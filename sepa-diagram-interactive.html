@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SEPA Payment Flows — Interactive GCP Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0A0E17;font-family:'Outfit',sans-serif;color:#E2E8F0;min-height:100vh;padding:24px 16px 60px}
+.header{text-align:center;max-width:800px;margin:0 auto 32px}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.2em;color:#06B6D4;text-transform:uppercase;margin-bottom:10px}
+.header h1{font-size:clamp(20px,4vw,32px);font-weight:700;color:#F8FAFC;line-height:1.2;margin-bottom:10px}
+.header p{font-size:14px;color:#64748B}
+.diagram-wrap{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:640px){.diagram-wrap{grid-template-columns:1fr}}
+.lane{border-radius:12px;padding:20px 16px;border:1px solid}
+.lane-sct{background:rgba(15,24,39,.6);border-color:rgba(29,78,216,.2)}
+.lane-inst{background:rgba(5,78,50,.15);border-color:rgba(5,150,105,.3)}
+.lane-title{text-align:center;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.06)}
+.lane-title h2{font-size:14px;font-weight:700;margin-bottom:4px}
+.lane-sct .lane-title h2{color:#60A5FA}
+.lane-inst .lane-title h2{color:#34D399}
+.lane-title span{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;color:#475569}
+.node-wrap{display:flex;flex-direction:column;align-items:center;gap:0}
+.node{width:100%;border-radius:8px;padding:12px 14px;cursor:pointer;border:1px solid;transition:transform .15s,box-shadow .15s,border-color .15s;position:relative}
+.node:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.node-compute{background:rgba(29,78,216,.12);border-color:rgba(29,78,216,.3)}
+.node-storage{background:rgba(5,150,105,.12);border-color:rgba(5,150,105,.3)}
+.node-message{background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.3)}
+.node-ai{background:rgba(217,119,6,.12);border-color:rgba(217,119,6,.3)}
+.node-external{background:rgba(100,116,139,.1);border-color:rgba(100,116,139,.2);border-style:dashed}
+.node-confirm{background:rgba(5,150,105,.2);border-color:rgba(5,150,105,.5)}
+.node-app{background:rgba(100,116,139,.12);border-color:rgba(100,116,139,.25)}
+.node:hover.node-compute{border-color:rgba(96,165,250,.6)}
+.node:hover.node-storage{border-color:rgba(52,211,153,.6)}
+.node:hover.node-message{border-color:rgba(167,139,250,.6)}
+.node:hover.node-ai{border-color:rgba(251,191,36,.6)}
+.node:hover.node-confirm{border-color:#34D399}
+.node-title{font-size:13px;font-weight:600;color:#F1F5F9;margin-bottom:3px}
+.node-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:#64748B}
+.node-external .node-title{color:#94A3B8}
+.node-confirm .node-title{color:#34D399}
+.ext-badge{font-family:'JetBrains Mono',monospace;font-size:9px;color:#475569;font-style:italic;margin-bottom:2px}
+.warm-badge{position:absolute;top:8px;right:8px;font-family:'JetBrains Mono',monospace;font-size:9px;background:rgba(217,119,6,.2);color:#FCD34D;border:1px solid rgba(217,119,6,.3);padding:2px 6px;border-radius:3px}
+.arrow{width:2px;height:24px;background:rgba(100,116,139,.3);margin:0 auto;position:relative;flex-shrink:0}
+.arrow::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid rgba(100,116,139,.5)}
+.arrow.green{background:rgba(5,150,105,.4)}
+.arrow.green::after{border-top-color:rgba(5,150,105,.6)}
+.key-diff{width:100%;background:rgba(5,150,105,.12);border:1px solid rgba(5,150,105,.3);border-radius:5px;padding:6px 10px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:#34D399}
+.settlement{width:100%;border-radius:6px;padding:8px;text-align:center;font-size:12px;font-weight:600;margin-top:8px}
+.settlement-sct{background:rgba(5,150,105,.1);color:#34D399;border:1px solid rgba(5,150,105,.2)}
+.settlement-inst{background:rgba(5,150,105,.2);color:#10B981;border:1px solid rgba(5,150,105,.4)}
+.panel-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:flex-end;justify-content:center;padding:16px}
+.panel-overlay.open{display:flex}
+.panel{background:#111827;border:1px solid rgba(255,255,255,.08);border-radius:16px 16px 0 0;padding:28px 24px 32px;width:100%;max-width:560px;max-height:70vh;overflow-y:auto}
+.panel-tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px}
+.panel h3{font-size:18px;font-weight:700;color:#F8FAFC;margin-bottom:14px}
+.panel p{font-size:14px;line-height:1.7;color:#94A3B8;margin-bottom:12px}
+.panel p:last-child{margin-bottom:0}
+.panel strong{color:#E2E8F0}
+.panel-close{display:block;margin:20px auto 0;padding:10px 24px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:#64748B;font-family:'JetBrains Mono',monospace;font-size:12px;cursor:pointer}
+.legend{max-width:900px;margin:20px auto 0;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:14px 20px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:center}
+.legend-item{display:flex;align-items:center;gap:7px;font-size:12px;color:#64748B}
+.legend-dot{width:10px;height:10px;border-radius:2px;border:1px solid;flex-shrink:0}
+.footer-note{text-align:center;margin-top:24px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#334155}
+.footer-note a{color:#0EA5E9;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="eyebrow">// Interactive Architecture · Fintech on Cloud</div>
+  <h1>SEPA Credit Transfer vs SEPA Instant<br/>GCP Architecture Diagram</h1>
+  <p>Click any component to understand what it does and why it is there</p>
+</div>
+
+<div class="diagram-wrap">
+  <div class="lane lane-sct">
+    <div class="lane-title"><h2>SEPA Credit Transfer (SCT)</h2><span>ASYNC · BATCH · D+1 SETTLEMENT</span></div>
+    <div class="node-wrap">
+      <div class="node node-app" onclick="openPanel('merchant-sct')"><div class="node-title">Merchant app</div><div class="node-sub">Initiates payment request</div></div>
+      <div class="arrow"></div>
+      <div class="node node-compute" onclick="openPanel('apigee')"><div class="node-title">Apigee API gateway</div><div class="node-sub">Auth · rate limiting · routing</div></div>
+      <div class="arrow"></div>
+      <div class="node node-compute" onclick="openPanel('cloudrun-sct')"><div class="node-title">Cloud Run</div><div class="node-sub">Build pain.001 XML · submit to bank</div></div>
+      <div class="arrow"></div>
+      <div class="node node-storage" onclick="openPanel('spanner')"><div class="node-title">Cloud Spanner</div><div class="node-sub">Idempotency · transaction state</div></div>
+      <div class="arrow"></div>
+      <div class="node node-message" onclick="openPanel('pubsub-sct')"><div class="node-title">Cloud Pub/Sub</div><div class="node-sub">Payment event published</div></div>
+      <div class="arrow"></div>
+      <div class="node node-external" onclick="openPanel('step2')"><div class="ext-badge">External</div><div class="node-title">EBA STEP2</div><div class="node-sub">Batch clearing · 4 cycles/day</div></div>
+      <div class="arrow"></div>
+      <div class="node node-message" onclick="openPanel('cloudtasks')"><div class="node-title">Cloud Tasks</div><div class="node-sub">pain.002 status polling</div></div>
+      <div class="arrow"></div>
+      <div class="node node-storage" onclick="openPanel('bigquery')"><div class="node-title">BigQuery + Looker</div><div class="node-sub">Reconciliation · reporting</div></div>
+      <div class="arrow"></div>
+      <div class="node node-ai" onclick="openPanel('vertex-sct')"><div class="node-title">Vertex AI (Gemini)</div><div class="node-sub">Mismatch classification</div></div>
+      <div class="settlement settlement-sct">Settlement: T+1 business day</div>
+    </div>
+  </div>
+
+  <div class="lane lane-inst">
+    <div class="lane-title"><h2>SEPA Instant (SCT Inst)</h2><span>SYNC · REAL-TIME · 10 SECONDS</span></div>
+    <div class="node-wrap">
+      <div class="node node-app" onclick="openPanel('merchant-inst')"><div class="node-title">Merchant app</div><div class="node-sub">Initiates instant payment</div></div>
+      <div class="arrow"></div>
+      <div class="node node-compute" onclick="openPanel('apigee')"><div class="node-title">Apigee API gateway</div><div class="node-sub">Low-latency routing</div></div>
+      <div class="arrow"></div>
+      <div class="node node-compute" onclick="openPanel('cloudrun-inst')"><div class="warm-badge">min-instances=2</div><div class="node-title">Cloud Run (warm)</div><div class="node-sub">pacs.008 · 8s timeout budget</div></div>
+      <div class="arrow"></div>
+      <div class="node node-storage" onclick="openPanel('spanner')"><div class="node-title">Cloud Spanner</div><div class="node-sub">Strong read · idempotency</div></div>
+      <div class="arrow"></div>
+      <div class="node node-external" onclick="openPanel('rt1tips')"><div class="ext-badge">External</div><div class="node-title">RT1 / TIPS (ECB)</div><div class="node-sub">Real-time clearing · 24/7</div></div>
+      <div class="arrow green"></div>
+      <div class="node node-confirm" onclick="openPanel('pacs002')"><div class="node-title">pacs.002 response</div><div class="node-sub">ACCP or RJCT — synchronous</div></div>
+      <div class="key-diff">Definitive answer within 10 seconds</div>
+      <div class="arrow"></div>
+      <div class="node node-message" onclick="openPanel('pubsub-inst')"><div class="node-title">Cloud Pub/Sub</div><div class="node-sub">Outcome event — COMPLETED</div></div>
+      <div class="arrow"></div>
+      <div class="node node-storage" onclick="openPanel('monitoring')"><div class="node-title">Cloud Monitoring</div><div class="node-sub">p99 latency · SLA alerting</div></div>
+      <div class="arrow"></div>
+      <div class="node node-ai" onclick="openPanel('vertex-inst')"><div class="node-title">Vertex AI (Gemini)</div><div class="node-sub">Reject reason classification</div></div>
+      <div class="settlement settlement-inst">Settlement: within 10 seconds</div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(29,78,216,.2);border-color:rgba(29,78,216,.4)"></div>Compute</div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(5,150,105,.2);border-color:rgba(5,150,105,.4)"></div>Storage / DB</div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(124,58,237,.2);border-color:rgba(124,58,237,.4)"></div>Messaging</div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(217,119,6,.2);border-color:rgba(217,119,6,.4)"></div>AI / ML</div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(100,116,139,.1);border-color:rgba(100,116,139,.3);border-style:dashed"></div>External</div>
+</div>
+
+<div class="footer-note">Interactive diagram · <a href="https://fintech-on-cloud.substack.com">Fintech on Cloud</a> · Full article on Substack</div>
+
+<div class="panel-overlay" id="overlay" onclick="closePanel(event)">
+  <div class="panel" id="panel">
+    <div class="panel-tag" id="panel-tag"></div>
+    <h3 id="panel-title"></h3>
+    <div id="panel-body"></div>
+    <button class="panel-close" onclick="closePanel()">Close</button>
+  </div>
+</div>
+
+<script>
+const C={
+  'merchant-sct':{tag:'// SCT · Entry point',color:'#64748B',title:'Merchant app — SCT',body:'<p>The merchant app is your system — a checkout, billing engine, or payout tool. It collects the creditor IBAN, amount, description, and an internal order reference before calling the payment API.</p><p>For SCT, it sends the payment and gets back a <strong>submitted</strong> status immediately. The actual outcome only arrives the next business day via pain.002. The app must handle this async gap gracefully — showing a "processing" state rather than a final confirmation.</p><p>Critical: generate a <strong>unique idempotency key</strong> per payment intent before any API call.</p>'},
+  'merchant-inst':{tag:'// SCT Inst · Entry point',color:'#34D399',title:'Merchant app — SCT Inst',body:'<p>Same starting point — but a completely different contract. With SCT Inst, the merchant app can show a <strong>definitive result within seconds</strong>. Either completed or rejected.</p><p>This fundamentally changes UX. A marketplace can credit a seller in real time. A gig platform pays a driver immediately. The app must handle both ACCP and RJCT and surface them instantly to the user.</p>'},
+  'apigee':{tag:'// GCP Compute · API layer',color:'#60A5FA',title:'Apigee API gateway',body:'<p>Apigee handles API key validation, OAuth token verification, rate limiting per merchant, and routing to the correct Cloud Run service.</p><p>For SCT Inst specifically: keep Apigee policies lightweight. Auth should use <strong>cached token validation</strong> — not a live lookup on every request — to protect your 8-second latency budget.</p>'},
+  'cloudrun-sct':{tag:'// GCP Compute · Initiation',color:'#60A5FA',title:'Cloud Run — SCT',body:'<p>Receives the payment request, constructs the <strong>pain.001 XML</strong> message, validates it against the XSD schema, and submits it to the debtor bank. The bank returns a synchronous ACK confirming receipt, not settlement.</p><p>For SCT, Cloud Run can scale to zero — cold starts are fine because SCT is not latency-critical.</p><p><strong>Always validate pain.001 against the XSD before submitting.</strong> Format errors return as FF01 rejections.</p>'},
+  'cloudrun-inst':{tag:'// GCP Compute · Initiation',color:'#60A5FA',title:'Cloud Run (warm) — SCT Inst',body:'<p>Cold starts are not acceptable here. A Cloud Run instance taking 800ms to start burns nearly 10% of your entire 10-second budget before the request even processes.</p><p>Set <strong>min-instances=2</strong> so there is always a warm instance ready. This costs more but is non-negotiable for SCT Inst SLAs.</p><p>The service constructs a <strong>pacs.008</strong> message, generates a UETR, and calls the bank with an internal timeout of 8 seconds — leaving 2 seconds of margin before the EPC hard deadline.</p>'},
+  'spanner':{tag:'// GCP Storage · State store',color:'#34D399',title:'Cloud Spanner',body:'<p>Spanner stores the canonical state of every payment: PENDING → SUBMITTED → COMPLETED or FAILED. It is the source of truth all downstream services read from.</p><p>The idempotency check reads from Spanner before constructing any payment message. If the key already exists, return the existing status without re-initiating.</p><p>For SCT Inst: use <strong>strong consistency reads</strong> — not stale reads. Do the read, check, and write in a single Spanner transaction.</p>'},
+  'pubsub-sct':{tag:'// GCP Messaging',color:'#A78BFA',title:'Cloud Pub/Sub — SCT',body:'<p>After bank ACK and initial state write, Cloud Run publishes a payment-initiated event to Pub/Sub. This decouples initiation from downstream processing — reconciliation workers, notification services, and audit systems all subscribe independently.</p>'},
+  'pubsub-inst':{tag:'// GCP Messaging',color:'#A78BFA',title:'Cloud Pub/Sub — SCT Inst',body:'<p>After a pacs.002 ACCP is received and confirmed in Spanner, a payment-completed event is published. Downstream systems — ledger updates, notifications, seller payout triggers — all consume from this topic.</p>'},
+  'step2':{tag:'// External · EBA clearing',color:'#64748B',title:'EBA STEP2',body:'<p>STEP2 is the EBA pan-European clearing infrastructure. Your debtor bank submits batched pain.001 files to STEP2, which processes them in <strong>4 clearing cycles per business day</strong>. STEP2 forwards settled transactions to creditor banks via TARGET2. This batch cycle is why SCT takes until the next business day.</p>'},
+  'rt1tips':{tag:'// External · Real-time clearing',color:'#64748B',title:'RT1 / TIPS (ECB)',body:'<p><strong>RT1</strong> is EBA real-time clearing infrastructure for SCT Inst, operating 24/7/365. <strong>TIPS</strong> is the ECB alternative, settling in central bank money.</p><p>Both process pacs.008 messages in real time and return pacs.002 within seconds. Key constraint: if the creditor bank has not joined RT1 or TIPS, SCT Inst cannot be used for that recipient.</p>'},
+  'cloudtasks':{tag:'// GCP Messaging · Async polling',color:'#A78BFA',title:'Cloud Tasks — pain.002 polling',body:'<p>Because SCT is asynchronous, Cloud Tasks schedules polling jobs with configurable retry and backoff to check for the pain.002 status file from the bank.</p><p>Typical pattern: poll at T+2h, then T+8h, then T+24h. No pain.002 after 24h? Escalate to manual investigation.</p>'},
+  'bigquery':{tag:'// GCP Storage · Analytics',color:'#34D399',title:'BigQuery + Looker',body:'<p>All payment events stream into BigQuery for reconciliation and reporting. BigQuery handles analytical queries — matching initiated payments against confirmed settlements, identifying mismatches, and generating end-of-day reconciliation reports.</p>'},
+  'monitoring':{tag:'// GCP Observability',color:'#34D399',title:'Cloud Monitoring — SCT Inst',body:'<p>For SCT Inst, monitoring is part of the compliance story. You need real-time visibility into <strong>p99 latency per bank</strong>, timeout rates, and rejection rates by reason code.</p><p>Set alerts for: p99 > 6s (approaching your 8s internal budget), timeout rate > 0.1%, and spikes in RJCT responses. Cloud Trace gives distributed tracing across the entire request path.</p>'},
+  'pacs002':{tag:'// ISO 20022 · Synchronous response',color:'#34D399',title:'pacs.002 — the key difference',body:'<p>pacs.002 is the ISO 20022 payment status message. In SCT Inst, it comes back <strong>synchronously within the same request</strong> — you do not poll for it.</p><p><strong>ACCP</strong> = funds credited. Done. <strong>RJCT</strong> = rejected with a reason code.</p><p>Common RJCT codes: <strong>DS04</strong> (creditor bank rejected), <strong>AM18</strong> (exceeds €100k limit), <strong>AG01</strong> (transaction forbidden), <strong>NARR</strong> (AML-related, needs human review).</p>'},
+  'vertex-sct':{tag:'// GCP AI · Reconciliation',color:'#FCD34D',title:'Vertex AI (Gemini) — SCT',body:'<p>When BigQuery identifies reconciliation mismatches, Vertex AI classifies the discrepancy and generates a plain-English explanation for ops teams — instead of analysts digging through raw pain.002 files.</p>'},
+  'vertex-inst':{tag:'// GCP AI · Failure classification',color:'#FCD34D',title:'Vertex AI (Gemini) — SCT Inst',body:'<p>RJCT responses include reason codes, but some (particularly NARR) are vague. Vertex AI classifies these using full transaction context to determine root cause and recommended action. High-confidence results route to automated logic. Low-confidence results route to human review.</p>'},
+};
+function openPanel(id){const c=C[id];if(!c)return;document.getElementById('panel-tag').textContent=c.tag;document.getElementById('panel-tag').style.color=c.color;document.getElementById('panel-title').textContent=c.title;document.getElementById('panel-body').innerHTML=c.body;document.getElementById('overlay').classList.add('open');}
+function closePanel(e){if(!e||e.target===document.getElementById('overlay'))document.getElementById('overlay').classList.remove('open');}
+</script>
+</body>
+</html>
