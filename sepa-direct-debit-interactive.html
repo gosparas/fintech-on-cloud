@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>SEPA Direct Debit — Production Architecture | Fintech on Cloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet"/>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#FFFFFF;font-family:'Outfit',sans-serif;color:#18181B;min-height:100vh;padding:0 0 60px;min-width:320px}
+        .header{background:#18181B;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+        .brand{font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#F8FAFC}
+        .brand span{color:#34D399}
+        .back{font-family:'JetBrains Mono',monospace;font-size:11px;color:#52525B;text-decoration:none;letter-spacing:0.1em}
+        .back:hover{color:#94A3B8}
+        .hero{text-align:center;padding:32px 24px 20px;max-width:900px;margin:0 auto}
+        .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#7C3AED;text-transform:uppercase;margin-bottom:8px}
+        .hero h1{font-family:'Fraunces',serif;font-size:clamp(20px,3.5vw,32px);font-weight:700;color:#18181B;line-height:1.15;margin-bottom:8px}
+        .hero p{font-size:13px;color:#64748B;margin-bottom:16px}
+        .tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+        .tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:3px;letter-spacing:0.1em;text-transform:uppercase}
+        .tag-blue{background:#DBEAFE;color:#1D4ED8}
+        .tag-green{background:#D1FAE5;color:#065F46}
+        .tag-gray{background:#F1F5F9;color:#475569}
+        .tag-red{background:#FEE2E2;color:#B91C1C}
+        .tag-purple{background:#EDE9FE;color:#4C1D95}
+        .tag-cyan{background:#CFFAFE;color:#0E7490}
+        .tag-amber{background:#FEF3C7;color:#78350F}
+        .hint{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#94A3B8;padding:9px;background:#F8FAFC;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;letter-spacing:0.05em}
+        /* ── SECTION ── */
+        .section{max-width:100%;margin:0 auto;padding:20px 12px 0}
+        .section-header{display:flex;align-items:flex-start;margin-bottom:12px;padding:12px 18px;border-radius:8px;border-left:4px solid}
+        .section-header h2{font-family:'Fraunces',serif;font-size:16px;font-weight:700;margin-bottom:3px}
+        .section-header p{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em}
+        .sh-core{background:#F5F3FF;border-color:#7C3AED}.sh-core h2{color:#4C1D95}.sh-core p{color:#7C3AED}
+        .sh-b2b{background:#ECFEFF;border-color:#0891B2}.sh-b2b h2{color:#0E4F6B}.sh-b2b p{color:#0891B2}
+        /* ── FLOW AREAS ── */
+        .flow-area{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin-bottom:6px}
+        .flow-area.recovery{background:#FFF7ED;border-color:#FED7AA}
+        .flow-area.ledger-row{background:#FFFBEB;border-color:#FDE68A}
+        .flow-area.recon-row{background:#F0FDF4;border-color:#A7F3D0}
+        .flow-area.rtx-row{background:#FEF2F2;border-color:#FECACA}
+        .flow-area.mandate-row{background:#F5F3FF;border-color:#C4B5FD}
+        .flow-area.b2b-row{background:#ECFEFF;border-color:#A5F3FC}
+        .flow-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#94A3B8;margin-bottom:10px}
+        .flow-label.warn{color:#D97706}
+        .flow-label.success{color:#059669}
+        .flow-label.danger{color:#DC2626}
+        .flow-label.purple{color:#7C3AED}
+        .flow-label.cyan{color:#0891B2}
+        .flow-row{display:flex;align-items:center;flex-wrap:wrap;row-gap:8px;column-gap:0px;padding-bottom:2px}
+        /* ── BOXES ── */
+        .box{flex-shrink:2;flex-grow:0;border-radius:7px;padding:7px 8px;cursor:pointer;border:1.5px solid;transition:transform 0.1s,box-shadow 0.1s;min-width:82px;max-width:148px;text-align:center}
+        .box:hover{transform:translateY(-2px);box-shadow:0 3px 12px rgba(0,0,0,0.08)}
+        .bt{font-family:'Outfit',sans-serif;font-size:10.5px;font-weight:600;margin-bottom:2px;line-height:1.2}
+        .bs{font-family:'JetBrains Mono',monospace;font-size:7.5px;line-height:1.35;opacity:0.8}
+        .box-blue{background:#EFF6FF;border-color:#93C5FD}.box-blue .bt{color:#1E3A8A}.box-blue .bs{color:#3B82F6}
+        .box-teal{background:#ECFDF5;border-color:#6EE7B7}.box-teal .bt{color:#064E3B}.box-teal .bs{color:#059669}
+        .box-purple{background:#F5F3FF;border-color:#C4B5FD}.box-purple .bt{color:#4C1D95}.box-purple .bs{color:#7C3AED}
+        .box-amber{background:#FFFBEB;border-color:#FCD34D}.box-amber .bt{color:#78350F}.box-amber .bs{color:#D97706}
+        .box-gray{background:#F8FAFC;border-color:#CBD5E1}.box-gray .bt{color:#475569}.box-gray .bs{color:#94A3B8}
+        .box-ext{background:#F1F5F9;border-color:#CBD5E1;border-style:dashed}.box-ext .bt{color:#475569}.box-ext .bs{color:#94A3B8}
+        .box-red{background:#FEF2F2;border-color:#FECACA}.box-red .bt{color:#B91C1C}.box-red .bs{color:#EF4444}
+        .box-orange{background:#FFF7ED;border-color:#FED7AA}.box-orange .bt{color:#C2410C}.box-orange .bs{color:#EA580C}
+        .box-green{background:#F0FDF4;border-color:#A7F3D0}.box-green .bt{color:#065F46}.box-green .bs{color:#059669}
+        .box-yellow{background:#FEFCE8;border-color:#FEF08A}.box-yellow .bt{color:#713F12}.box-yellow .bs{color:#CA8A04}
+        .box-cyan{background:#ECFEFF;border-color:#A5F3FC}.box-cyan .bt{color:#0E4F6B}.box-cyan .bs{color:#0891B2}
+        .box-indigo{background:#EEF2FF;border-color:#A5B4FC}.box-indigo .bt{color:#3730A3}.box-indigo .bs{color:#4F46E5}
+        /* ── ENTRY GROUP ── */
+        .entry-group{display:flex;flex-direction:column;gap:5px;flex-shrink:0;margin-right:4px}
+        .entry-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#94A3B8;text-align:center;margin-bottom:2px}
+        .entry-box{border-radius:6px;padding:6px 8px;cursor:pointer;border:1px solid;transition:transform 0.1s,box-shadow 0.1s;text-align:center;min-width:84px;max-width:110px}
+        .entry-box:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,0.07)}
+        .entry-box .et{font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;margin-bottom:1px}
+        .entry-box .es{font-family:'JetBrains Mono',monospace;font-size:8px;opacity:0.7}
+        .eb-p{background:#F5F3FF;border-color:#C4B5FD}.eb-p .et{color:#4C1D95}.eb-p .es{color:#7C3AED}
+        .eb-c{background:#ECFEFF;border-color:#A5F3FC}.eb-c .et{color:#0E4F6B}.eb-c .es{color:#0891B2}
+        /* ── ARROWS ── */
+        .arr{flex-shrink:1;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 4px;min-width:48px;max-width:72px;position:relative;overflow:visible}
+        .arr-line{height:2px;width:100%;position:relative;flex-shrink:0}
+        .arr-line::after{content:'▶';position:absolute;right:-6px;top:50%;transform:translateY(-50%);font-size:8px}
+        .arr-sync .arr-line{background:#7C3AED}.arr-sync .arr-line::after{color:#7C3AED}
+        .arr-async .arr-line{background:transparent;border-top:2px dashed #0891B2}.arr-async .arr-line::after{color:#0891B2}
+        .arr-return .arr-line{background:transparent;border-top:2px dashed #059669}.arr-return .arr-line::after{color:#059669}
+        .arr-warn .arr-line{background:transparent;border-top:2px dashed #EA580C}.arr-warn .arr-line::after{color:#EA580C}
+        .arr-danger .arr-line{background:transparent;border-top:2px dashed #DC2626}.arr-danger .arr-line::after{color:#DC2626}
+        .arr-label{font-family:'JetBrains Mono',monospace;font-size:8px;margin-top:3px;white-space:nowrap;text-align:center;max-width:80px;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+        .arr-sync .arr-label{color:#7C3AED}
+        .arr-async .arr-label{color:#0891B2}
+        .arr-return .arr-label{color:#059669}
+        .arr-warn .arr-label{color:#EA580C}
+        .arr-danger .arr-label{color:#DC2626}
+        .banner{border-radius:5px;padding:7px 12px;margin-bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;text-align:left;letter-spacing:0.04em}
+        .banner-amber{background:#FFFBEB;border:1px solid #FCD34D;color:#78350F}
+        /* ── COMPARE GRID ── */
+        .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+        .compare-card{border-radius:8px;padding:12px 14px;border:1px solid}
+        .compare-card h4{font-family:'Fraunces',serif;font-size:13px;font-weight:700;margin-bottom:8px}
+        .compare-card ul{padding-left:14px}
+        .compare-card li{font-size:11px;color:#475569;margin-bottom:4px;line-height:1.5}
+        .cc-core{background:#F5F3FF;border-color:#C4B5FD}.cc-core h4{color:#4C1D95}
+        .cc-b2b{background:#ECFEFF;border-color:#A5F3FC}.cc-b2b h4{color:#0E4F6B}
+        /* ── LEGEND ── */
+        .legend{max-width:1300px;margin:16px auto 0;padding:0 14px}
+        .legend-inner{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center}
+        .li{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#64748B}
+        .ld{width:24px;height:2px}
+        .ld-s{background:#7C3AED}
+        .ld-a{background:transparent;border-top:2px dashed #0891B2}
+        .ld-r{background:transparent;border-top:2px dashed #059669}
+        .ld-w{background:transparent;border-top:2px dashed #EA580C}
+        .ld-d{background:transparent;border-top:2px dashed #DC2626}
+        .lb{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+        /* ── MODAL ── */
+        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+        .modal-bg.open{display:flex}
+        .modal{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;width:100%;max-width:540px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.12)}
+        .modal-head{padding:18px 22px 14px;border-bottom:1px solid #F1F5F9;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:#fff;z-index:1}
+        .modal-hl{flex:1}
+        .modal-tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#7C3AED;margin-bottom:4px}
+        .modal-title{font-family:'Fraunces',serif;font-size:19px;font-weight:700;color:#18181B;line-height:1.2}
+        .modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:#94A3B8;flex-shrink:0;line-height:1}
+        .modal-x:hover{color:#18181B}
+        .modal-body{padding:18px 22px 22px}
+        .modal-body p{font-family:'Outfit',sans-serif;font-size:13px;color:#475569;line-height:1.75;margin-bottom:12px}
+        .modal-body p:last-child{margin-bottom:0}
+        .modal-body strong{color:#18181B;font-weight:600}
+        .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+        .chip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:4px}
+        .chip-blue{background:#DBEAFE;color:#1E3A8A}
+        .chip-teal{background:#D1FAE5;color:#064E3B}
+        .chip-amber{background:#FEF3C7;color:#78350F}
+        .chip-gray{background:#F1F5F9;color:#475569}
+        .chip-red{background:#FEE2E2;color:#B91C1C}
+        .chip-purple{background:#EDE9FE;color:#4C1D95}
+        .chip-orange{background:#FFEDD5;color:#C2410C}
+        .chip-cyan{background:#CFFAFE;color:#0E7490}
+        .footer{text-align:center;margin-top:36px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#CBD5E1;padding:16px;background:#18181B}
+        .footer a{color:#34D399;text-decoration:none}
+        .screenshot-btn{display:block;padding:7px 18px;background:#18181B;color:#fff;font-family:'JetBrains Mono',monospace;font-size:11px;border:none;border-radius:6px;cursor:pointer;letter-spacing:0.05em}
+        .screenshot-btn:hover{background:#334155}
+        body.screenshot-mode .modal-bg{display:none!important}
+        @media print{.modal-bg,.screenshot-btn{display:none!important}body{padding:0!important}.section{padding:8px 6px 0!important}.flow-area{break-inside:avoid;margin-bottom:4px!important}.box{max-width:140px!important;min-width:80px!important}.arr{min-width:24px!important}}
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="brand">Fintech <span>on</span> Cloud</div>
+    <a class="back" href="https://fintechoncloud.substack.com">← Back to blog</a>
+</div>
+<div class="hero">
+    <div class="eyebrow">// Production Architecture · Post #2 · SEPA Series</div>
+    <h1>SEPA Direct Debit (Core &amp; B2B)<br/>Production-Grade GCP Architecture</h1>
+    <p>Click any component for a full explanation. Covers mandate management, pre-notification, debit execution (D-1 submission), R-transactions (returns, refusals, reversals, refunds), reconciliation and dispute handling — all on GCP.</p>
+    <div class="tags">
+        <span class="tag tag-purple">SDD Core</span>
+        <span class="tag tag-cyan">SDD B2B</span>
+        <span class="tag tag-blue">GCP</span>
+        <span class="tag tag-green">ISO 20022</span>
+        <span class="tag tag-amber">State Machine</span>
+        <span class="tag tag-red">R-Transactions</span>
+        <span class="tag tag-green">Mandate Registry</span>
+        <span class="tag tag-blue">STEP2 / CSM</span>
+    </div>
+</div>
+<div class="hint" style="display:flex;align-items:center;justify-content:center;gap:16px;">Click any box to learn more <span>→</span><button class="screenshot-btn" onclick="document.body.classList.toggle('screenshot-mode');this.textContent=document.body.classList.contains('screenshot-mode')?'Exit compact mode':'Compact view for screenshot'">Compact view for screenshot</button></div>
+
+<!-- ══════════════════════════════════════ SDD CORE ══════════════════════════════════════ -->
+<div class="section">
+    <div class="section-header sh-core">
+        <div>
+            <h2>SEPA Direct Debit — Core (SDD Core)</h2>
+            <p>D-1 SUBMISSION · pain.008 / pain.002 · STEP2 SDD CSM · APIGEE X · B2C &amp; LOW-VALUE RECURRING</p>
+        </div>
+    </div>
+
+    <!-- PHASE 0: Mandate Lifecycle -->
+    <div class="flow-area mandate-row">
+        <div class="flow-label purple">// Phase 0 — Mandate lifecycle: creditor stores and versions SEPA mandates before any collection</div>
+        <div class="flow-row">
+            <div class="entry-group">
+                <div class="entry-label">Creditor</div>
+                <div class="entry-box eb-p" onclick="om('merchant_app_core')"><div class="et">Merchant App</div><div class="es">Mandate setup</div></div>
+            </div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">HTTPS</div></div>
+            <div class="box box-blue" onclick="om('apigee_core')"><div class="bt">Apigee X</div><div class="bs">Auth · rate limit · LB</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-purple" onclick="om('mandate_registry')"><div class="bt">Mandate Registry</div><div class="bs">Create · amend · cancel · MRN</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">persist</div></div>
+            <div class="box box-indigo" onclick="om('mandate_db')"><div class="bt">Spanner / SQL</div><div class="bs">Versioned mandate store</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('mandate_event')"><div class="bt">Cloud Pub/Sub</div><div class="bs">mandate.created / amended</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">notify</div></div>
+            <div class="box box-ext" onclick="om('debtor_bank_mandate')"><div class="bt">Debtor Bank</div><div class="bs">Optional (B2B: required)</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 1: Collection Initiation -->
+    <div class="flow-area">
+        <div class="flow-label purple">// Phase 1 — Collection initiation: pre-notification → schema validation → idempotency → mandate check → AML → state machine → bank adapter → pain.008</div>
+        <div class="flow-row">
+            <div class="entry-group">
+                <div class="entry-label">Creditor</div>
+                <div class="entry-box eb-p" onclick="om('merchant_app_core')"><div class="et">Merchant App</div><div class="es">Initiate collection</div></div>
+            </div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">D-14/5</div></div>
+            <div class="box box-purple" onclick="om('pre_notification')"><div class="bt">Pre-Notification</div><div class="bs">Email · PDF · configurable</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-gray" onclick="om('schema_val_core')"><div class="bt">Schema Validation</div><div class="bs">pain.008 contract · reject</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">valid</div></div>
+            <div class="box box-orange" onclick="om('idempotency_core')"><div class="bt">Idempotency</div><div class="bs">MRN+seq+amount dedup</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">new</div></div>
+            <div class="box box-purple" onclick="om('mandate_check')"><div class="bt">Mandate Check</div><div class="bs">Active · seq type · CI</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">valid</div></div>
+            <div class="box box-red" onclick="om('aml_core')"><div class="bt">AML / Sanctions</div><div class="bs">Screen · block flagged</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">pass</div></div>
+            <div class="box box-orange" onclick="om('state_machine_core')"><div class="bt">State Machine</div><div class="bs">CREATED → SUBMITTED</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-blue" onclick="om('bank_adapter_core')"><div class="bt">Bank Adapter Layer</div><div class="bs">per-bank → pain.008</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">persist</div></div>
+            <div class="box box-indigo" onclick="om('spanner_core')"><div class="bt">Spanner / SQL</div><div class="bs">State · mandate counter</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('pubsub_initiated_core')"><div class="bt">Cloud Pub/Sub</div><div class="bs">collection.initiated</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 2: Async Clearing -->
+    <div class="flow-area">
+        <div class="flow-label purple">// Phase 2 — Async clearing: D-1 batch → STEP2 SDD CSM → debtor bank → pain.002 + camt.054 → state update</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('pubsub_worker_core')"><div class="bt">Cloud Pub/Sub</div><div class="bs">worker · D-1 cut-off check</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">check</div></div>
+            <div class="box box-orange" onclick="om('cutoff_service')"><div class="bt">Cut-Off Service</div><div class="bs">D-1 FRST · D-2 RCUR/FNAL</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">batch</div></div>
+            <div class="box box-ext" onclick="om('creditor_bank')"><div class="bt">Creditor Bank</div><div class="bs">Submit pain.008 to CSM</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">route</div></div>
+            <div class="box box-ext" onclick="om('step2_sdd')"><div class="bt">EBA STEP2 / CSM</div><div class="bs">4 cycles/day · D+0 settle</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">debit</div></div>
+            <div class="box box-ext" onclick="om('debtor_bank_debit')"><div class="bt">Debtor Bank</div><div class="bs">Debits account · pain.002</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">status</div></div>
+            <div class="box box-blue" onclick="om('cloud_tasks_poll')"><div class="bt">Cloud Tasks</div><div class="bs">pain.002 + camt.054 poll</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">update</div></div>
+            <div class="box box-orange" onclick="om('state_machine_settle')"><div class="bt">State Machine</div><div class="bs">→ SETTLED / R-TX</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">write</div></div>
+            <div class="box box-indigo" onclick="om('spanner_settle')"><div class="bt">Spanner / SQL</div><div class="bs">Final state</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 2b: R-Transactions -->
+    <div class="flow-area rtx-row">
+        <div class="flow-label danger">// Phase 2b — R-Transaction handling: return (pacs.004) · refusal (pain.002 RJCT) · reversal (pacs.007) · refund (camt.055)</div>
+        <div class="flow-row">
+            <div class="box box-red" onclick="om('r_transaction_handler')"><div class="bt">R-Tx Handler</div><div class="bs">Classify type · reason code</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">return</div></div>
+            <div class="box box-red" onclick="om('return_flow')"><div class="bt">Return (pacs.004)</div><div class="bs">Post-settle · D+5 · AC04/AM04</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">refusal</div></div>
+            <div class="box box-red" onclick="om('refusal_flow')"><div class="bt">Refusal (RJCT)</div><div class="bs">Pre-settle · MD01/MD02</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">reversal</div></div>
+            <div class="box box-orange" onclick="om('reversal_flow')"><div class="bt">Reversal (pacs.007)</div><div class="bs">Creditor-init · D+5</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">refund</div></div>
+            <div class="box box-orange" onclick="om('refund_flow')"><div class="bt">Refund (camt.055)</div><div class="bs">8-week · Core only</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">recon↓</div></div>
+            <div class="box box-yellow" onclick="om('ledger_reversal_core')"><div class="bt">Ledger Reversal</div><div class="bs">Recon-gated · idempotent</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('pubsub_rtx')"><div class="bt">Cloud Pub/Sub</div><div class="bs">collection.returned / refunded</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 3: Ledger -->
+    <div class="flow-area ledger-row">
+        <div class="flow-label warn">// Phase 3 — Ledger: pending debit on initiation → confirmed on ACCP → reversed on R-transaction</div>
+        <div class="flow-row">
+            <div class="box box-orange" onclick="om('state_machine_core')"><div class="bt">State Machine</div><div class="bs">ACCP / RJCT confirmed</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-yellow" onclick="om('ledger_service_core')"><div class="bt">Ledger Service</div><div class="bs">Pending → confirmed debit</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-teal" onclick="om('ledger_db_core')"><div class="bt">Ledger DB</div><div class="bs">Double-entry · immutable</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('ledger_event_core')"><div class="bt">Cloud Pub/Sub</div><div class="bs">ledger.updated event</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 4: Analytics + Reconciliation -->
+    <div class="flow-area recon-row">
+        <div class="flow-label success">// Phase 4 — Analytics + reconciliation: PII-stripped events → BigQuery → recon engine → AI classify</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('pubsub_analytics_core')"><div class="bt">Cloud Pub/Sub</div><div class="bs">transaction events fan-out</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-teal" onclick="om('dataflow_core')"><div class="bt">Dataflow</div><div class="bs">PII removal · enrich</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-teal" onclick="om('bigquery_core')"><div class="bt">BigQuery</div><div class="bs">R-rate · mandate churn</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-green" onclick="om('recon_engine_core')"><div class="bt">Reconciliation Engine</div><div class="bs">Ledger vs bank · R-tx gate</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-purple" onclick="om('vertex_core')"><div class="bt">Vertex AI (Gemini)</div><div class="bs">R-tx classify · dispute score</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 5: Recovery -->
+    <div class="flow-area recovery">
+        <div class="flow-label warn">// Phase 5 — Recovery layer: DLQ · retry · circuit breaker · cut-off miss · manual review</div>
+        <div class="flow-row">
+            <div class="box box-red" onclick="om('dlq_core')"><div class="bt">Dead Letter Queue</div><div class="bs">Pub/Sub DLQ · cut-off miss</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">alert</div></div>
+            <div class="box box-teal" onclick="om('monitoring_core')"><div class="bt">Cloud Monitoring</div><div class="bs">R-rate · SLA · cut-off</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">route</div></div>
+            <div class="box box-orange" onclick="om('retry_core')"><div class="bt">Retry Mechanism</div><div class="bs">Backoff · circuit breaker</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">escalate</div></div>
+            <div class="box box-red" onclick="om('manual_review_core')"><div class="bt">Manual Review Queue</div><div class="bs">Ops · dispute · mandate freeze</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">resolve</div></div>
+            <div class="box box-orange" onclick="om('state_machine_core')"><div class="bt">State Machine</div><div class="bs">FAILED / COMPENSATING</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════ SDD B2B ══════════════════════════════════════ -->
+<div class="section" style="margin-top:28px">
+    <div class="section-header sh-b2b">
+        <div>
+            <h2>SEPA Direct Debit — B2B (SDD B2B)</h2>
+            <p>D-1 ALL SEQ TYPES · pain.008 (B2BB) · NO REFUND RIGHT · DEBTOR BANK VALIDATES MANDATE · CORPORATE ONLY</p>
+        </div>
+    </div>
+
+    <div class="banner banner-amber">⚠ Key B2B differences vs Core: (1) Debtor bank <strong>must</strong> hold and validate the mandate before each debit. (2) No unconditional refund right. (3) Shorter return window: D+2. (4) Corporate debtors only. (5) D-1 cut-off for all sequence types.</div>
+
+    <div class="compare-grid" style="margin-bottom:10px">
+        <div class="compare-card cc-core">
+            <h4>SDD Core</h4>
+            <ul>
+                <li>B2C + B2B debtors allowed</li>
+                <li>Debtor bank: no prior mandate check</li>
+                <li>8-week unconditional refund right</li>
+                <li>Return window: D+5 business days</li>
+                <li>FRST/OOFF D-1, RCUR/FNAL D-2 cut-off</li>
+                <li>Lower creditor liability</li>
+            </ul>
+        </div>
+        <div class="compare-card cc-b2b">
+            <h4>SDD B2B</h4>
+            <ul>
+                <li>Non-consumer (corporate) debtors only</li>
+                <li>Debtor bank holds &amp; validates mandate</li>
+                <li>No unconditional refund right</li>
+                <li>Return window: D+2 business days</li>
+                <li>FRST/RCUR/FNAL/OOFF: D-1 cut-off</li>
+                <li>Higher creditor control / lower dispute risk</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- B2B PHASE 0: Mandate with ACK -->
+    <div class="flow-area b2b-row">
+        <div class="flow-label cyan">// B2B Phase 0 — Mandate registration: creditor AND debtor bank both receive and store mandate copy</div>
+        <div class="flow-row">
+            <div class="entry-group">
+                <div class="entry-label">Creditor (B2B)</div>
+                <div class="entry-box eb-c" onclick="om('b2b_creditor_app')"><div class="et">Creditor ERP</div><div class="es">Corporate treasury</div></div>
+            </div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">HTTPS</div></div>
+            <div class="box box-cyan" onclick="om('b2b_mandate_registry')"><div class="bt">Mandate Registry (B2B)</div><div class="bs">MRN + debtor bank notify</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">notify</div></div>
+            <div class="box box-ext" onclick="om('b2b_debtor_bank_mandate')"><div class="bt">Debtor Bank (B2B)</div><div class="bs">Store mandate · ACK</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">ACK</div></div>
+            <div class="box box-cyan" onclick="om('b2b_mandate_ack')"><div class="bt">Mandate ACK Store</div><div class="bs">Track ACK · block if pending</div></div>
+        </div>
+    </div>
+
+    <!-- B2B PHASE 1: Collection -->
+    <div class="flow-area">
+        <div class="flow-label cyan">// B2B Phase 1 — Collection: no pre-notification required · D-1 all seq types · ACK gate before submit</div>
+        <div class="flow-row">
+            <div class="entry-group">
+                <div class="entry-label">Creditor (B2B)</div>
+                <div class="entry-box eb-c" onclick="om('b2b_creditor_app')"><div class="et">Creditor ERP</div><div class="es">Invoice · subscription</div></div>
+            </div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-gray" onclick="om('b2b_schema_val')"><div class="bt">Schema Validation</div><div class="bs">pain.008 B2BB · reject Core</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">valid</div></div>
+            <div class="box box-cyan" onclick="om('b2b_mandate_check')"><div class="bt">Mandate Check (B2B)</div><div class="bs">MRN + bank ACK confirmed</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">ACK'd</div></div>
+            <div class="box box-blue" onclick="om('b2b_bank_adapter')"><div class="bt">Bank Adapter (B2B)</div><div class="bs">B2BB code · D-1 enforced</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">persist</div></div>
+            <div class="box box-indigo" onclick="om('b2b_spanner')"><div class="bt">Spanner / SQL</div><div class="bs">State · B2B ACK check</div></div>
+        </div>
+    </div>
+
+    <!-- B2B PHASE 2: Clearing + R-Tx -->
+    <div class="flow-area">
+        <div class="flow-label cyan">// B2B Phase 2 — Clearing: debtor bank validates mandate on receipt · D+2 return window · no refund path</div>
+        <div class="flow-row">
+            <div class="box box-ext" onclick="om('b2b_step2')"><div class="bt">EBA STEP2 / SDD CSM</div><div class="bs">Routes B2B pain.008</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">validate</div></div>
+            <div class="box box-ext" onclick="om('b2b_debtor_bank_debit')"><div class="bt">Debtor Bank (B2B)</div><div class="bs">Check mandate · debit · D+2</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">status</div></div>
+            <div class="box box-red" onclick="om('b2b_r_tx')"><div class="bt">R-Tx Handler (B2B)</div><div class="bs">Return/Refusal/Reversal only</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">recon↓</div></div>
+            <div class="box box-yellow" onclick="om('b2b_ledger')"><div class="bt">Ledger Service</div><div class="bs">Double-entry · recon-gated</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+    <div class="legend-inner">
+        <div class="li"><div class="ld ld-s"></div>Synchronous (Core)</div>
+        <div class="li"><div class="ld ld-a"></div>Asynchronous / B2B</div>
+        <div class="li"><div class="ld ld-r"></div>Status return</div>
+        <div class="li"><div class="ld ld-w"></div>Recovery / warning</div>
+        <div class="li"><div class="ld ld-d"></div>R-Transaction / failure</div>
+        <div class="li"><div class="lb" style="background:#EFF6FF;border:1.5px solid #93C5FD"></div>GCP compute</div>
+        <div class="li"><div class="lb" style="background:#ECFDF5;border:1.5px solid #6EE7B7"></div>Storage / analytics</div>
+        <div class="li"><div class="lb" style="background:#FFFBEB;border:1.5px solid #FCD34D"></div>Messaging / events</div>
+        <div class="li"><div class="lb" style="background:#F5F3FF;border:1.5px solid #C4B5FD"></div>State machine / mandate</div>
+        <div class="li"><div class="lb" style="background:#FEFCE8;border:1.5px solid #FEF08A"></div>Ledger / accounting</div>
+        <div class="li"><div class="lb" style="background:#F0FDF4;border:1.5px solid #A7F3D0"></div>Reconciliation</div>
+        <div class="li"><div class="lb" style="background:#FEF2F2;border:1.5px solid #FECACA"></div>R-Transaction / DLQ</div>
+        <div class="li"><div class="lb" style="background:#ECFEFF;border:1.5px solid #A5F3FC"></div>B2B specific</div>
+        <div class="li"><div class="lb" style="background:#F1F5F9;border:1.5px dashed #CBD5E1"></div>External (bank / CSM)</div>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="mbg" onclick="cbg(event)">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-hl">
+                <div class="modal-tag" id="mtag"></div>
+                <div class="modal-title" id="mtitle"></div>
+            </div>
+            <button class="modal-x" onclick="cm()">✕</button>
+        </div>
+        <div class="modal-body" id="mbody"></div>
+    </div>
+</div>
+
+<div class="footer">
+    Interactive architecture diagram · <a href="https://fintechoncloud.substack.com">Fintech on Cloud</a> · Post #2: SEPA Direct Debit (Core &amp; B2B) · Production-Grade GCP Architecture
+</div>
+
+<script>
+const D={
+    'merchant_app_core':{tag:'Entry Point · SDD Core',title:'Merchant / Creditor App',body:`<p>The creditor triggers two distinct flows: <strong>(1) Mandate management</strong> — create, amend or cancel a SEPA mandate before any money moves; <strong>(2) Collection initiation</strong> — submit a debit instruction referencing an active mandate.</p><p>Every request carries a <code>MandateReferenceNumber (MRN)</code>, the Creditor Identifier (CI), and the sequence type (<code>FRST / RCUR / FNAL / OOFF</code>). The sequence type controls clearing cut-off and debtor bank handling.</p>`,chips:[{t:'FRST/RCUR/FNAL/OOFF',c:'chip-purple'},{t:'MRN required',c:'chip-gray'},{t:'Creditor ID (CI)',c:'chip-blue'}]},
+    'apigee_core':{tag:'GCP · API Gateway',title:'Apigee X',body:`<p>Single entry point for all creditor traffic. Handles <strong>mTLS + OAuth 2.0</strong> authentication, per-creditor rate limiting (prevents bulk submission storms near cut-off), schema pre-validation, PII-masked audit logging, and load balancing across regional backends.</p>`,chips:[{t:'mTLS + OAuth2',c:'chip-blue'},{t:'Per-creditor quota',c:'chip-amber'},{t:'LB included',c:'chip-blue'}]},
+    'mandate_registry':{tag:'SDD Core · Mandate',title:'Mandate Registry',body:`<p>The Mandate Registry is the heart of any SDD implementation. A SEPA mandate is a <strong>legally binding authorisation</strong> by the debtor. This service generates a globally unique <strong>MRN</strong>, stores versioned mandate data (creditor ID, debtor IBAN, signed date, type), enforces the <strong>36-month expiry rule</strong> for unused mandates, and emits lifecycle events to Pub/Sub for downstream consumers.</p><p>Amendments create a new version — old versions are immutable for audit. For B2B, it also tracks <strong>debtor bank acknowledgement</strong> status.</p>`,chips:[{t:'MRN generation',c:'chip-purple'},{t:'Versioned',c:'chip-green'},{t:'36-month expiry',c:'chip-amber'},{t:'Lifecycle events',c:'chip-blue'}]},
+    'mandate_db':{tag:'Storage · Mandate',title:'Spanner / Cloud SQL — Mandate Store',body:`<p>Stores all mandate versions with a unique MRN index. Uses <strong>append-only versioning</strong> — amendments add a new row; the previous version is never overwritten. Queries always read the highest active version. Strict access controls: only the Mandate Registry writes; other services read-only.</p>`,chips:[{t:'Append-only versioned',c:'chip-teal'},{t:'Unique MRN index',c:'chip-blue'},{t:'Read-only for consumers',c:'chip-gray'}]},
+    'mandate_event':{tag:'Messaging · Mandate',title:'Cloud Pub/Sub — Mandate Events',body:`<p>Publishes <code>mandate.created</code>, <code>mandate.amended</code>, and <code>mandate.cancelled</code> events. Consumers include the ledger (to open/close a mandate account), the fraud system (to score new mandates), analytics (mandate churn tracking), and for B2B — the debtor bank notification service.</p>`,chips:[{t:'mandate.created',c:'chip-purple'},{t:'mandate.amended',c:'chip-amber'},{t:'mandate.cancelled',c:'chip-red'}]},
+    'debtor_bank_mandate':{tag:'External',title:'Debtor Bank — Mandate Notification',body:`<p>For <strong>SDD Core</strong>, debtor bank notification is optional. For <strong>SDD B2B</strong>, this step is <em>mandatory</em>: the debtor bank must receive, store, and acknowledge the mandate before any collection can proceed. A B2B collection against an unacknowledged mandate will be refused with <code>MD01</code>.</p>`,chips:[{t:'Core: optional',c:'chip-gray'},{t:'B2B: mandatory',c:'chip-cyan'},{t:'MD01 if missing',c:'chip-red'}]},
+    'pre_notification':{tag:'SDD Core · EPC Rule',title:'Pre-Notification Service',body:`<p>EPC SDD rules require the creditor to notify the debtor of an upcoming collection <strong>at least 14 calendar days</strong> before the due date (commonly reduced to 5 days for recurring subscriptions if agreed in the mandate). This service schedules email/PDF dispatch with amount, due date, creditor name, and MRN. It maintains an audit trail of sent notifications — critical evidence for dispute resolution. B2B does not require pre-notification.</p>`,chips:[{t:'D-14 default',c:'chip-amber'},{t:'D-5 configurable',c:'chip-gray'},{t:'Dispute evidence',c:'chip-red'},{t:'B2B: not required',c:'chip-cyan'}]},
+    'schema_val_core':{tag:'SDD Core · Validation',title:'Schema Validation',body:`<p>Validates incoming collection requests against ISO 20022 <strong>pain.008</strong> schema before any business logic. Checks: MRN, Creditor ID format (country-specific regex), debtor IBAN checksum (MOD-97), amount (positive, EUR, max limits), due date (future business day, passes cut-off), sequence type. Returns detailed <code>422</code> with all failures listed — never a generic 400.</p>`,chips:[{t:'pain.008 schema',c:'chip-blue'},{t:'IBAN MOD-97',c:'chip-teal'},{t:'CI format check',c:'chip-gray'},{t:'HTTP 422 detailed',c:'chip-red'}]},
+    'idempotency_core':{tag:'SDD Core · Safety',title:'Idempotency Service',body:`<p>Prevents double-debiting on retries. <strong>Idempotency key</strong> = hash of <code>MRN + SequenceType + DueDate + Amount</code>. Checked <em>before</em> any state machine transition. MATCH → return original response. NO MATCH → proceed, write key atomically with initial state in a Spanner transaction. TTL: 14 days — sufficient to cover any retry window.</p>`,chips:[{t:'MRN+seq+date+amt key',c:'chip-purple'},{t:'14-day TTL',c:'chip-gray'},{t:'Spanner atomic write',c:'chip-teal'},{t:'Check BEFORE state',c:'chip-red'}]},
+    'mandate_check':{tag:'SDD Core · Guard',title:'Mandate Check',body:`<p>Validates the incoming collection against the mandate registry before generating a pain.008: <strong>MRN active and not expired</strong> (36-month rule), <strong>Creditor ID matches</strong>, <strong>sequence type logic</strong> (FRST must be first; RCUR follows; FNAL terminates; OOFF cannot repeat), <strong>amount cap</strong> (if configured). For B2B: debtor bank ACK must be ACKNOWLEDGED. Failed mandate check returns <code>4xx</code> immediately — never reaches bank adapter.</p>`,chips:[{t:'MRN active check',c:'chip-purple'},{t:'Seq type logic',c:'chip-amber'},{t:'CI match',c:'chip-blue'},{t:'B2B: ACK gate',c:'chip-cyan'}]},
+    'aml_core':{tag:'SDD Core · Compliance',title:'AML / Sanctions Screening',body:`<p>Screens every collection before bank submission against sanctions lists (OFAC, EU, UN) and internal AML rules (spike detection, velocity checks per debtor). Flagged collections enter a <strong>HOLD</strong> state pending compliance review — never submitted without clearance. Configurable SLA escalation (e.g. 4h) if unreviewed.</p>`,chips:[{t:'OFAC / EU / UN',c:'chip-red'},{t:'Velocity checks',c:'chip-amber'},{t:'HOLD state',c:'chip-orange'},{t:'SLA escalation',c:'chip-gray'}]},
+    'state_machine_core':{tag:'SDD Core · Orchestration',title:'State Machine (SDD Core)',body:`<p>Tracks each collection through its full lifecycle. All transitions persist to Spanner before ACK — no lost state on crash. Transitions are idempotent.</p><p><strong>States:</strong> CREATED → SUBMITTED → PENDING_SETTLEMENT → SETTLED / RETURNED / REFUSED / REVERSED / REFUNDED / COMPENSATING</p>`,chips:[{t:'CREATED',c:'chip-gray'},{t:'SUBMITTED',c:'chip-purple'},{t:'SETTLED',c:'chip-teal'},{t:'RETURNED',c:'chip-red'},{t:'REFUSED',c:'chip-red'},{t:'REVERSED',c:'chip-orange'},{t:'REFUNDED',c:'chip-amber'}]},
+    'bank_adapter_core':{tag:'SDD Core · Integration',title:'Bank Adapter Layer',body:`<p>Translates internal collection objects → ISO 20022 <strong>pain.008</strong> XML. Sets <code>LclInstrm = CORE</code> for SDD Core (B2BB for B2B). Injects Creditor Identifier (CI) in country-specific format. Handles per-bank batch size limits, file naming, and connectivity (SFTP, EBICS, REST, SWIFT FileAct). Records send timestamp for cut-off audit.</p>`,chips:[{t:'pain.008 XML',c:'chip-blue'},{t:'CORE / B2BB code',c:'chip-purple'},{t:'CI injection',c:'chip-gray'},{t:'SFTP / EBICS / REST',c:'chip-teal'}]},
+    'spanner_core':{tag:'Storage · SDD Core',title:'Spanner / Cloud SQL',body:`<p>Persists payment state and the mandate sequence counter (incremented on each successful collection to track FRST → RCUR progression). The state machine is the only writer — all other services read but never write payment state directly.</p>`,chips:[{t:'State machine writes only',c:'chip-gray'},{t:'Sequence counter',c:'chip-purple'},{t:'Spanner / Cloud SQL',c:'chip-teal'}]},
+    'pubsub_initiated_core':{tag:'Messaging · SDD Core',title:'Cloud Pub/Sub — collection.initiated',body:`<p>Published after state is persisted. Multiple subscribers fan out independently: the D-1 submission worker, analytics pipeline, ledger (pending entry), notification service, and audit log. Enable exactly-once delivery. All subscribers must be idempotent.</p>`,chips:[{t:'collection.initiated',c:'chip-purple'},{t:'Fan-out',c:'chip-blue'},{t:'Exactly-once',c:'chip-teal'}]},
+    'pubsub_worker_core':{tag:'Messaging · Clearing',title:'Cloud Pub/Sub Worker',body:`<p>Consumes <code>collection.initiated</code> and triggers the D-1 cut-off check. If the due date is within the next clearing cycle window, routes to the Bank Adapter for batch file assembly. If past cut-off, routes to DLQ with <code>CUTOFF_MISSED</code>.</p>`,chips:[{t:'collection.initiated consumer',c:'chip-purple'},{t:'D-1 trigger',c:'chip-amber'},{t:'Cut-off gate',c:'chip-red'}]},
+    'cutoff_service':{tag:'SDD Core · EPC Rule',title:'Cut-Off Service',body:`<p>Missing a cut-off defers the payment by a full clearing cycle. <strong>SDD Core:</strong> FRST/OOFF D-1; RCUR/FNAL D-2. <strong>SDD B2B:</strong> all types D-1. Checks TARGET2 calendar, applies bank-specific internal cut-offs (often earlier than EPC deadline), routes late submissions to DLQ with <code>CUTOFF_MISSED</code> — never silently defers.</p>`,chips:[{t:'D-1 FRST/OOFF',c:'chip-amber'},{t:'D-2 RCUR/FNAL',c:'chip-amber'},{t:'B2B: D-1 all',c:'chip-cyan'},{t:'TARGET2 calendar',c:'chip-gray'},{t:'CUTOFF_MISSED → DLQ',c:'chip-red'}]},
+    'creditor_bank':{tag:'External',title:'Creditor Bank',body:`<p>Receives the pain.008 batch from the Bank Adapter Layer. Validates format, checks creditor account, and submits the batch to EBA STEP2 / SDD CSM. Returns a file ACK (not per-payment status — that comes later via pain.002).</p>`,chips:[{t:'pain.008 receiver',c:'chip-gray'},{t:'Batch to CSM',c:'chip-gray'},{t:'File ACK',c:'chip-teal'}]},
+    'step2_sdd':{tag:'External · CSM',title:'EBA STEP2 / SDD CSM',body:`<p>Routes pain.008 from creditor bank to debtor bank. Operates <strong>4 clearing cycles per business day</strong>. Applies EPC SDD scheme validation (MRN format, CI format, seq type). Settlement via TARGET2 on due date. Returns pain.002 status per instruction.</p>`,chips:[{t:'4 cycles/day',c:'chip-gray'},{t:'TARGET2 settlement',c:'chip-gray'},{t:'pain.002 per instruction',c:'chip-blue'}]},
+    'debtor_bank_debit':{tag:'External',title:'Debtor Bank',body:`<p>Receives the pain.008 instruction. For <strong>Core</strong>: no prior mandate check — debts settle; debtor can reclaim via R-transaction later. For <strong>B2B</strong>: validates the instruction against its stored mandate copy before debiting — refuses MD01 if mandate not found. Returns pain.002 ACCP or RJCT, may send R-transactions post-settlement.</p>`,chips:[{t:'Core: no prior check',c:'chip-purple'},{t:'B2B: validates mandate',c:'chip-cyan'},{t:'pain.002 response',c:'chip-blue'},{t:'R-tx post-settle',c:'chip-red'}]},
+    'cloud_tasks_poll':{tag:'GCP · Scheduling',title:'Cloud Tasks — pain.002 + camt.054 Poll',body:`<p>Manages scheduled polling for pain.002 status (ACCP/RJCT per instruction) and camt.054 credit confirmation. Uses exponential backoff. When status arrives, notifies the state machine. Exhausted retries go to DLQ.</p>`,chips:[{t:'pain.002 polling',c:'chip-blue'},{t:'camt.054 confirm',c:'chip-teal'},{t:'Exp. backoff',c:'chip-amber'},{t:'DLQ on exhaustion',c:'chip-red'}]},
+    'state_machine_settle':{tag:'SDD Core · Orchestration',title:'State Machine — Settlement',body:`<p>pain.002 ACCP → SETTLED, triggers ledger confirmed entry, emits <code>collection.settled</code>. pain.002 RJCT → REFUSED, voids pending ledger entry. R-transaction received → transitions to RETURNED / REVERSED / REFUNDED accordingly.</p>`,chips:[{t:'SETTLED on ACCP',c:'chip-teal'},{t:'REFUSED on RJCT',c:'chip-red'},{t:'RETURNED on pacs.004',c:'chip-red'},{t:'REVERSED on pacs.007',c:'chip-orange'}]},
+    'spanner_settle':{tag:'Storage',title:'Spanner / SQL — Final State',body:`<p>Writes the terminal state and updates the mandate sequence counter (e.g. FRST → RCUR for next collection). The mandate counter is critical: submitting a second FRST when the first succeeded will be refused by the debtor bank.</p>`,chips:[{t:'Terminal state',c:'chip-teal'},{t:'Seq counter update',c:'chip-purple'}]},
+    'r_transaction_handler':{tag:'SDD Core · R-Transactions',title:'R-Transaction Handler',body:`<p>Four distinct R-transaction types: <strong>Return (pacs.004)</strong> — debtor bank post-settlement, D+5 Core / D+2 B2B. <strong>Refusal (pain.002 RJCT)</strong> — debtor bank rejects pre-settlement, no funds move. <strong>Reversal (pacs.007)</strong> — creditor-initiated, up to D+5. <strong>Refund (camt.055)</strong> — debtor 8-week right, Core only. Handler classifies, updates state machine, and triggers recon-gated ledger reversal where applicable.</p>`,chips:[{t:'Return pacs.004',c:'chip-red'},{t:'Refusal RJCT',c:'chip-red'},{t:'Reversal pacs.007',c:'chip-orange'},{t:'Refund camt.055 Core only',c:'chip-amber'}]},
+    'return_flow':{tag:'R-Transaction · Return',title:'Return (pacs.004)',body:`<p>Occurs after the debit has been settled but the debtor bank subsequently reverses it. Common reasons: <code>AC04</code> (account closed), <code>AM04</code> (insufficient funds), <code>MD01</code> (no mandate — dispute), <code>MD06</code> (refund request). Flow: pacs.004 received → R-TX handler classifies → state machine SETTLED → RETURNED → recon-gated ledger reversal → Pub/Sub <code>collection.returned</code> event → webhook to creditor app → optional auto-retry logic (configurable per reason code).</p><p>Auto-retry: AM04 returns may trigger a re-presentation after N days (configurable). MD01 returns should freeze the mandate pending investigation — never auto-retry.</p>`,chips:[{t:'AC04 / AM04 / MD01',c:'chip-red'},{t:'D+5 Core / D+2 B2B',c:'chip-gray'},{t:'MD01 → freeze mandate',c:'chip-red'}]},
+    'refusal_flow':{tag:'R-Transaction · Refusal',title:'Refusal (pain.002 RJCT)',body:`<p>Debtor bank rejects the instruction before settlement — no funds move. Common codes: <code>MD01</code> (no mandate), <code>MD02</code> (mandate data wrong), <code>MS02</code> (unspecified). State machine: SUBMITTED → REFUSED → ledger void of pending entry → webhook to creditor. B2B MD01 indicates mandate sync issue.</p>`,chips:[{t:'Pre-settlement',c:'chip-gray'},{t:'No funds move',c:'chip-teal'},{t:'MD01 / MD02 / MS02',c:'chip-red'},{t:'Void pending entry',c:'chip-amber'}]},
+    'reversal_flow':{tag:'R-Transaction · Reversal',title:'Reversal (pacs.007)',body:`<p>Creditor-initiated cancellation of a settled collection — used for errors. Window: D+5 Core / D+2 B2B. <strong>Critical</strong>: ledger reversal is recon-gated — only written after reconciliation confirms the original settlement and that no reversal already exists. Idempotent: replaying produces no second reversal.</p>`,chips:[{t:'Creditor-initiated',c:'chip-orange'},{t:'D+5 Core / D+2 B2B',c:'chip-gray'},{t:'Recon-gated',c:'chip-red'},{t:'Idempotent',c:'chip-teal'}]},
+    'refund_flow':{tag:'R-Transaction · Refund',title:'Refund (camt.055) — Core Only',body:`<p>Under SDD Core, a debtor has an <strong>unconditional right to a refund within 8 weeks</strong> of the debit — no reason required. After 8 weeks up to 13 months: refund only if no valid mandate. <strong>B2B has no such right</strong> — a key commercial advantage for creditors. Flow: camt.055 received → state machine SETTLED → REFUNDED → recon-gated ledger reversal → mandate review triggered.</p>`,chips:[{t:'8-week window',c:'chip-amber'},{t:'Core only',c:'chip-purple'},{t:'No B2B refund right',c:'chip-cyan'},{t:'Mandate review triggered',c:'chip-red'}]},
+    'ledger_reversal_core':{tag:'SDD Core · Safety',title:'Ledger Reversal — Recon-Gated',body:`<p>A critical safety pattern: <strong>ledger reversals are never triggered directly by an R-transaction event</strong>. Gated behind reconciliation confirmation to prevent double-reversal. Gate logic: reconciliation engine matches R-transaction against original settled entry, confirms correct amount and MRN, confirms not already reversed — then writes the reversal double-entry. All writes are idempotent.</p>`,chips:[{t:'Recon confirms first',c:'chip-red'},{t:'Never direct trigger',c:'chip-red'},{t:'Double-reversal prevention',c:'chip-teal'},{t:'Idempotent write',c:'chip-teal'}]},
+    'pubsub_rtx':{tag:'Messaging · R-Transactions',title:'Cloud Pub/Sub — R-Transaction Events',body:`<p>Publishes typed events: <code>collection.returned</code>, <code>collection.refused</code>, <code>collection.reversed</code>, <code>collection.refunded</code>. Consumed by the creditor webhook service, ledger (recon-gated reversal), analytics (R-rate tracking), and mandate service (freeze/cancel on MD01).</p>`,chips:[{t:'collection.returned',c:'chip-red'},{t:'collection.refused',c:'chip-red'},{t:'collection.reversed',c:'chip-orange'},{t:'collection.refunded',c:'chip-amber'}]},
+    'ledger_service_core':{tag:'SDD Core · Accounting',title:'Ledger Service',body:`<p>Two-stage ledger lifecycle: <strong>Pending entry</strong> written at collection initiation to reserve the expected credit; <strong>Confirmed entry</strong> written on ACCP to finalise the debit. On R-transaction: writes a recon-gated reversal double-entry. All entries are append-only and immutable.</p>`,chips:[{t:'Pending entry',c:'chip-amber'},{t:'Confirmed on ACCP',c:'chip-teal'},{t:'Reversal on R-tx',c:'chip-red'},{t:'Double-entry',c:'chip-blue'}]},
+    'ledger_db_core':{tag:'Storage · Ledger',title:'Ledger DB',body:`<p>Dedicated append-only database for ledger entries — separate from the payment state DB. Strict access controls: finance and compliance teams only. Entries are never updated — corrections appear as new rows with a reference to the original entry being corrected.</p>`,chips:[{t:'Append-only',c:'chip-teal'},{t:'Strict access',c:'chip-red'},{t:'Immutable audit',c:'chip-gray'}]},
+    'ledger_event_core':{tag:'Messaging · Ledger',title:'Cloud Pub/Sub — ledger.updated',body:`<p>Published after each ledger write. Consumed by treasury management (available balance update), reporting, and BI dashboards. Contains only a reference ID — never raw PII. Recipients query the ledger service for details using authorised access.</p>`,chips:[{t:'ledger.updated',c:'chip-teal'},{t:'No PII in event',c:'chip-red'},{t:'Reference ID only',c:'chip-gray'}]},
+    'pubsub_analytics_core':{tag:'Messaging · Analytics',title:'Cloud Pub/Sub — Analytics Fan-Out',body:`<p>All transaction lifecycle events fan out from a single analytics topic. Dataflow consumes and PII-strips before BigQuery. Multiple consumers subscribe independently without affecting each other.</p>`,chips:[{t:'All lifecycle events',c:'chip-purple'},{t:'Fan-out pattern',c:'chip-blue'},{t:'Dataflow subscriber',c:'chip-teal'}]},
+    'dataflow_core':{tag:'GCP · Data Processing',title:'Dataflow — PII Removal',body:`<p>Streaming pipeline between Pub/Sub and BigQuery. Strips PII (replaces IBAN, debtor name with tokenised references), enriches events (country code, BIC, mandate type, R-reason classification), computes windowed aggregates (R-rate per creditor, settlement success rate, cut-off compliance). GDPR-required before BigQuery ingestion.</p>`,chips:[{t:'PII tokenisation',c:'chip-red'},{t:'GDPR compliance',c:'chip-red'},{t:'R-rate aggregates',c:'chip-amber'},{t:'Windowed stats',c:'chip-teal'}]},
+    'bigquery_core':{tag:'GCP · Analytics',title:'BigQuery',body:`<p>Stores PII-stripped, enriched transaction history. Key SDD analytics: <strong>R-transaction rate</strong> per creditor (EPC may suspend creditors above ~2%), <strong>mandate churn</strong>, <strong>settlement timing</strong>, <strong>cut-off compliance</strong>. Powers Looker / Grafana dashboards.</p>`,chips:[{t:'R-rate per creditor',c:'chip-red'},{t:'Mandate churn',c:'chip-amber'},{t:'Cut-off compliance',c:'chip-purple'},{t:'Looker / Grafana',c:'chip-blue'}]},
+    'recon_engine_core':{tag:'SDD Core · Reconciliation',title:'Reconciliation Engine',body:`<p>Two roles: <strong>(1) Standard recon</strong> — matches ledger entries against bank statements (camt.054 / MT940), flags unmatched entries. <strong>(2) Recon gate for reversals</strong> — before any ledger reversal, confirms the R-transaction is valid, non-duplicate, and references a settled entry. Ambiguous R-transactions escalate to Vertex AI and Manual Review Queue.</p>`,chips:[{t:'Ledger vs bank statement',c:'chip-teal'},{t:'Reversal gate',c:'chip-red'},{t:'Ambiguous → AI + ops',c:'chip-amber'}]},
+    'vertex_core':{tag:'AI · Decision Assist',title:'Vertex AI (Gemini) — Decision Assist Only',body:`<p>Assists with the most ambiguous SDD operations — always as <strong>decision-assist, never autonomous action</strong>: <strong>R-tx reason classification</strong> (MS02 "unspecified" classified from debtor history), <strong>dispute scoring</strong> (legitimate vs fraudulent refund), <strong>mismatch explanation</strong> (plain-language narration for ops). Human approval required for all compliance-sensitive actions.</p>`,chips:[{t:'Decision-assist only',c:'chip-red'},{t:'MS02 classification',c:'chip-amber'},{t:'Dispute scoring',c:'chip-purple'},{t:'Human approves',c:'chip-orange'}]},
+    'dlq_core':{tag:'Recovery · SDD Core',title:'Dead Letter Queue (DLQ)',body:`<p>Two DLQ surfaces: <strong>Pub/Sub DLQ</strong> — messages failing after N retries (failed R-tx processing, failed webhook delivery, failed ledger writes). <strong>Cloud Tasks DLQ</strong> — pain.002 poll tasks that fail. <strong>Cut-off miss events</strong> — collections past cut-off land here with <code>CUTOFF_MISSED</code> for ops to decide: hold for next cycle or cancel. All DLQ entries trigger PagerDuty alerts.</p>`,chips:[{t:'Pub/Sub DLQ',c:'chip-red'},{t:'Tasks DLQ',c:'chip-red'},{t:'CUTOFF_MISSED',c:'chip-amber'},{t:'PagerDuty alert',c:'chip-orange'}]},
+    'monitoring_core':{tag:'GCP · Observability',title:'Cloud Monitoring — SDD Core',body:`<p>Key SDD-specific signals: <strong>R-rate threshold</strong> (alert &gt;1%, EPC risk &gt;2%), <strong>cut-off compliance</strong> (alert on any CUTOFF_MISSED), <strong>pain.002 poll latency</strong> (alert if &gt;2h post-settlement), <strong>mandate ACK latency B2B</strong> (alert if &gt;24h), <strong>DLQ depth</strong> (alert on non-zero), <strong>recon mismatch count</strong> (alert on unresolved &gt;24h).</p>`,chips:[{t:'R-rate > 1% alert',c:'chip-red'},{t:'CUTOFF_MISSED alert',c:'chip-amber'},{t:'DLQ depth alert',c:'chip-red'},{t:'Recon mismatch 24h',c:'chip-orange'}]},
+    'retry_core':{tag:'Recovery · Pattern',title:'Retry Mechanism + Circuit Breaker',body:`<p>Per-component retry strategies: Cloud Tasks uses exponential backoff for pain.002 polling. Pub/Sub has configurable retry policies per subscription. The Bank Adapter implements a <strong>circuit breaker</strong> per bank — if a bank API returns 5xx above threshold, circuit opens for a cooldown period. Cloud Run concurrency limits prevent overwhelming downstream systems.</p>`,chips:[{t:'Exponential backoff',c:'chip-amber'},{t:'Circuit breaker',c:'chip-red'},{t:'Concurrency limit',c:'chip-blue'},{t:'Per-bank TPS cap',c:'chip-gray'}]},
+    'manual_review_core':{tag:'Recovery · Ops',title:'Manual Review Queue',body:`<p>Payments exhausting retries or requiring human judgement (MD01 disputes, ambiguous MS02, low-confidence recon mismatches, CUTOFF_MISSED decisions) route here. Ops dashboard backed by a Spanner query on terminal failure states. Ops investigates, resolves, and either re-submits, triggers compensation, or cancels with mandate freeze.</p>`,chips:[{t:'MD01 disputes',c:'chip-red'},{t:'MS02 ambiguous',c:'chip-amber'},{t:'CUTOFF_MISSED decision',c:'chip-orange'},{t:'Mandate freeze option',c:'chip-purple'}]},
+    'b2b_creditor_app':{tag:'Entry Point · B2B',title:'Creditor ERP / App (B2B)',body:`<p>Corporate treasury systems, subscription billing platforms, or B2B invoicing ERPs initiating SDD B2B collections. Must hold confirmed debtor bank ACK before any collection is submitted. No pre-notification required by B2B scheme rules.</p>`,chips:[{t:'Corporate treasury',c:'chip-cyan'},{t:'B2B invoicing',c:'chip-cyan'},{t:'No pre-notification',c:'chip-gray'}]},
+    'b2b_mandate_registry':{tag:'B2B · Mandate',title:'Mandate Registry (B2B)',body:`<p>Same as Core plus: on mandate creation, triggers <strong>notification to the debtor bank</strong>. Tracks <code>bank_ack_status</code>: PENDING → ACKNOWLEDGED / REJECTED. <strong>Blocks all collection attempts until ACK = ACKNOWLEDGED</strong>. On mandate amendment, status resets to PENDING. Alerts fire if ACK not received within 24h — ops investigates mandate sync with debtor bank.</p>`,chips:[{t:'Debtor bank notification',c:'chip-cyan'},{t:'ACK tracking',c:'chip-amber'},{t:'Block until ACK',c:'chip-red'},{t:'Re-notify on amendment',c:'chip-orange'}]},
+    'b2b_debtor_bank_mandate':{tag:'External · B2B',title:'Debtor Bank (B2B) — Mandate Storage',body:`<p>Receives and stores the mandate copy from the creditor (via the creditor bank). Links the mandate to the debtor account. On each incoming pain.008, validates the instruction against the stored mandate before debiting. Sends ACK back when mandate is stored. This ACK must be confirmed before any B2B collection proceeds.</p>`,chips:[{t:'Stores mandate copy',c:'chip-cyan'},{t:'Validates on each debit',c:'chip-red'},{t:'Sends ACK',c:'chip-teal'},{t:'MD01 if no mandate',c:'chip-red'}]},
+    'b2b_mandate_ack':{tag:'B2B · Storage',title:'Mandate ACK Store',body:`<p>Tracks the debtor bank acknowledgement status for every B2B mandate. Collections are blocked at the Mandate Check until <code>ack_status = ACKNOWLEDGED</code>. On mandate amendment, status resets to PENDING. Alerts fire if ACK not received within 24h — ops investigates mandate sync with debtor bank.</p>`,chips:[{t:'PENDING → ACKNOWLEDGED',c:'chip-cyan'},{t:'Block on PENDING',c:'chip-red'},{t:'24h ACK alert',c:'chip-amber'}]},
+    'b2b_schema_val':{tag:'B2B · Validation',title:'Schema Validation (B2B)',body:`<p>Same as Core plus B2B-specific checks: <code>LclInstrm = B2BB</code> must be present, Core sequence types rejected if submitted on B2B endpoint. Returns detailed <code>422</code>.</p>`,chips:[{t:'LclInstrm: B2BB required',c:'chip-cyan'},{t:'Reject CORE seq types',c:'chip-red'},{t:'HTTP 422 detailed',c:'chip-gray'}]},
+    'b2b_mandate_check':{tag:'B2B · Guard',title:'Mandate Check (B2B)',body:`<p>Same as Core plus the critical B2B gate: <strong>debtor bank ACK must be ACKNOWLEDGED</strong> before collection proceeds. If ACK is PENDING or REJECTED, returns <code>4xx</code> immediately. This prevents the most common B2B failure: submitting a collection before the debtor bank has stored the mandate (resulting in MD01 refusal).</p>`,chips:[{t:'ACK = ACKNOWLEDGED gate',c:'chip-cyan'},{t:'PENDING → 4xx',c:'chip-red'},{t:'Prevents MD01',c:'chip-teal'}]},
+    'b2b_bank_adapter':{tag:'B2B · Integration',title:'Bank Adapter Layer (B2B)',body:`<p>Same as Core but sets <code>LclInstrm = B2BB</code> — routes through the B2B scheme at STEP2, not Core scheme. Enforces <strong>D-1 cut-off for all sequence types</strong> (unlike Core which uses D-2 for RCUR/FNAL).</p>`,chips:[{t:'LclInstrm: B2BB',c:'chip-cyan'},{t:'D-1 all seq types',c:'chip-amber'},{t:'B2B scheme routing',c:'chip-teal'}]},
+    'b2b_spanner':{tag:'Storage · B2B',title:'Spanner / SQL (B2B)',body:`<p>Persists B2B collection state and cross-checks mandate ACK status on each write. Ensures no collection reaches SUBMITTED state without a confirmed debtor bank ACK.</p>`,chips:[{t:'ACK cross-check on write',c:'chip-cyan'},{t:'B2B state transitions',c:'chip-teal'}]},
+    'b2b_step2':{tag:'External · B2B CSM',title:'EBA STEP2 / SDD CSM (B2B)',body:`<p>Routes B2B pain.008 (<code>LclInstrm = B2BB</code>) through the <strong>separate B2B scheme</strong> at STEP2. Instructions not conforming to B2B format are rejected at CSM. Same 4-cycle/day schedule as Core.</p>`,chips:[{t:'B2B scheme separate',c:'chip-cyan'},{t:'LclInstrm validation',c:'chip-red'},{t:'4 cycles/day',c:'chip-gray'}]},
+    'b2b_debtor_bank_debit':{tag:'External · B2B',title:'Debtor Bank (B2B) — Debit Validation',body:`<p>Validates each incoming pain.008 against its stored mandate copy before debiting. If mandate not found or mismatched: refuses <code>MD01</code>. <strong>D+2 return window</strong> vs D+5 for Core. Post-settlement certainty is much higher.</p>`,chips:[{t:'Mandate validation on each debit',c:'chip-cyan'},{t:'D+2 return window',c:'chip-amber'},{t:'MD01 if mismatch',c:'chip-red'},{t:'No refund right',c:'chip-red'}]},
+    'b2b_r_tx':{tag:'B2B · R-Transactions',title:'R-Transaction Handler (B2B)',body:`<p>Same types as Core but with key differences: <strong>no unconditional refund (camt.055)</strong> — REFUNDED state does not exist for B2B. <strong>D+2 return window</strong> vs D+5 for Core. <strong>MD01 returns are rarer</strong> (mandate pre-validated by debtor bank) — when they occur, investigate mandate sync.</p>`,chips:[{t:'No refund path',c:'chip-red'},{t:'D+2 return window',c:'chip-cyan'},{t:'MD01 → mandate sync check',c:'chip-amber'},{t:'Return/Refusal/Reversal only',c:'chip-gray'}]},
+    'b2b_ledger':{tag:'B2B · Accounting',title:'Ledger Service (B2B)',body:`<p>Same double-entry pattern as Core. B2B-specific: no camt.055 refund reversal path. Recon gate before ledger reversal still applies — even with B2B's higher post-settlement certainty, double-reversal prevention is non-negotiable. Idempotent writes throughout.</p>`,chips:[{t:'Double-entry',c:'chip-teal'},{t:'No refund reversal path',c:'chip-red'},{t:'Recon-gated',c:'chip-amber'},{t:'Idempotent',c:'chip-teal'}]}
+};
+
+function om(id){
+    const d=D[id];if(!d)return;
+    document.getElementById('mtag').textContent=d.tag;
+    document.getElementById('mtitle').textContent=d.title;
+    let h=d.body;
+    if(d.chips&&d.chips.length){h+='<div class="chips">';d.chips.forEach(c=>{h+=`<span class="chip ${c.c}">${c.t}</span>`;});h+='</div>';}
+    document.getElementById('mbody').innerHTML=h;
+    document.getElementById('mbg').classList.add('open');
+    document.body.style.overflow='hidden';
+}
+function cm(){document.getElementById('mbg').classList.remove('open');document.body.style.overflow='';}
+function cbg(e){if(e.target===document.getElementById('mbg'))cm();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')cm();});
+</script>
+</body>
+</html>
