@@ -1,172 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SEPA Payment Flows — Production Architecture | Fintech on Cloud</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet"/>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#FFFFFF;font-family:'Outfit',sans-serif;color:#18181B;min-height:100vh;padding:0 0 60px;min-width:320px}
-.header{background:#18181B;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
-.brand{font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#F8FAFC}
-.brand span{color:#34D399}
-.back{font-family:'JetBrains Mono',monospace;font-size:11px;color:#52525B;text-decoration:none;letter-spacing:0.1em}
-.back:hover{color:#94A3B8}
-.hero{text-align:center;padding:32px 24px 20px;max-width:900px;margin:0 auto}
-.eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#0369A1;text-transform:uppercase;margin-bottom:8px}
-.hero h1{font-family:'Fraunces',serif;font-size:clamp(20px,3.5vw,32px);font-weight:700;color:#18181B;line-height:1.15;margin-bottom:8px}
-.hero p{font-size:13px;color:#64748B;margin-bottom:16px}
-.tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
-.tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:3px;letter-spacing:0.1em;text-transform:uppercase}
-.tag-blue{background:#DBEAFE;color:#1D4ED8}
-.tag-green{background:#D1FAE5;color:#065F46}
-.tag-gray{background:#F1F5F9;color:#475569}
-.tag-red{background:#FEE2E2;color:#B91C1C}
-.hint{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#94A3B8;padding:9px;background:#F8FAFC;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;letter-spacing:0.05em}
-.hint span{color:#0369A1}
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>SEPA Payment Flows — Production Architecture | Fintech on Cloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet"/>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#FFFFFF;font-family:'Outfit',sans-serif;color:#18181B;min-height:100vh;padding:0 0 60px;min-width:320px}
+        .header{background:#18181B;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+        .brand{font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#F8FAFC}
+        .brand span{color:#34D399}
+        .back{font-family:'JetBrains Mono',monospace;font-size:11px;color:#52525B;text-decoration:none;letter-spacing:0.1em}
+        .back:hover{color:#94A3B8}
+        .hero{text-align:center;padding:32px 24px 20px;max-width:900px;margin:0 auto}
+        .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#0369A1;text-transform:uppercase;margin-bottom:8px}
+        .hero h1{font-family:'Fraunces',serif;font-size:clamp(20px,3.5vw,32px);font-weight:700;color:#18181B;line-height:1.15;margin-bottom:8px}
+        .hero p{font-size:13px;color:#64748B;margin-bottom:16px}
+        .tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+        .tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:3px;letter-spacing:0.1em;text-transform:uppercase}
+        .tag-blue{background:#DBEAFE;color:#1D4ED8}
+        .tag-green{background:#D1FAE5;color:#065F46}
+        .tag-gray{background:#F1F5F9;color:#475569}
+        .tag-red{background:#FEE2E2;color:#B91C1C}
+        .hint{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#94A3B8;padding:9px;background:#F8FAFC;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;letter-spacing:0.05em}
+        .hint span{color:#0369A1}
 
-/* ── SECTION ── */
-.section{max-width:100%;margin:0 auto;padding:20px 12px 0}
-.section-header{display:flex;align-items:flex-start;margin-bottom:12px;padding:12px 18px;border-radius:8px;border-left:4px solid}
-.section-header h2{font-family:'Fraunces',serif;font-size:16px;font-weight:700;margin-bottom:3px}
-.section-header p{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em}
-.sh-sct{background:#EFF6FF;border-color:#1D4ED8}.sh-sct h2{color:#1E3A8A}.sh-sct p{color:#3B82F6}
-.sh-inst{background:#ECFDF5;border-color:#059669}.sh-inst h2{color:#064E3B}.sh-inst p{color:#10B981}
+        /* ── SECTION ── */
+        .section{max-width:100%;margin:0 auto;padding:20px 12px 0}
+        .section-header{display:flex;align-items:flex-start;margin-bottom:12px;padding:12px 18px;border-radius:8px;border-left:4px solid}
+        .section-header h2{font-family:'Fraunces',serif;font-size:16px;font-weight:700;margin-bottom:3px}
+        .section-header p{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em}
+        .sh-sct{background:#EFF6FF;border-color:#1D4ED8}.sh-sct h2{color:#1E3A8A}.sh-sct p{color:#3B82F6}
+        .sh-inst{background:#ECFDF5;border-color:#059669}.sh-inst h2{color:#064E3B}.sh-inst p{color:#10B981}
 
-/* ── FLOW AREAS ── */
-.flow-area{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin-bottom:6px}
-.flow-area.recovery{background:#FFF7ED;border-color:#FED7AA}
-.flow-area.ledger-row{background:#FFFBEB;border-color:#FDE68A}
-.flow-area.recon-row{background:#F0FDF4;border-color:#A7F3D0}
-.flow-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#94A3B8;margin-bottom:10px}
-.flow-label.warn{color:#D97706}
-.flow-label.success{color:#059669}
-.flow-row{display:flex;align-items:center;flex-wrap:wrap;row-gap:8px;padding-bottom:2px}
+        /* ── FLOW AREAS ── */
+        .flow-area{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin-bottom:6px}
+        .flow-area.recovery{background:#FFF7ED;border-color:#FED7AA}
+        .flow-area.ledger-row{background:#FFFBEB;border-color:#FDE68A}
+        .flow-area.recon-row{background:#F0FDF4;border-color:#A7F3D0}
+        .flow-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#94A3B8;margin-bottom:10px}
+        .flow-label.warn{color:#D97706}
+        .flow-label.success{color:#059669}
+        .flow-row{display:flex;align-items:center;flex-wrap:wrap;row-gap:8px;column-gap:0px;padding-bottom:2px}
 
-/* ── ENTRY GROUP ── */
-.entry-group{display:flex;flex-direction:column;gap:5px;flex-shrink:0;margin-right:6px}
-.entry-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#94A3B8;text-align:center;margin-bottom:2px}
-.entry-box{border-radius:6px;padding:6px 8px;cursor:pointer;border:1px solid;transition:transform 0.1s,box-shadow 0.1s;text-align:center;min-width:88px;max-width:120px}
-.entry-box:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,0.07)}
-.entry-box .et{font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;margin-bottom:1px}
-.entry-box .es{font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.7}
-.eb-m{background:#F5F3FF;border-color:#C4B5FD}.eb-m .et{color:#4C1D95}.eb-m .es{color:#7C3AED}
-.eb-d{background:#F8FAFC;border-color:#CBD5E1}.eb-d .et{color:#1E293B}.eb-d .es{color:#64748B}
-.eb-a{background:#FFFBEB;border-color:#FCD34D}.eb-a .et{color:#78350F}.eb-a .es{color:#D97706}
+        /* ── ENTRY GROUP ── */
+        .entry-group{display:flex;flex-direction:column;gap:5px;flex-shrink:0;margin-right:4px}
+        .entry-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#94A3B8;text-align:center;margin-bottom:2px}
+        .entry-box{border-radius:6px;padding:6px 8px;cursor:pointer;border:1px solid;transition:transform 0.1s,box-shadow 0.1s;text-align:center;min-width:84px;max-width:110px}
+        .entry-box:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,0.07)}
+        .entry-box .et{font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;margin-bottom:1px}
+        .entry-box .es{font-family:'JetBrains Mono',monospace;font-size:8px;opacity:0.7}
+        .eb-m{background:#F5F3FF;border-color:#C4B5FD}.eb-m .et{color:#4C1D95}.eb-m .es{color:#7C3AED}
+        .eb-d{background:#F8FAFC;border-color:#CBD5E1}.eb-d .et{color:#1E293B}.eb-d .es{color:#64748B}
+        .eb-a{background:#FFFBEB;border-color:#FCD34D}.eb-a .et{color:#78350F}.eb-a .es{color:#D97706}
 
-/* ── BOXES ── */
-.box{flex-shrink:1;flex-grow:0;border-radius:7px;padding:8px 10px;cursor:pointer;border:1.5px solid;transition:transform 0.1s,box-shadow 0.1s;min-width:90px;max-width:160px;text-align:center}
-.box:hover{transform:translateY(-2px);box-shadow:0 3px 12px rgba(0,0,0,0.08)}
-.bt{font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;margin-bottom:2px;line-height:1.2}
-.bs{font-family:'JetBrains Mono',monospace;font-size:8px;line-height:1.35;opacity:0.8}
-.box-blue{background:#EFF6FF;border-color:#93C5FD}.box-blue .bt{color:#1E3A8A}.box-blue .bs{color:#3B82F6}
-.box-teal{background:#ECFDF5;border-color:#6EE7B7}.box-teal .bt{color:#064E3B}.box-teal .bs{color:#059669}
-.box-purple{background:#F5F3FF;border-color:#C4B5FD}.box-purple .bt{color:#4C1D95}.box-purple .bs{color:#7C3AED}
-.box-amber{background:#FFFBEB;border-color:#FCD34D}.box-amber .bt{color:#78350F}.box-amber .bs{color:#D97706}
-.box-gray{background:#F8FAFC;border-color:#CBD5E1}.box-gray .bt{color:#475569}.box-gray .bs{color:#94A3B8}
-.box-ext{background:#F1F5F9;border-color:#CBD5E1;border-style:dashed}.box-ext .bt{color:#475569}.box-ext .bs{color:#94A3B8}
-.box-red{background:#FEF2F2;border-color:#FECACA}.box-red .bt{color:#B91C1C}.box-red .bs{color:#EF4444}
-.box-orange{background:#FFF7ED;border-color:#FED7AA}.box-orange .bt{color:#C2410C}.box-orange .bs{color:#EA580C}
-.box-green{background:#F0FDF4;border-color:#A7F3D0}.box-green .bt{color:#065F46}.box-green .bs{color:#059669}
-.box-yellow{background:#FEFCE8;border-color:#FEF08A}.box-yellow .bt{color:#713F12}.box-yellow .bs{color:#CA8A04}
+        /* ── BOXES ── */
+        .box{flex-shrink:2;flex-grow:0;border-radius:7px;padding:7px 8px;cursor:pointer;border:1.5px solid;transition:transform 0.1s,box-shadow 0.1s;min-width:82px;max-width:148px;text-align:center}
+        .box:hover{transform:translateY(-2px);box-shadow:0 3px 12px rgba(0,0,0,0.08)}
+        .bt{font-family:'Outfit',sans-serif;font-size:10.5px;font-weight:600;margin-bottom:2px;line-height:1.2}
+        .bs{font-family:'JetBrains Mono',monospace;font-size:7.5px;line-height:1.35;opacity:0.8}
+        .box-blue{background:#EFF6FF;border-color:#93C5FD}.box-blue .bt{color:#1E3A8A}.box-blue .bs{color:#3B82F6}
+        .box-teal{background:#ECFDF5;border-color:#6EE7B7}.box-teal .bt{color:#064E3B}.box-teal .bs{color:#059669}
+        .box-purple{background:#F5F3FF;border-color:#C4B5FD}.box-purple .bt{color:#4C1D95}.box-purple .bs{color:#7C3AED}
+        .box-amber{background:#FFFBEB;border-color:#FCD34D}.box-amber .bt{color:#78350F}.box-amber .bs{color:#D97706}
+        .box-gray{background:#F8FAFC;border-color:#CBD5E1}.box-gray .bt{color:#475569}.box-gray .bs{color:#94A3B8}
+        .box-ext{background:#F1F5F9;border-color:#CBD5E1;border-style:dashed}.box-ext .bt{color:#475569}.box-ext .bs{color:#94A3B8}
+        .box-red{background:#FEF2F2;border-color:#FECACA}.box-red .bt{color:#B91C1C}.box-red .bs{color:#EF4444}
+        .box-orange{background:#FFF7ED;border-color:#FED7AA}.box-orange .bt{color:#C2410C}.box-orange .bs{color:#EA580C}
+        .box-green{background:#F0FDF4;border-color:#A7F3D0}.box-green .bt{color:#065F46}.box-green .bs{color:#059669}
+        .box-yellow{background:#FEFCE8;border-color:#FEF08A}.box-yellow .bt{color:#713F12}.box-yellow .bs{color:#CA8A04}
 
-/* ── ARROWS ── */
-.arr{flex-shrink:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 2px;min-width:32px;max-width:44px}
-.arr-line{height:2px;width:100%;position:relative}
-.arr-line::after{content:'▶';position:absolute;right:-6px;top:50%;transform:translateY(-50%);font-size:8px}
-.arr-sync .arr-line{background:#1D4ED8}.arr-sync .arr-line::after{color:#1D4ED8}
-.arr-async .arr-line{background:transparent;border-top:2px dashed #7C3AED}.arr-async .arr-line::after{color:#7C3AED}
-.arr-return .arr-line{background:transparent;border-top:2px dashed #059669}.arr-return .arr-line::after{color:#059669}
-.arr-warn .arr-line{background:transparent;border-top:2px dashed #EA580C}.arr-warn .arr-line::after{color:#EA580C}
-.arr-label{font-family:'JetBrains Mono',monospace;font-size:9px;margin-top:2px;white-space:nowrap}
-.arr-sync .arr-label{color:#1D4ED8}
-.arr-async .arr-label{color:#7C3AED}
-.arr-return .arr-label{color:#059669}
-.arr-warn .arr-label{color:#EA580C}
+        /* ── ARROWS ── */
+        .arr{flex-shrink:1;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 4px;min-width:48px;max-width:72px;position:relative;overflow:visible}
+        .arr-line{height:2px;width:100%;position:relative;flex-shrink:0}
+        .arr-line::after{content:'▶';position:absolute;right:-6px;top:50%;transform:translateY(-50%);font-size:8px}
+        .arr-sync .arr-line{background:#1D4ED8}.arr-sync .arr-line::after{color:#1D4ED8}
+        .arr-async .arr-line{background:transparent;border-top:2px dashed #7C3AED}.arr-async .arr-line::after{color:#7C3AED}
+        .arr-return .arr-line{background:transparent;border-top:2px dashed #059669}.arr-return .arr-line::after{color:#059669}
+        .arr-warn .arr-line{background:transparent;border-top:2px dashed #EA580C}.arr-warn .arr-line::after{color:#EA580C}
+        .arr-label{font-family:'JetBrains Mono',monospace;font-size:8px;margin-top:3px;white-space:nowrap;text-align:center;max-width:80px;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+        .arr-sync .arr-label{color:#1D4ED8}
+        .arr-async .arr-label{color:#7C3AED}
+        .arr-return .arr-label{color:#059669}
+        .arr-warn .arr-label{color:#EA580C}
 
-.banner{border-radius:5px;padding:7px 12px;margin-bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;text-align:left;letter-spacing:0.04em}
-.banner-red{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C}
-.banner-blue{background:#DBEAFE;border:1px solid #93C5FD;color:#1E3A8A}
-.banner-green{background:#D1FAE5;border:1px solid #6EE7B7;color:#065F46}
+        .banner{border-radius:5px;padding:7px 12px;margin-bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;text-align:left;letter-spacing:0.04em}
+        .banner-red{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C}
+        .banner-blue{background:#DBEAFE;border:1px solid #93C5FD;color:#1E3A8A}
+        .banner-green{background:#D1FAE5;border:1px solid #6EE7B7;color:#065F46}
 
-/* ── LEGEND ── */
-.legend{max-width:1300px;margin:16px auto 0;padding:0 14px}
-.legend-inner{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center}
-.li{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#64748B}
-.ld{width:24px;height:2px}
-.ld-s{background:#1D4ED8}
-.ld-a{background:transparent;border-top:2px dashed #7C3AED}
-.ld-r{background:transparent;border-top:2px dashed #059669}
-.ld-w{background:transparent;border-top:2px dashed #EA580C}
-.lb{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+        /* ── LEGEND ── */
+        .legend{max-width:1300px;margin:16px auto 0;padding:0 14px}
+        .legend-inner{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center}
+        .li{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#64748B}
+        .ld{width:24px;height:2px}
+        .ld-s{background:#1D4ED8}
+        .ld-a{background:transparent;border-top:2px dashed #7C3AED}
+        .ld-r{background:transparent;border-top:2px dashed #059669}
+        .ld-w{background:transparent;border-top:2px dashed #EA580C}
+        .lb{width:10px;height:10px;border-radius:2px;flex-shrink:0}
 
-/* ── MODAL ── */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
-.modal-bg.open{display:flex}
-.modal{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;width:100%;max-width:540px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.12)}
-.modal-head{padding:18px 22px 14px;border-bottom:1px solid #F1F5F9;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:#fff;z-index:1}
-.modal-hl{flex:1}
-.modal-tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#0369A1;margin-bottom:4px}
-.modal-title{font-family:'Fraunces',serif;font-size:19px;font-weight:700;color:#18181B;line-height:1.2}
-.modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:#94A3B8;flex-shrink:0;line-height:1}
-.modal-x:hover{color:#18181B}
-.modal-body{padding:18px 22px 22px}
-.modal-body p{font-family:'Outfit',sans-serif;font-size:13px;color:#475569;line-height:1.75;margin-bottom:12px}
-.modal-body p:last-child{margin-bottom:0}
-.modal-body strong{color:#18181B;font-weight:600}
-.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
-.chip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:4px}
-.chip-blue{background:#DBEAFE;color:#1E3A8A}
-.chip-teal{background:#D1FAE5;color:#064E3B}
-.chip-amber{background:#FEF3C7;color:#78350F}
-.chip-gray{background:#F1F5F9;color:#475569}
-.chip-red{background:#FEE2E2;color:#B91C1C}
-.chip-purple{background:#EDE9FE;color:#4C1D95}
-.chip-orange{background:#FFEDD5;color:#C2410C}
+        /* ── MODAL ── */
+        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+        .modal-bg.open{display:flex}
+        .modal{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;width:100%;max-width:540px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.12)}
+        .modal-head{padding:18px 22px 14px;border-bottom:1px solid #F1F5F9;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:#fff;z-index:1}
+        .modal-hl{flex:1}
+        .modal-tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#0369A1;margin-bottom:4px}
+        .modal-title{font-family:'Fraunces',serif;font-size:19px;font-weight:700;color:#18181B;line-height:1.2}
+        .modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:#94A3B8;flex-shrink:0;line-height:1}
+        .modal-x:hover{color:#18181B}
+        .modal-body{padding:18px 22px 22px}
+        .modal-body p{font-family:'Outfit',sans-serif;font-size:13px;color:#475569;line-height:1.75;margin-bottom:12px}
+        .modal-body p:last-child{margin-bottom:0}
+        .modal-body strong{color:#18181B;font-weight:600}
+        .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+        .chip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:4px}
+        .chip-blue{background:#DBEAFE;color:#1E3A8A}
+        .chip-teal{background:#D1FAE5;color:#064E3B}
+        .chip-amber{background:#FEF3C7;color:#78350F}
+        .chip-gray{background:#F1F5F9;color:#475569}
+        .chip-red{background:#FEE2E2;color:#B91C1C}
+        .chip-purple{background:#EDE9FE;color:#4C1D95}
+        .chip-orange{background:#FFEDD5;color:#C2410C}
 
-.footer{text-align:center;margin-top:36px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#CBD5E1;padding:16px;background:#18181B}
-.footer a{color:#34D399;text-decoration:none}
+        .footer{text-align:center;margin-top:36px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#CBD5E1;padding:16px;background:#18181B}
+        .footer a{color:#34D399;text-decoration:none}
 
-/* ── SCREENSHOT / PRINT MODE ── */
-.screenshot-btn{display:block;padding:7px 18px;background:#18181B;color:#fff;font-family:'JetBrains Mono',monospace;font-size:11px;border:none;border-radius:6px;cursor:pointer;letter-spacing:0.05em}
-.screenshot-btn:hover{background:#334155}
-body.screenshot-mode .modal-bg{display:none!important}
-body.screenshot-mode .header{padding:10px 20px}
-body.screenshot-mode .hero{padding:20px 24px 14px}
-body.screenshot-mode .section{padding:12px 10px 0}
-body.screenshot-mode .flow-area{padding:8px 10px;margin-bottom:4px}
-@media print{
-  .modal-bg,.screenshot-btn{display:none!important}
-  body{padding:0!important;min-width:unset!important}
-  .section{padding:8px 6px 0!important;max-width:100%!important}
-  .flow-area{break-inside:avoid;margin-bottom:4px!important}
-  .box{max-width:140px!important;min-width:80px!important}
-  .arr{min-width:24px!important}
-  a{color:inherit!important;text-decoration:none!important}
-}
-</style>
+        /* ── SCREENSHOT / PRINT MODE ── */
+        .screenshot-btn{display:block;padding:7px 18px;background:#18181B;color:#fff;font-family:'JetBrains Mono',monospace;font-size:11px;border:none;border-radius:6px;cursor:pointer;letter-spacing:0.05em}
+        .screenshot-btn:hover{background:#334155}
+        body.screenshot-mode .modal-bg{display:none!important}
+        body.screenshot-mode .header{padding:10px 20px}
+        body.screenshot-mode .hero{padding:20px 24px 14px}
+        body.screenshot-mode .section{padding:12px 10px 0}
+        body.screenshot-mode .flow-area{padding:8px 10px;margin-bottom:4px}
+        @media print{
+            .modal-bg,.screenshot-btn{display:none!important}
+            body{padding:0!important;min-width:unset!important}
+            .section{padding:8px 6px 0!important;max-width:100%!important}
+            .flow-area{break-inside:avoid;margin-bottom:4px!important}
+            .box{max-width:140px!important;min-width:80px!important}
+            .arr{min-width:24px!important}
+            a{color:inherit!important;text-decoration:none!important}
+        }
+    </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="brand">Fintech <span>on</span> Cloud</div>
-  <a class="back" href="https://fintechoncloud.substack.com">← Back to blog</a>
+    <div class="brand">Fintech <span>on</span> Cloud</div>
+    <a class="back" href="https://fintechoncloud.substack.com">← Back to blog</a>
 </div>
 
 <div class="hero">
-  <div class="eyebrow">// Production Architecture · Post #1 · SEPA Series</div>
-  <h1>SEPA Credit Transfer vs SEPA Instant<br/>Production-Grade GCP Architecture</h1>
-  <p>Click any component for a full explanation. Includes idempotency service, state machine, bank adapter layer, ledger, reconciliation, timeout handling, DLQ and retry.</p>
-  <div class="tags">
-    <span class="tag tag-blue">SEPA SCT</span>
-    <span class="tag tag-green">SEPA Instant</span>
-    <span class="tag tag-blue">GCP</span>
-    <span class="tag tag-gray">ISO 20022</span>
-    <span class="tag tag-gray">State Machine</span>
-    <span class="tag tag-gray">Idempotency</span><span class="tag tag-gray">Bank Adapter Layer</span>
-    <span class="tag tag-red">DLQ · Retry</span>
-  </div>
+    <div class="eyebrow">// Production Architecture · Post #1 · SEPA Series</div>
+    <h1>SEPA Credit Transfer vs SEPA Instant<br/>Production-Grade GCP Architecture</h1>
+    <p>Click any component for a full explanation. Includes schema validation, AML/sanctions screening, idempotency, state machine, bank adapter layer, ledger (with recon-gated reversal), reconciliation, webhook callbacks, DLQ and retry.</p>
+    <div class="tags">
+        <span class="tag tag-blue">SEPA SCT</span>
+        <span class="tag tag-green">SEPA Instant</span>
+        <span class="tag tag-blue">GCP</span>
+        <span class="tag tag-gray">ISO 20022</span>
+        <span class="tag tag-gray">State Machine</span>
+        <span class="tag tag-gray">Idempotency</span>
+        <span class="tag tag-gray">Bank Adapter Layer</span>
+        <span class="tag tag-red">AML · Sanctions</span>
+        <span class="tag tag-red">DLQ · Retry</span>
+        <span class="tag tag-green">Webhooks · Recon</span>
+    </div>
 </div>
 
 <div class="hint" style="display:flex;align-items:center;justify-content:center;gap:16px;">Click any box to learn more <span>→</span><button class="screenshot-btn" onclick="document.body.classList.toggle('screenshot-mode');this.textContent=document.body.classList.contains('screenshot-mode')?'Exit compact mode':'Compact view for screenshot'">Compact view for screenshot</button></div>
@@ -175,317 +178,378 @@ body.screenshot-mode .flow-area{padding:8px 10px;margin-bottom:4px}
      SCT
 ══════════════════════════════════════════ -->
 <div class="section">
-  <div class="section-header sh-sct">
-    <div>
-      <h2>SEPA Credit Transfer (SCT) — Async Batch Flow</h2>
-      <p>D+1 SETTLEMENT · pain.001 / pain.002 · STEP2 CLEARING · APIGEE X (LB INCLUDED)</p>
+    <div class="section-header sh-sct">
+        <div>
+            <h2>SEPA Credit Transfer (SCT) — Async Batch Flow</h2>
+            <p>D+1 SETTLEMENT · pain.001 / pain.002 · STEP2 CLEARING · APIGEE X (LB INCLUDED)</p>
+        </div>
     </div>
-  </div>
 
-  <!-- ROW 1: Entry → Apigee → Balance Check → State Machine → Bank Adapter -->
-  <div class="flow-area">
-    <div class="flow-label">// 1. Initiation — idempotency → balance check → state machine → bank adapter layer → ISO 20022</div>
-    <div class="flow-row">
-      <div class="entry-group">
-        <div class="entry-label">Entry points</div>
-        <div class="entry-box eb-m" onclick="om('merchant')"><div class="et">Merchant App</div><div class="es">Web / mobile</div></div>
-        <div class="entry-box eb-d" onclick="om('desktop')"><div class="et">Desktop Client</div><div class="es">Treasury / ERP</div></div>
-        <div class="entry-box eb-a" onclick="om('thirdparty')"><div class="et">Third Party API</div><div class="es">Partner / PSP</div></div>
-      </div>
-      <div style="flex-shrink:0;display:flex;align-items:center;margin-right:4px">
-        <svg width="18" height="96" viewBox="0 0 18 96"><path d="M2 8 Q16 8 16 48 Q16 88 2 88" fill="none" stroke="#CBD5E1" stroke-width="1.5"/><polygon points="16,45 12,41 12,51" fill="#CBD5E1"/></svg>
-      </div>
-      <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">HTTPS</div></div>
-      <div class="box box-blue" onclick="om('apigee-sct')"><div class="bt">Apigee X</div><div class="bs">Auth · LB included</div></div>
-      <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-      <div class="box box-orange" onclick="om('idempotency')"><div class="bt">Idempotency Service</div><div class="bs">Check BEFORE processing</div></div>
-      <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">new / dup</div></div>
-      <div class="box box-yellow" onclick="om('balance-check')"><div class="bt">Balance Check</div><div class="bs">Reserve funds (pending)</div></div>
-      <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-      <div class="box box-orange" onclick="om('state-machine-sct')"><div class="bt">State Machine</div><div class="bs">CREATED → SUBMITTED</div></div>
-      <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-      <div class="box box-blue" onclick="om('bank-adapter-sct')"><div class="bt">Bank Adapter Layer</div><div class="bs">per-bank → pain.001</div></div>
-      <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-      <div class="box box-teal" onclick="om('db-sct')"><div class="bt">Spanner / SQL</div><div class="bs">Persist state</div></div>
+    <!-- ROW 1: Entry → Apigee → Schema Val → Idempotency → Balance Check → AML → State Machine → Bank Adapter -->
+    <div class="flow-area">
+        <div class="flow-label">// 1. Initiation — schema validation → idempotency → balance check → AML/sanctions → state machine → bank adapter → ISO 20022</div>
+        <div class="flow-row">
+            <div class="entry-group">
+                <div class="entry-label">Entry points</div>
+                <div class="entry-box eb-m" onclick="om('merchant')"><div class="et">Merchant App</div><div class="es">Web / mobile</div></div>
+                <div class="entry-box eb-d" onclick="om('desktop')"><div class="et">Desktop Client</div><div class="es">Treasury / ERP</div></div>
+                <div class="entry-box eb-a" onclick="om('thirdparty')"><div class="et">Third Party API</div><div class="es">Partner / PSP</div></div>
+            </div>
+            <div style="flex-shrink:0;display:flex;align-items:center;margin-right:4px">
+                <svg width="18" height="96" viewBox="0 0 18 96"><path d="M2 8 Q16 8 16 48 Q16 88 2 88" fill="none" stroke="#CBD5E1" stroke-width="1.5"/><polygon points="16,45 12,41 12,51" fill="#CBD5E1"/></svg>
+            </div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">HTTPS</div></div>
+            <div class="box box-blue" onclick="om('apigee-sct')"><div class="bt">Apigee X</div><div class="bs">Auth · rate limit · LB</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-gray" onclick="om('schema-validation')"><div class="bt">Schema Validation</div><div class="bs">Contract · reject invalid</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">valid</div></div>
+            <div class="box box-orange" onclick="om('idempotency')"><div class="bt">Idempotency Service</div><div class="bs">Check BEFORE processing</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">new</div></div>
+            <div class="box box-yellow" onclick="om('balance-check')"><div class="bt">Balance Check</div><div class="bs">Reserve funds (pending)</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-red" onclick="om('aml-sanctions')"><div class="bt">AML / Sanctions</div><div class="bs">Screening · block flagged</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">pass</div></div>
+            <div class="box box-orange" onclick="om('state-machine-sct')"><div class="bt">State Machine</div><div class="bs">CREATED → SUBMITTED</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-blue" onclick="om('bank-adapter-sct')"><div class="bt">Bank Adapter Layer</div><div class="bs">per-bank → pain.001</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-teal" onclick="om('db-sct')"><div class="bt">Spanner / SQL</div><div class="bs">Persist state</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-purple" onclick="om('pubsub-sct')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.initiated</div></div>
+        </div>
     </div>
-  </div>
 
-  <!-- ROW 2: Async clearing path -->
-  <div class="flow-area">
-    <div class="flow-label">// 2. Async clearing — Pub/Sub → bank → STEP2 → pain.002 → state update</div>
-    <div class="flow-row">
-      <div class="box box-purple" onclick="om('pubsub-sct')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.initiated</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-      <div class="box box-ext" onclick="om('debtor-bank')"><div class="bt">Debtor Bank</div><div class="bs">AML · validate</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">batch</div></div>
-      <div class="box box-ext" onclick="om('step2')"><div class="bt">EBA STEP2</div><div class="bs">4 cycles/day</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">D+1</div></div>
-      <div class="box box-blue" onclick="om('cloudtasks')"><div class="bt">Cloud Tasks</div><div class="bs">pain.002 polling</div></div>
-      <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">status</div></div>
-      <div class="box box-orange" onclick="om('state-machine-sct')"><div class="bt">State Machine</div><div class="bs">→ COMPLETED / FAILED</div></div>
-      <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">write</div></div>
-      <div class="box box-teal" onclick="om('db-sct')"><div class="bt">Spanner / SQL</div><div class="bs">Final state</div></div>
+    <!-- ROW 2: Async clearing path -->
+    <div class="flow-area">
+        <div class="flow-label">// 2. Async clearing — Pub/Sub worker → bank → STEP2 → pain.002 + camt.054 → state update</div>
+        <div class="flow-row">
+            <div class="box box-purple" onclick="om('pubsub-sct')"><div class="bt">Cloud Pub/Sub</div><div class="bs">worker consumes event</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-ext" onclick="om('debtor-bank')"><div class="bt">Debtor Bank</div><div class="bs">Validate · submit STEP2</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">batch</div></div>
+            <div class="box box-ext" onclick="om('step2')"><div class="bt">EBA STEP2</div><div class="bs">4 cycles/day</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">D+1</div></div>
+            <div class="box box-blue" onclick="om('cloudtasks')"><div class="bt">Cloud Tasks</div><div class="bs">pain.002 + camt.054 poll</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">status</div></div>
+            <div class="box box-orange" onclick="om('state-machine-sct')"><div class="bt">State Machine</div><div class="bs">→ COMPLETED / FAILED</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">write</div></div>
+            <div class="box box-teal" onclick="om('db-sct')"><div class="bt">Spanner / SQL</div><div class="bs">Final state</div></div>
+        </div>
     </div>
-  </div>
 
-  <!-- ROW 3: Ledger -->
-  <div class="flow-area ledger-row">
-    <div class="flow-label warn">// 3. Ledger update — pending entry on initiation, confirmed entry on ACCP</div>
-    <div class="flow-row">
-      <div class="box box-orange" onclick="om('state-machine-sct')"><div class="bt">State Machine</div><div class="bs">ACCP confirmed</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-      <div class="box box-yellow" onclick="om('ledger')"><div class="bt">Ledger Service</div><div class="bs">Pending → confirmed entry</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-      <div class="box box-teal" onclick="om('ledger-db')"><div class="bt">Ledger DB</div><div class="bs">Double-entry store</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-      <div class="box box-purple" onclick="om('pubsub-sct')"><div class="bt">Cloud Pub/Sub</div><div class="bs">ledger.updated event</div></div>
+    <!-- ROW 2b: SCT Compensation / Recall -->
+    <div class="flow-area" style="background:#FFF7ED;border-color:#FED7AA">
+        <div class="flow-label warn">// 2b. Compensation / Payment Recall — pacs.007 / camt.056 recall flow on FAILED or ops-triggered</div>
+        <div class="flow-row">
+            <div class="box box-red" onclick="om('state-machine-sct')"><div class="bt">State Machine</div><div class="bs">FAILED / ops-triggered</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">trigger</div></div>
+            <div class="box box-orange" onclick="om('compensation-sct')"><div class="bt">Compensation Flow</div><div class="bs">pacs.007 / camt.056 recall</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">idem.</div></div>
+            <div class="box box-yellow" onclick="om('ledger')"><div class="bt">Ledger Reversal</div><div class="bs">Reversal only after recon gate</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">write</div></div>
+            <div class="box box-teal" onclick="om('db-sct')"><div class="bt">Spanner / SQL</div><div class="bs">COMPENSATING → REVERSED</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-purple" onclick="om('pubsub-sct')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.reversed event</div></div>
+        </div>
     </div>
-  </div>
 
-  <!-- ROW 4: Analytics + Reconciliation -->
-  <div class="flow-area recon-row">
-    <div class="flow-label success">// 4. Analytics + reconciliation — Dataflow strips PII → BigQuery → reconciliation engine</div>
-    <div class="flow-row">
-      <div class="box box-purple" onclick="om('pubsub-sct')"><div class="bt">Cloud Pub/Sub</div><div class="bs">transaction events</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-      <div class="box box-teal" onclick="om('dataflow')"><div class="bt">Dataflow</div><div class="bs">PII removal · transform</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-      <div class="box box-teal" onclick="om('bigquery')"><div class="bt">BigQuery</div><div class="bs">Transaction warehouse</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-      <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Ledger vs bank statement</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-      <div class="box box-amber" onclick="om('vertexai')"><div class="bt">Vertex AI (Gemini)</div><div class="bs">Mismatch explain</div></div>
+    <!-- ROW 3: Ledger -->
+    <div class="flow-area ledger-row">
+        <div class="flow-label warn">// 3. Ledger update — pending entry on initiation, confirmed entry on ACCP</div>
+        <div class="flow-row">
+            <div class="box box-orange" onclick="om('state-machine-sct')"><div class="bt">State Machine</div><div class="bs">ACCP confirmed</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-yellow" onclick="om('ledger')"><div class="bt">Ledger Service</div><div class="bs">Pending → confirmed entry</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-teal" onclick="om('ledger-db')"><div class="bt">Ledger DB</div><div class="bs">Double-entry store</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-purple" onclick="om('pubsub-sct')"><div class="bt">Cloud Pub/Sub</div><div class="bs">ledger.updated event</div></div>
+        </div>
     </div>
-  </div>
 
-  <!-- ROW 5: Recovery -->
-  <div class="flow-area recovery">
-    <div class="flow-label warn">// 5. Recovery layer — DLQ captures failures, retry / manual review / circuit breaker</div>
-    <div class="flow-row">
-      <div class="box box-red" onclick="om('dlq')"><div class="bt">Dead Letter Queue</div><div class="bs">Pub/Sub DLQ · Tasks DLQ</div></div>
-      <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">alert</div></div>
-      <div class="box box-teal" onclick="om('monitoring-sct')"><div class="bt">Cloud Monitoring</div><div class="bs">Alert · dashboard</div></div>
-      <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">route</div></div>
-      <div class="box box-orange" onclick="om('retry')"><div class="bt">Retry Mechanism</div><div class="bs">Exp. backoff · circuit breaker</div></div>
-      <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">escalate</div></div>
-      <div class="box box-red" onclick="om('manual-review')"><div class="bt">Manual Review Queue</div><div class="bs">Ops team investigation</div></div>
-      <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">resolve</div></div>
-      <div class="box box-orange" onclick="om('state-machine-sct')"><div class="bt">State Machine</div><div class="bs">FAILED / COMPENSATING</div></div>
+    <!-- ROW 4: Analytics + Reconciliation -->
+    <div class="flow-area recon-row">
+        <div class="flow-label success">// 4. Analytics + reconciliation — Dataflow strips PII → BigQuery → reconciliation engine</div>
+        <div class="flow-row">
+            <div class="box box-purple" onclick="om('pubsub-sct')"><div class="bt">Cloud Pub/Sub</div><div class="bs">transaction events</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-teal" onclick="om('dataflow')"><div class="bt">Dataflow</div><div class="bs">PII removal · transform</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-teal" onclick="om('bigquery')"><div class="bt">BigQuery</div><div class="bs">Transaction warehouse</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Ledger vs bank statement</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-amber" onclick="om('vertexai')"><div class="bt">Vertex AI (Gemini)</div><div class="bs">Mismatch explain</div></div>
+        </div>
     </div>
-  </div>
+
+    <!-- ROW 5: Recovery -->
+    <div class="flow-area recovery">
+        <div class="flow-label warn">// 5. Recovery layer — DLQ captures failures, retry / manual review / circuit breaker</div>
+        <div class="flow-row">
+            <div class="box box-red" onclick="om('dlq')"><div class="bt">Dead Letter Queue</div><div class="bs">Pub/Sub DLQ · Tasks DLQ</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">alert</div></div>
+            <div class="box box-teal" onclick="om('monitoring-sct')"><div class="bt">Cloud Monitoring</div><div class="bs">Alert · dashboard</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">route</div></div>
+            <div class="box box-orange" onclick="om('retry')"><div class="bt">Retry Mechanism</div><div class="bs">Exp. backoff · circuit breaker</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">escalate</div></div>
+            <div class="box box-red" onclick="om('manual-review')"><div class="bt">Manual Review Queue</div><div class="bs">Ops team investigation</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">resolve</div></div>
+            <div class="box box-orange" onclick="om('state-machine-sct')"><div class="bt">State Machine</div><div class="bs">FAILED / COMPENSATING</div></div>
+        </div>
+    </div>
 </div>
 
 <!-- ══════════════════════════════════════
      SCT INST
 ══════════════════════════════════════════ -->
 <div class="section" style="margin-top:28px">
-  <div class="section-header sh-inst">
-    <div>
-      <h2>SEPA Instant Credit Transfer (SCT Inst) — Real-Time Synchronous Flow</h2>
-      <p>10-SECOND HARD DEADLINE · pacs.008 / pacs.002 · RT1 / TIPS · APIGEE X (LB INCLUDED)</p>
+    <div class="section-header sh-inst">
+        <div>
+            <h2>SEPA Instant Credit Transfer (SCT Inst) — Real-Time Synchronous Flow</h2>
+            <p>10-SECOND HARD DEADLINE · pacs.008 / pacs.002 · RT1 / TIPS · APIGEE X (LB INCLUDED)</p>
+        </div>
     </div>
-  </div>
 
-  <div class="banner banner-red">10-second EPC deadline — entire synchronous path must complete within this window or payment is automatically rejected and refunded</div>
+    <div class="banner banner-red">10-second EPC deadline — entire synchronous path must complete within this window or payment is automatically rejected and refunded</div>
 
-  <!-- ROW 1: Sync path -->
-  <div class="flow-area">
-    <div class="flow-label">// 1. Synchronous path — idempotency → balance check → state machine → bank adapter layer → RT1/TIPS</div>
-    <div class="flow-row">
-      <div class="entry-group">
-        <div class="entry-label">Entry points</div>
-        <div class="entry-box eb-m" onclick="om('merchant-inst')"><div class="et">Merchant App</div><div class="es">Waits for result</div></div>
-        <div class="entry-box eb-d" onclick="om('desktop')"><div class="et">Desktop Client</div><div class="es">Real-time UI</div></div>
-        <div class="entry-box eb-a" onclick="om('thirdparty')"><div class="et">Third Party API</div><div class="es">Sync call</div></div>
-      </div>
-      <div style="flex-shrink:0;display:flex;align-items:center;margin-right:4px">
-        <svg width="18" height="96" viewBox="0 0 18 96"><path d="M2 8 Q16 8 16 48 Q16 88 2 88" fill="none" stroke="#CBD5E1" stroke-width="1.5"/><polygon points="16,45 12,41 12,51" fill="#CBD5E1"/></svg>
-      </div>
-      <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">HTTPS</div></div>
-      <div class="box box-blue" onclick="om('apigee-inst')"><div class="bt">Apigee X</div><div class="bs">Auth · minimal policies</div></div>
-      <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-      <div class="box box-orange" onclick="om('idempotency-inst')"><div class="bt">Idempotency Service</div><div class="bs">Check BEFORE processing</div></div>
-      <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">new / dup</div></div>
-      <div class="box box-yellow" onclick="om('balance-check-inst')"><div class="bt">Balance Check</div><div class="bs">Ledger pre-flight · &lt;100ms</div></div>
-      <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-      <div class="box box-orange" onclick="om('state-machine-inst')"><div class="bt">State Machine</div><div class="bs">CREATED → IN_FLIGHT</div></div>
-      <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-      <div class="box box-blue" onclick="om('bank-adapter-inst')"><div class="bt">Bank Adapter Layer</div><div class="bs">per-bank → pacs.008</div></div>
-      <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-      <div class="box box-teal" onclick="om('db-inst')"><div class="bt">Spanner / SQL</div><div class="bs">Strong read · lock</div></div>
-      <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-      <div class="box box-ext" onclick="om('rt1tips')"><div class="bt">RT1 / TIPS</div><div class="bs">ECB · 24/7</div></div>
+    <!-- ROW 1: Sync path -->
+    <div class="flow-area">
+        <div class="flow-label">// 1. Synchronous path — schema validation → idempotency → balance check → AML/sanctions → state machine → bank adapter → RT1/TIPS</div>
+        <div class="flow-row">
+            <div class="entry-group">
+                <div class="entry-label">Entry points</div>
+                <div class="entry-box eb-m" onclick="om('merchant-inst')"><div class="et">Merchant App</div><div class="es">Waits for result</div></div>
+                <div class="entry-box eb-d" onclick="om('desktop')"><div class="et">Desktop Client</div><div class="es">Real-time UI</div></div>
+                <div class="entry-box eb-a" onclick="om('thirdparty')"><div class="et">Third Party API</div><div class="es">Sync call</div></div>
+            </div>
+            <div style="flex-shrink:0;display:flex;align-items:center;margin-right:4px">
+                <svg width="18" height="96" viewBox="0 0 18 96"><path d="M2 8 Q16 8 16 48 Q16 88 2 88" fill="none" stroke="#CBD5E1" stroke-width="1.5"/><polygon points="16,45 12,41 12,51" fill="#CBD5E1"/></svg>
+            </div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">HTTPS</div></div>
+            <div class="box box-blue" onclick="om('apigee-inst')"><div class="bt">Apigee X</div><div class="bs">Auth · minimal policies</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-gray" onclick="om('schema-validation-inst')"><div class="bt">Schema Validation</div><div class="bs">Contract · fast reject</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">valid</div></div>
+            <div class="box box-orange" onclick="om('idempotency-inst')"><div class="bt">Idempotency Service</div><div class="bs">Check BEFORE processing</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">new</div></div>
+            <div class="box box-yellow" onclick="om('balance-check-inst')"><div class="bt">Balance Check</div><div class="bs">Ledger pre-flight · &lt;100ms</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-red" onclick="om('aml-sanctions-inst')"><div class="bt">AML / Sanctions</div><div class="bs">Pre-cached · &lt;50ms</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">pass</div></div>
+            <div class="box box-orange" onclick="om('state-machine-inst')"><div class="bt">State Machine</div><div class="bs">CREATED → IN_FLIGHT</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-blue" onclick="om('bank-adapter-inst')"><div class="bt">Bank Adapter Layer</div><div class="bs">per-bank → pacs.008</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-teal" onclick="om('db-inst')"><div class="bt">Spanner / SQL</div><div class="bs">Strong read · lock</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-ext" onclick="om('rt1tips')"><div class="bt">RT1 / TIPS</div><div class="bs">ECB · 24/7</div></div>
+        </div>
     </div>
-  </div>
 
-  <!-- ROW 2: pacs.002 return + ledger update -->
-  <div class="flow-area" style="background:#F0FDF4;border-color:#A7F3D0">
-    <div class="flow-label success">// 2. pacs.002 return + immediate ledger final entry — same synchronous connection</div>
-    <div class="flow-row">
-      <div class="box box-ext" onclick="om('pacs002')"><div class="bt">pacs.002</div><div class="bs">ACCP or RJCT</div></div>
-      <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">sync return</div></div>
-      <div class="box box-orange" onclick="om('state-machine-inst')"><div class="bt">State Machine</div><div class="bs">COMPLETED · FAILED · TIMEOUT</div></div>
-      <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-      <div class="box box-yellow" onclick="om('ledger')"><div class="bt">Ledger Service</div><div class="bs">Immediate confirmation → final entry</div></div>
-      <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-      <div class="box box-teal" onclick="om('db-inst')"><div class="bt">Spanner / SQL</div><div class="bs">Write confirmed state</div></div>
-      <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">sync return</div></div>
-      <div style="flex-shrink:0;display:flex;align-items:center;margin-left:4px">
-        <svg width="18" height="96" viewBox="0 0 18 96" style="transform:scaleX(-1)"><path d="M2 8 Q16 8 16 48 Q16 88 2 88" fill="none" stroke="#059669" stroke-width="1.5"/><polygon points="2,45 6,41 6,51" fill="#059669"/></svg>
-      </div>
-      <div class="entry-group">
-        <div class="entry-label" style="color:#059669">Result to</div>
-        <div class="entry-box eb-m" style="border-color:#6EE7B7"><div class="et" style="color:#065F46">Merchant App</div><div class="es">COMPLETED/FAILED</div></div>
-        <div class="entry-box eb-d" style="border-color:#6EE7B7"><div class="et" style="color:#065F46">Desktop Client</div><div class="es">Real-time update</div></div>
-        <div class="entry-box eb-a" style="border-color:#6EE7B7"><div class="et" style="color:#065F46">Third Party API</div><div class="es">HTTP response</div></div>
-      </div>
+    <!-- ROW 2: pacs.002 return + ledger update -->
+    <div class="flow-area" style="background:#F0FDF4;border-color:#A7F3D0">
+        <div class="flow-label success">// 2. pacs.002 return + immediate ledger final entry — same synchronous connection</div>
+        <div class="flow-row">
+            <div class="box box-ext" onclick="om('pacs002')"><div class="bt">pacs.002</div><div class="bs">ACCP or RJCT</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">← return</div></div>
+            <div class="box box-orange" onclick="om('state-machine-inst')"><div class="bt">State Machine</div><div class="bs">COMPLETED · FAILED · TIMEOUT</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-yellow" onclick="om('ledger')"><div class="bt">Ledger Service</div><div class="bs">Immediate confirmation → final entry</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">sync</div></div>
+            <div class="box box-teal" onclick="om('db-inst')"><div class="bt">Spanner / SQL</div><div class="bs">Write confirmed state</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">← result</div></div>
+            <div class="entry-group">
+                <div class="entry-label" style="color:#059669">Result to</div>
+                <div class="entry-box eb-m" style="border-color:#6EE7B7"><div class="et" style="color:#065F46">Merchant App</div><div class="es">COMPLETED/FAILED</div></div>
+                <div class="entry-box eb-d" style="border-color:#6EE7B7"><div class="et" style="color:#065F46">Desktop Client</div><div class="es">Real-time update</div></div>
+                <div class="entry-box eb-a" style="border-color:#6EE7B7"><div class="et" style="color:#065F46">Third Party API</div><div class="es">HTTP response</div></div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- ROW 2b: TIMEOUT path — unknown state -->
-  <div class="flow-area" style="background:#FFF7ED;border-color:#FED7AA">
-    <div class="flow-label warn">// 2b. TIMEOUT path — outcome unknown until reconciliation resolves it</div>
-    <div class="banner banner-red" style="font-size:10px;padding:5px 10px;margin-bottom:8px">Timeout ≠ Failure — the bank may or may not have processed the payment. Outcome is unknown until reconciliation confirms.</div>
-    <div class="flow-row">
-      <div class="box box-red" onclick="om('timeout-inst')"><div class="bt">State Machine</div><div class="bs">IN_FLIGHT → TIMEOUT (UNKNOWN)</div></div>
-      <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">publish</div></div>
-      <div class="box box-red" onclick="om('dlq')"><div class="bt">Dead Letter Queue</div><div class="bs">Timeout event</div></div>
-      <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">alert</div></div>
-      <div class="box box-teal" onclick="om('monitoring-inst')"><div class="bt">Cloud Monitoring</div><div class="bs">PagerDuty · ops alert</div></div>
-      <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">resolve ↓</div></div>
-      <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Resolve uncertain transactions</div></div>
-      <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">→ final state</div></div>
-      <div class="box box-orange" onclick="om('state-machine-inst')"><div class="bt">State Machine</div><div class="bs">TIMEOUT → COMPLETED / FAILED</div></div>
+    <!-- ROW 2b: Async webhook fallback for disconnected clients -->
+    <div class="flow-area" style="background:#EFF6FF;border-color:#93C5FD">
+        <div class="flow-label">// 2b. Async webhook / callback — fires post-confirmation for disconnected or polling clients</div>
+        <div class="flow-row">
+            <div class="box box-teal" onclick="om('db-inst')"><div class="bt">Spanner / SQL</div><div class="bs">Confirmed state written</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-purple" onclick="om('pubsub-inst')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.completed event</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">fan-out</div></div>
+            <div class="box box-blue" onclick="om('webhook-service')"><div class="bt">Webhook Service</div><div class="bs">Callback URL · retry · sign</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">notify</div></div>
+            <div class="entry-group">
+                <div class="entry-label">Async notify</div>
+                <div class="entry-box eb-m" style="border-color:#93C5FD"><div class="et" style="color:#1E3A8A">Merchant App</div><div class="es">Webhook callback</div></div>
+                <div class="entry-box eb-a" style="border-color:#93C5FD"><div class="et" style="color:#1E3A8A">Third Party API</div><div class="es">Signed webhook</div></div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- ROW 3: Post-confirm async analytics + reconciliation -->
-  <div class="flow-area recon-row">
-    <div class="flow-label success">// 3. Post-confirmation analytics + reconciliation — fires after client response sent</div>
-    <div class="flow-row">
-      <div class="box box-purple" onclick="om('pubsub-inst')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.completed</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-      <div class="box box-teal" onclick="om('dataflow')"><div class="bt">Dataflow</div><div class="bs">PII removal · enrich</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-      <div class="box box-teal" onclick="om('bigquery')"><div class="bt">BigQuery</div><div class="bs">SLA · analytics</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-      <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Ledger vs settlement · resolves TIMEOUT</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-      <div class="box box-amber" onclick="om('vertexai')"><div class="bt">Vertex AI (Gemini)</div><div class="bs">RJCT · mismatch classify</div></div>
-      <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-      <div class="box box-teal" onclick="om('monitoring-inst')"><div class="bt">Cloud Monitoring</div><div class="bs">p99 · SLA alerts</div></div>
+    <!-- ROW 2c: TIMEOUT path — unknown state -->
+    <div class="flow-area" style="background:#FFF7ED;border-color:#FED7AA">
+        <div class="flow-label warn">// 2c. TIMEOUT path — outcome unknown until reconciliation resolves it — reversal is provisional, NOT final</div>
+        <div class="banner banner-red" style="font-size:10px;padding:5px 10px;margin-bottom:8px">Timeout ≠ Failure — bank may or may not have processed the payment. Ledger reversal is <strong>provisional</strong>. It is only finalised after reconciliation confirms FAILED. If recon confirms ACCP, provisional reversal is voided — never double-reverse.</div>
+        <div class="flow-row">
+            <div class="box box-red" onclick="om('timeout-inst')"><div class="bt">State Machine</div><div class="bs">IN_FLIGHT → TIMEOUT</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-red" onclick="om('dlq')"><div class="bt">Dead Letter Queue</div><div class="bs">Timeout event</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">alert</div></div>
+            <div class="box box-teal" onclick="om('monitoring-inst')"><div class="bt">Cloud Monitoring</div><div class="bs">PagerDuty · ops alert</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">resolve</div></div>
+            <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Gate: confirm FAILED before reversal</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">confirmed</div></div>
+            <div class="box box-yellow" onclick="om('ledger-reversal-gate')"><div class="bt">Ledger Reversal</div><div class="bs">Idempotent · recon-gated</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">final</div></div>
+            <div class="box box-orange" onclick="om('state-machine-inst')"><div class="bt">State Machine</div><div class="bs">TIMEOUT → COMPLETED / FAILED</div></div>
+        </div>
     </div>
-  </div>
 
-  <!-- ROW 4: Recovery -->
-  <div class="flow-area recovery">
-    <div class="flow-label warn">// 4. Recovery layer — timeout handling, DLQ, retry with circuit breaker, compensation</div>
-    <div class="flow-row">
-      <div class="box box-red" onclick="om('timeout-inst')"><div class="bt">Timeout Handler</div><div class="bs">8s budget exceeded</div></div>
-      <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">trigger</div></div>
-      <div class="box box-orange" onclick="om('state-machine-inst')"><div class="bt">State Machine</div><div class="bs">→ TIMED_OUT</div></div>
-      <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">publish</div></div>
-      <div class="box box-red" onclick="om('dlq')"><div class="bt">Dead Letter Queue</div><div class="bs">Pub/Sub DLQ</div></div>
-      <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">alert</div></div>
-      <div class="box box-teal" onclick="om('monitoring-inst')"><div class="bt">Cloud Monitoring</div><div class="bs">PagerDuty · alert</div></div>
-      <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">route</div></div>
-      <div class="box box-orange" onclick="om('retry')"><div class="bt">Retry / Circuit Breaker</div><div class="bs">Backoff · open/closed</div></div>
-      <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">compensate</div></div>
-      <div class="box box-yellow" onclick="om('ledger')"><div class="bt">Ledger Reversal</div><div class="bs">Compensating entry</div></div>
+    <!-- ROW 3: Post-confirm async analytics + reconciliation -->
+    <div class="flow-area recon-row">
+        <div class="flow-label success">// 3. Post-confirmation analytics + reconciliation — fires after client response sent</div>
+        <div class="flow-row">
+            <div class="box box-purple" onclick="om('pubsub-inst')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.completed</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-teal" onclick="om('dataflow')"><div class="bt">Dataflow</div><div class="bs">PII removal · enrich</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-teal" onclick="om('bigquery')"><div class="bt">BigQuery</div><div class="bs">SLA · analytics</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Ledger vs settlement · resolves TIMEOUT</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-amber" onclick="om('vertexai')"><div class="bt">Vertex AI (Gemini)</div><div class="bs">RJCT · mismatch classify</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-teal" onclick="om('monitoring-inst')"><div class="bt">Cloud Monitoring</div><div class="bs">p99 · SLA alerts</div></div>
+        </div>
     </div>
-  </div>
+
+    <!-- ROW 4: Recovery -->
+    <div class="flow-area recovery">
+        <div class="flow-label warn">// 4. Recovery layer — timeout handling, DLQ, retry with circuit breaker, recon-gated compensation</div>
+        <div class="flow-row">
+            <div class="box box-red" onclick="om('timeout-inst')"><div class="bt">Timeout Handler</div><div class="bs">8s budget exceeded</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">trigger</div></div>
+            <div class="box box-orange" onclick="om('state-machine-inst')"><div class="bt">State Machine</div><div class="bs">→ TIMED_OUT</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-red" onclick="om('dlq')"><div class="bt">Dead Letter Queue</div><div class="bs">Pub/Sub DLQ</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">alert</div></div>
+            <div class="box box-teal" onclick="om('monitoring-inst')"><div class="bt">Cloud Monitoring</div><div class="bs">PagerDuty · alert · traces</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">route</div></div>
+            <div class="box box-orange" onclick="om('retry')"><div class="bt">Retry / Circuit Breaker</div><div class="bs">Backoff · concurrency limit</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">recon↓</div></div>
+            <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Confirm outcome first</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">if FAILED</div></div>
+            <div class="box box-yellow" onclick="om('ledger-reversal-gate')"><div class="bt">Ledger Reversal</div><div class="bs">Idempotent · recon-gated</div></div>
+        </div>
+    </div>
 </div>
 
 <!-- LEGEND -->
 <div class="legend">
-  <div class="legend-inner">
-    <div class="li"><div class="ld ld-s"></div>Synchronous</div>
-    <div class="li"><div class="ld ld-a"></div>Asynchronous</div>
-    <div class="li"><div class="ld ld-r"></div>Sync return</div>
-    <div class="li"><div class="ld ld-w"></div>Recovery / failure path</div>
-    <div class="li"><div class="lb" style="background:#EFF6FF;border:1.5px solid #93C5FD"></div>GCP compute</div>
-    <div class="li"><div class="lb" style="background:#ECFDF5;border:1.5px solid #6EE7B7"></div>Storage / analytics</div>
-    <div class="li"><div class="lb" style="background:#F5F3FF;border:1.5px solid #C4B5FD"></div>Messaging</div>
-    <div class="li"><div class="lb" style="background:#FFFBEB;border:1.5px solid #FCD34D"></div>AI / ML</div>
-    <div class="li"><div class="lb" style="background:#FFF7ED;border:1.5px solid #FED7AA"></div>State machine / adapter</div>
-    <div class="li"><div class="lb" style="background:#FEFCE8;border:1.5px solid #FEF08A"></div>Balance / ledger</div>
-    <div class="li"><div class="lb" style="background:#F0FDF4;border:1.5px solid #A7F3D0"></div>Reconciliation</div>
-    <div class="li"><div class="lb" style="background:#FEF2F2;border:1.5px solid #FECACA"></div>Recovery / DLQ</div>
-    <div class="li"><div class="lb" style="background:#F1F5F9;border:1.5px dashed #CBD5E1"></div>External</div>
-  </div>
+    <div class="legend-inner">
+        <div class="li"><div class="ld ld-s"></div>Synchronous</div>
+        <div class="li"><div class="ld ld-a"></div>Asynchronous</div>
+        <div class="li"><div class="ld ld-r"></div>Sync return</div>
+        <div class="li"><div class="ld ld-w"></div>Recovery / failure path</div>
+        <div class="li"><div class="lb" style="background:#EFF6FF;border:1.5px solid #93C5FD"></div>GCP compute</div>
+        <div class="li"><div class="lb" style="background:#ECFDF5;border:1.5px solid #6EE7B7"></div>Storage / analytics</div>
+        <div class="li"><div class="lb" style="background:#F5F3FF;border:1.5px solid #C4B5FD"></div>Messaging</div>
+        <div class="li"><div class="lb" style="background:#FFFBEB;border:1.5px solid #FCD34D"></div>AI / ML</div>
+        <div class="li"><div class="lb" style="background:#FFF7ED;border:1.5px solid #FED7AA"></div>State machine / adapter</div>
+        <div class="li"><div class="lb" style="background:#FEFCE8;border:1.5px solid #FEF08A"></div>Balance / ledger</div>
+        <div class="li"><div class="lb" style="background:#F0FDF4;border:1.5px solid #A7F3D0"></div>Reconciliation</div>
+        <div class="li"><div class="lb" style="background:#F8FAFC;border:1.5px solid #CBD5E1"></div>Validation / Schema</div>
+        <div class="li"><div class="lb" style="background:#FEF2F2;border:1.5px solid #FECACA"></div>Recovery / DLQ / Compliance</div>
+        <div class="li"><div class="lb" style="background:#F1F5F9;border:1.5px dashed #CBD5E1"></div>External</div>
+    </div>
 </div>
 
 <!-- MODAL -->
 <div class="modal-bg" id="mbg" onclick="cbg(event)">
-  <div class="modal">
-    <div class="modal-head">
-      <div class="modal-hl">
-        <div class="modal-tag" id="mtag"></div>
-        <div class="modal-title" id="mtitle"></div>
-      </div>
-      <button class="modal-x" onclick="cm()">✕</button>
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-hl">
+                <div class="modal-tag" id="mtag"></div>
+                <div class="modal-title" id="mtitle"></div>
+            </div>
+            <button class="modal-x" onclick="cm()">✕</button>
+        </div>
+        <div class="modal-body" id="mbody"></div>
     </div>
-    <div class="modal-body" id="mbody"></div>
-  </div>
 </div>
 
 <div class="footer">
-  Interactive architecture diagram · <a href="https://fintechoncloud.substack.com">Fintech on Cloud</a> · Post #1: SEPA Credit Transfer vs SEPA Instant · Production-Grade GCP Architecture
+    Interactive architecture diagram · <a href="https://fintechoncloud.substack.com">Fintech on Cloud</a> · Post #1: SEPA Credit Transfer vs SEPA Instant · Production-Grade GCP Architecture
 </div>
 
 <script>
-const D={
-'merchant':{tag:'Entry point · SCT',title:'Merchant App',body:`<p>The merchant app initiates SCT via HTTPS POST to Apigee — sending creditor IBAN, amount, description, and an idempotency key. For SCT it receives a synchronous <strong>acknowledgement</strong> only. Settlement confirmation arrives the next business day via pain.002.</p>`,chips:[{t:'HTTPS POST',c:'chip-blue'},{t:'Idempotency key',c:'chip-gray'},{t:'ACK not settlement',c:'chip-gray'}]},
-'merchant-inst':{tag:'Entry point · SCT Inst',title:'Merchant App',body:`<p>For SCT Inst the connection stays open — the app waits synchronously for a definitive COMPLETED or FAILED result within the 10-second EPC window. No polling, no pending state to manage.</p>`,chips:[{t:'Synchronous wait',c:'chip-teal'},{t:'10s max',c:'chip-red'},{t:'COMPLETED or FAILED',c:'chip-teal'}]},
-'desktop':{tag:'Entry point',title:'Desktop Client',body:`<p>Treasury management systems, back-office tools, or finance dashboards authenticating via machine-to-machine OAuth2 client credentials. Used for payroll, supplier payments, and bulk transfers. The payment flow through the system is identical to the merchant app path.</p>`,chips:[{t:'M2M OAuth2',c:'chip-blue'},{t:'Bulk payouts',c:'chip-gray'},{t:'Treasury ops',c:'chip-gray'}]},
-'thirdparty':{tag:'Entry point',title:'Third Party API',body:`<p>Partner PSPs, ERP systems (SAP, Oracle, Exact), accounting platforms, and embedded finance providers. Authenticate via API keys or OAuth2. Apigee applies per-caller rate limits and quotas — making it the critical security boundary for all external integrations.</p>`,chips:[{t:'API key / OAuth2',c:'chip-amber'},{t:'Per-caller quotas',c:'chip-blue'},{t:'ERP / PSP',c:'chip-gray'}]},
-'apigee-sct':{tag:'GCP · API Gateway',title:'Apigee X — SCT',body:`<p>Single gateway for all entry points. Handles OAuth2 validation, API key auth, rate limiting, and routing to Cloud Run. <strong>Apigee X includes an internal HTTPS Load Balancer</strong> — no separate LB needed. Full policy chain is safe here because SCT has relaxed latency requirements.</p>`,chips:[{t:'LB included',c:'chip-blue'},{t:'OAuth2 / API key',c:'chip-blue'},{t:'Schema validation',c:'chip-gray'}]},
-'apigee-inst':{tag:'GCP · API Gateway',title:'Apigee X — SCT Inst',body:`<p>Same gateway but keep the policy chain minimal — authentication and routing only. Every millisecond in Apigee eats into the 10-second budget. Push all business logic to Cloud Run. Target Apigee's contribution at under 50ms. <strong>Apigee X includes the LB internally.</strong></p>`,chips:[{t:'LB included',c:'chip-blue'},{t:'Minimal policies',c:'chip-red'},{t:'<50ms target',c:'chip-red'}]},
-'balance-check':{tag:'SCT · Pre-flight',title:'Balance Check',body:`<p>Before submitting a pain.001, query the internal ledger to verify the debtor account has sufficient available balance. Catching an insufficient funds scenario here avoids an AM04 rejection from the bank, saves the clearing cycle, and prevents an unnecessary state machine transition to FAILED.</p><p>This is a read against the Ledger DB — not the bank. Your ledger balance is your internal source of truth for available funds before external submission.</p>`,chips:[{t:'Ledger read',c:'chip-teal'},{t:'AM04 prevention',c:'chip-gray'},{t:'Pre-flight check',c:'chip-amber'}]},
-'balance-check-inst':{tag:'SCT Inst · Pre-flight',title:'Balance Check',body:`<p>For SCT Inst the balance check is a fast synchronous read against the internal ledger before initiating the pacs.008 submission. Because the 10-second clock starts ticking immediately, this check must complete in under 100ms.</p><p>Use a Spanner stale read or a cached ledger snapshot for speed — the bank will do its own definitive balance check anyway. The goal is to avoid obviously doomed submissions before they consume the precious time budget.</p>`,chips:[{t:'<100ms target',c:'chip-red'},{t:'Stale read OK',c:'chip-teal'},{t:'Fast pre-flight',c:'chip-amber'}]},
-'state-machine-sct':{tag:'SCT · Orchestration',title:'Payment State Machine',body:`<p>The state machine owns all payment lifecycle transitions for SCT. It is the single component that writes state to Spanner/SQL — no other service writes payment state directly.</p><p>SCT state lifecycle: <strong>CREATED → SUBMITTED → PROCESSING → COMPLETED / FAILED / COMPENSATING</strong>. Each transition is validated — you cannot move from COMPLETED back to PROCESSING, for example. This prevents double-processing and ensures every ops query has a reliable state to inspect.</p>`,chips:[{t:'CREATED',c:'chip-gray'},{t:'SUBMITTED',c:'chip-blue'},{t:'COMPLETED',c:'chip-teal'},{t:'FAILED',c:'chip-red'},{t:'COMPENSATING',c:'chip-orange'}]},
-'state-machine-inst':{tag:'SCT Inst · Orchestration',title:'Payment State Machine',body:`<p>For SCT Inst the state machine operates within the synchronous path — transitions must be fast.</p><p>Full lifecycle: <strong>CREATED → IN_FLIGHT → COMPLETED / FAILED / TIMEOUT (UNKNOWN)</strong>.</p><p><strong>COMPLETED</strong> — pacs.002 ACCP received. Funds credited. Ledger final entry written.</p><p><strong>FAILED</strong> — pacs.002 RJCT received. Reason code recorded. Ledger reversal if pending entry exists.</p><p><strong>TIMEOUT (UNKNOWN)</strong> — Cloud Run's 8-second budget expired with no pacs.002 response. This is <em>not</em> the same as FAILED. The bank may or may not have processed the payment. The state remains ambiguous until the reconciliation engine resolves it against the bank statement. Never surface TIMEOUT as FAILED to the end user.</p>`,chips:[{t:'CREATED',c:'chip-gray'},{t:'IN_FLIGHT',c:'chip-blue'},{t:'COMPLETED',c:'chip-teal'},{t:'FAILED',c:'chip-red'},{t:'TIMEOUT (UNKNOWN)',c:'chip-orange'}]},
-'bank-adapter-sct':{tag:'SCT · Integration',title:'Bank Adapter Layer (per-bank implementations)',body:`<p>The bank adapter translates your canonical internal payment object into the bank-specific ISO 20022 pain.001 XML format. Different banks implement pain.001 with different mandatory fields, namespace versions, and character encoding requirements.</p><p>The adapter also handles the submission mechanism (REST API vs SFTP vs MQ), authentication per bank (OAuth2, mTLS, API key), and bank-specific retry semantics. Adding a new bank means writing a new adapter — Cloud Run never changes.</p>`,chips:[{t:'pain.001 XML',c:'chip-blue'},{t:'Per-bank config',c:'chip-gray'},{t:'mTLS / OAuth2',c:'chip-blue'},{t:'SFTP / REST',c:'chip-gray'}]},
-'bank-adapter-inst':{tag:'SCT Inst · Integration',title:'Bank Adapter Layer (per-bank implementations)',body:`<p>For SCT Inst the bank adapter builds the pacs.008 ISO 20022 message with a UETR (Unique End-to-End Transaction Reference) and handles submission to RT1 or TIPS via the bank's instant payment gateway.</p><p>The adapter enforces the 8-second internal timeout — if the bank gateway doesn't respond in time, the adapter raises a TimeoutException that the state machine transitions to TIMED_OUT. The adapter also handles bank-specific pacs.002 parsing — some banks include non-standard extensions.</p>`,chips:[{t:'pacs.008 builder',c:'chip-blue'},{t:'UETR generation',c:'chip-teal'},{t:'8s timeout enforced',c:'chip-red'},{t:'pacs.002 parser',c:'chip-blue'}]},
-'db-sct':{tag:'GCP · Storage',title:'Spanner / Cloud SQL',body:`<p>Use <strong>Cloud Spanner</strong> for multi-region or high transaction volumes — external consistency across regions makes it ideal for cross-border operations. Use <strong>Cloud SQL (PostgreSQL)</strong> for single-region deployments — lower cost, simpler ops, migration path to Spanner when needed.</p><p>The state machine is the only writer to payment state. Other services read but never write state directly.</p>`,chips:[{t:'Global → Spanner',c:'chip-teal'},{t:'Regional → Cloud SQL',c:'chip-blue'},{t:'State machine writes only',c:'chip-gray'}]},
-'db-inst':{tag:'GCP · Storage',title:'Spanner / Cloud SQL — SCT Inst',body:`<p>For SCT Inst the idempotency check uses a <strong>strong read</strong> — never stale. Use optimistic locking: read → check → write in a single transaction. If the UETR already exists, return the cached result immediately without re-initiating.</p>`,chips:[{t:'Strong read',c:'chip-red'},{t:'Optimistic lock',c:'chip-teal'},{t:'No stale reads',c:'chip-red'}]},
-'ledger':{tag:'Fintech · Accounting',title:'Ledger Service',body:`<p>The ledger is the authoritative record of money movement — separate from the payment state database. Where Spanner/SQL tracks payment lifecycle states (CREATED, IN_FLIGHT, COMPLETED), the ledger tracks actual money movement using <strong>double-entry bookkeeping</strong>.</p><p>Two types of entries:</p><p><strong>Pending entry (pre-flight / reservation)</strong> — written at initiation time to reserve the funds before submission to the bank. For SCT this is optional but recommended to prevent overdraft scenarios during batch processing. For SCT Inst this is written synchronously before pacs.008 is sent.</p><p><strong>Confirmed entry (post-settlement)</strong> — written after ACCP confirmation. This is the final, immutable record of the debit and credit. For SCT Inst: written synchronously in the return path before HTTP 200 is returned — annotated as <em>immediate confirmation → final entry</em>. For SCT: written asynchronously after pain.002 ACCP arrives.</p>`,chips:[{t:'Pending entry',c:'chip-amber'},{t:'Confirmed entry',c:'chip-teal'},{t:'Double-entry',c:'chip-blue'},{t:'Pre-flight reservation',c:'chip-gray'},{t:'GDPR-sensitive',c:'chip-red'}]},
-'ledger-db':{tag:'Fintech · Storage',title:'Ledger Database',body:`<p>A dedicated database for ledger entries — separate from the payment state database. Typically PostgreSQL or Spanner with append-only write semantics (ledger entries are never updated, only new entries are appended as corrections or reversals).</p><p>The separation matters for compliance: the payment DB can be queried by engineering for debugging, but the ledger DB should have strict access controls — finance and compliance teams only.</p>`,chips:[{t:'Append-only',c:'chip-teal'},{t:'Strict access control',c:'chip-red'},{t:'Audit immutable',c:'chip-gray'}]},
-'recon':{tag:'Fintech · Operations',title:'Reconciliation Engine',body:`<p>The reconciliation engine matches what your <strong>ledger says happened</strong> against what the <strong>bank statement says happened</strong>. These two sources of truth diverge regularly — due to timing differences, bank fees, failed payments that partially settled, or system errors.</p><p>It runs as a scheduled job (nightly for SCT batch) or near-real-time (for SCT Inst using streaming from BigQuery). Mismatches are classified by Vertex AI and routed to the ops queue. Common mismatch types: bank fee deductions, FX rounding, timing gaps between systems.</p>`,chips:[{t:'Ledger vs bank statement',c:'chip-teal'},{t:'Nightly for SCT',c:'chip-gray'},{t:'Real-time for SCT Inst',c:'chip-green'},{t:'Feeds Vertex AI',c:'chip-amber'}]},
-'pubsub-sct':{tag:'GCP · Messaging',title:'Cloud Pub/Sub — SCT',body:`<p>Decouples payment initiation from all downstream processing. After the state machine transitions to SUBMITTED, it publishes a payment.initiated event. Multiple subscribers fan out independently — the bank submission worker, analytics pipeline, ledger service, notification service, and audit log all consume from this topic.</p><p>Enable exactly-once delivery with deduplication. All subscribers must be idempotent regardless.</p>`,chips:[{t:'Fan-out',c:'chip-purple'},{t:'Exactly-once delivery',c:'chip-teal'},{t:'Multiple subscribers',c:'chip-gray'}]},
-'pubsub-inst':{tag:'GCP · Messaging',title:'Cloud Pub/Sub — SCT Inst',body:`<p>The Pub/Sub publish fires <strong>after</strong> the pacs.002 response has been written and the HTTP 200 returned to the caller. This keeps the synchronous path lean. The payment.completed event feeds the Dataflow PII pipeline, monitoring systems, and reconciliation engine asynchronously.</p>`,chips:[{t:'Post-confirmation',c:'chip-purple'},{t:'Async downstream',c:'chip-gray'},{t:'UETR in payload',c:'chip-teal'}]},
-'dataflow':{tag:'GCP · Data Processing',title:'Dataflow — PII Removal',body:`<p>Sits between Pub/Sub and BigQuery for GDPR compliance. Payment transactions contain PII — beneficiary names, IBANs, addresses. Storing raw events in BigQuery creates a compliance risk.</p><p>The Dataflow pipeline tokenises IBANs with internal reference IDs and strips beneficiary names before events reach BigQuery. Original PII stays in Spanner/SQL and the Ledger DB with strict access controls.</p>`,chips:[{t:'GDPR compliance',c:'chip-red'},{t:'IBAN tokenisation',c:'chip-teal'},{t:'PII removal',c:'chip-red'}]},
-'bigquery':{tag:'GCP · Analytics',title:'BigQuery',body:`<p>Stores PII-cleaned transaction events for analytics, reconciliation, and SLA tracking. For SCT Inst, BigQuery tracks actual end-to-end latency per payment against the 10-second EPC deadline — p99 degradation shows up here before it becomes an incident.</p>`,chips:[{t:'Recon queries',c:'chip-teal'},{t:'SLA tracking',c:'chip-blue'},{t:'Settlement reports',c:'chip-gray'}]},
-'vertexai':{tag:'GCP AI',title:'Vertex AI (Gemini)',body:`<p>Two roles: for SCT it classifies reconciliation mismatches (bank fee, FX rounding, system error, or unknown). For SCT Inst it classifies pacs.002 RJCT reason codes into actionable routing decisions — DS04 to compliance review, AM18 to amount correction, NARR to manual investigation.</p>`,chips:[{t:'Mismatch classification',c:'chip-amber'},{t:'RJCT routing',c:'chip-amber'},{t:'Ops automation',c:'chip-gray'}]},
-'dlq':{tag:'Recovery · GCP',title:'Dead Letter Queue',body:`<p>Any message that fails processing after exhausting all configured retries lands in the DLQ. Without a DLQ, failed messages are silently dropped — payments disappear with no visibility.</p><p>In GCP, Pub/Sub topics have native dead letter topic support. Cloud Tasks has a similar mechanism. Every subscription and task queue in the payment flow should have a DLQ configured with a Cloud Monitoring alert on queue depth. A non-empty DLQ should page the on-call engineer.</p>`,chips:[{t:'Pub/Sub dead letter topic',c:'chip-red'},{t:'Cloud Tasks DLQ',c:'chip-red'},{t:'Alert on depth > 0',c:'chip-orange'},{t:'Never silent drop',c:'chip-gray'}]},
-'retry':{tag:'Recovery · Pattern',title:'Retry Mechanism + Circuit Breaker',body:`<p>Different retry strategies per component. <strong>Cloud Tasks</strong> uses exponential backoff for pain.002 polling — starting at 30 seconds, doubling up to a max of 24 hours before DLQ. <strong>Pub/Sub</strong> has configurable retry policies per subscription.</p><p>The bank adapter implements a <strong>circuit breaker</strong> — if a bank's API returns 5xx errors more than a configured threshold, the circuit opens and stops sending requests for a cooldown period. This prevents hammering a degraded bank endpoint and conserves your retry budget.</p>`,chips:[{t:'Exponential backoff',c:'chip-orange'},{t:'Circuit breaker',c:'chip-red'},{t:'Max retry budget',c:'chip-gray'},{t:'Cooldown period',c:'chip-orange'}]},
-'manual-review':{tag:'Recovery · Ops',title:'Manual Review Queue',body:`<p>Payments that exhaust all automated retry attempts, or that land in states requiring human judgement (NARR rejections, ambiguous TIMED_OUT, reconciliation mismatches with low AI confidence), route to the manual review queue.</p><p>This is typically a simple ops dashboard backed by a Spanner query filtered on terminal failure states. The ops engineer investigates, resolves, and either triggers a compensation flow or marks the payment as closed.</p>`,chips:[{t:'Ops dashboard',c:'chip-gray'},{t:'NARR rejections',c:'chip-red'},{t:'Low-confidence mismatches',c:'chip-orange'}]},
-'timeout-inst':{tag:'SCT Inst · Recovery',title:'Timeout Handler',body:`<p>When Cloud Run's 8-second internal timeout fires without a pacs.002 response, the timeout handler takes over. It immediately transitions the state machine to TIMED_OUT, publishes a timeout event to the DLQ, and returns an HTTP 504 to the caller.</p><p>A TIMED_OUT payment is <strong>ambiguous</strong> — the bank may or may not have processed it. The reconciliation engine will resolve the ambiguity when the bank statement arrives. Until then, the ledger holds a provisional reversal entry.</p>`,chips:[{t:'8s timeout fires',c:'chip-red'},{t:'State → TIMED_OUT',c:'chip-red'},{t:'Ambiguous — needs recon',c:'chip-orange'},{t:'Provisional reversal',c:'chip-amber'}]},
+    const D={
+        'merchant':{tag:'Entry point · SCT',title:'Merchant App',body:`<p>The merchant app initiates SCT via HTTPS POST to Apigee — sending creditor IBAN, amount, description, and an idempotency key. For SCT it receives a synchronous <strong>acknowledgement</strong> only. Settlement confirmation arrives the next business day via pain.002.</p>`,chips:[{t:'HTTPS POST',c:'chip-blue'},{t:'Idempotency key',c:'chip-gray'},{t:'ACK not settlement',c:'chip-gray'}]},
+        'merchant-inst':{tag:'Entry point · SCT Inst',title:'Merchant App',body:`<p>For SCT Inst the connection stays open — the app waits synchronously for a definitive COMPLETED or FAILED result within the 10-second EPC window. No polling, no pending state to manage.</p>`,chips:[{t:'Synchronous wait',c:'chip-teal'},{t:'10s max',c:'chip-red'},{t:'COMPLETED or FAILED',c:'chip-teal'}]},
+        'desktop':{tag:'Entry point',title:'Desktop Client',body:`<p>Treasury management systems, back-office tools, or finance dashboards authenticating via machine-to-machine OAuth2 client credentials. Used for payroll, supplier payments, and bulk transfers. The payment flow through the system is identical to the merchant app path.</p>`,chips:[{t:'M2M OAuth2',c:'chip-blue'},{t:'Bulk payouts',c:'chip-gray'},{t:'Treasury ops',c:'chip-gray'}]},
+        'thirdparty':{tag:'Entry point',title:'Third Party API',body:`<p>Partner PSPs, ERP systems (SAP, Oracle, Exact), accounting platforms, and embedded finance providers. Authenticate via API keys or OAuth2. Apigee applies per-caller rate limits and quotas — making it the critical security boundary for all external integrations.</p>`,chips:[{t:'API key / OAuth2',c:'chip-amber'},{t:'Per-caller quotas',c:'chip-blue'},{t:'ERP / PSP',c:'chip-gray'}]},
+        'apigee-sct':{tag:'GCP · API Gateway',title:'Apigee X — SCT',body:`<p>Single gateway for all entry points. Handles OAuth2 validation, API key auth, rate limiting, and routing to Cloud Run. <strong>Apigee X includes an internal HTTPS Load Balancer</strong> — no separate LB needed. Full policy chain is safe here because SCT has relaxed latency requirements.</p>`,chips:[{t:'LB included',c:'chip-blue'},{t:'OAuth2 / API key',c:'chip-blue'},{t:'Schema validation',c:'chip-gray'}]},
+        'apigee-inst':{tag:'GCP · API Gateway',title:'Apigee X — SCT Inst',body:`<p>Same gateway but keep the policy chain minimal — authentication and routing only. Every millisecond in Apigee eats into the 10-second budget. Push all business logic to Cloud Run. Target Apigee's contribution at under 50ms. <strong>Apigee X includes the LB internally.</strong></p>`,chips:[{t:'LB included',c:'chip-blue'},{t:'Minimal policies',c:'chip-red'},{t:'<50ms target',c:'chip-red'}]},
+        'balance-check':{tag:'SCT · Pre-flight',title:'Balance Check',body:`<p>Before submitting a pain.001, query the internal ledger to verify the debtor account has sufficient available balance. Catching an insufficient funds scenario here avoids an AM04 rejection from the bank, saves the clearing cycle, and prevents an unnecessary state machine transition to FAILED.</p><p>This is a read against the Ledger DB — not the bank. Your ledger balance is your internal source of truth for available funds before external submission.</p>`,chips:[{t:'Ledger read',c:'chip-teal'},{t:'AM04 prevention',c:'chip-gray'},{t:'Pre-flight check',c:'chip-amber'}]},
+        'balance-check-inst':{tag:'SCT Inst · Pre-flight',title:'Balance Check',body:`<p>For SCT Inst the balance check is a fast synchronous read against the internal ledger before initiating the pacs.008 submission. Because the 10-second clock starts ticking immediately, this check must complete in under 100ms.</p><p>Use a Spanner stale read or a cached ledger snapshot for speed — the bank will do its own definitive balance check anyway. The goal is to avoid obviously doomed submissions before they consume the precious time budget.</p>`,chips:[{t:'<100ms target',c:'chip-red'},{t:'Stale read OK',c:'chip-teal'},{t:'Fast pre-flight',c:'chip-amber'}]},
+        'state-machine-sct':{tag:'SCT · Orchestration',title:'Payment State Machine',body:`<p>The state machine owns all payment lifecycle transitions for SCT. It is the single component that writes state to Spanner/SQL — no other service writes payment state directly.</p><p>SCT state lifecycle: <strong>CREATED → SUBMITTED → PROCESSING → COMPLETED / FAILED / COMPENSATING</strong>. Each transition is validated — you cannot move from COMPLETED back to PROCESSING, for example. This prevents double-processing and ensures every ops query has a reliable state to inspect.</p>`,chips:[{t:'CREATED',c:'chip-gray'},{t:'SUBMITTED',c:'chip-blue'},{t:'COMPLETED',c:'chip-teal'},{t:'FAILED',c:'chip-red'},{t:'COMPENSATING',c:'chip-orange'}]},
+        'state-machine-inst':{tag:'SCT Inst · Orchestration',title:'Payment State Machine',body:`<p>For SCT Inst the state machine operates within the synchronous path — transitions must be fast.</p><p>Full lifecycle: <strong>CREATED → IN_FLIGHT → COMPLETED / FAILED / TIMEOUT (UNKNOWN)</strong>.</p><p><strong>COMPLETED</strong> — pacs.002 ACCP received. Funds credited. Ledger final entry written.</p><p><strong>FAILED</strong> — pacs.002 RJCT received. Reason code recorded. Ledger reversal if pending entry exists.</p><p><strong>TIMEOUT (UNKNOWN)</strong> — Cloud Run's 8-second budget expired with no pacs.002 response. This is <em>not</em> the same as FAILED. The bank may or may not have processed the payment. The state remains ambiguous until the reconciliation engine resolves it against the bank statement. Never surface TIMEOUT as FAILED to the end user.</p>`,chips:[{t:'CREATED',c:'chip-gray'},{t:'IN_FLIGHT',c:'chip-blue'},{t:'COMPLETED',c:'chip-teal'},{t:'FAILED',c:'chip-red'},{t:'TIMEOUT (UNKNOWN)',c:'chip-orange'}]},
+        'bank-adapter-sct':{tag:'SCT · Integration',title:'Bank Adapter Layer (per-bank implementations)',body:`<p>The bank adapter translates your canonical internal payment object into the bank-specific ISO 20022 pain.001 XML format. Different banks implement pain.001 with different mandatory fields, namespace versions, and character encoding requirements.</p><p>The adapter also handles the submission mechanism (REST API vs SFTP vs MQ), authentication per bank (OAuth2, mTLS, API key), and bank-specific retry semantics. Adding a new bank means writing a new adapter — Cloud Run never changes.</p>`,chips:[{t:'pain.001 XML',c:'chip-blue'},{t:'Per-bank config',c:'chip-gray'},{t:'mTLS / OAuth2',c:'chip-blue'},{t:'SFTP / REST',c:'chip-gray'}]},
+        'bank-adapter-inst':{tag:'SCT Inst · Integration',title:'Bank Adapter Layer (per-bank implementations)',body:`<p>For SCT Inst the bank adapter builds the pacs.008 ISO 20022 message with a UETR (Unique End-to-End Transaction Reference) and handles submission to RT1 or TIPS via the bank's instant payment gateway.</p><p>The adapter enforces the 8-second internal timeout — if the bank gateway doesn't respond in time, the adapter raises a TimeoutException that the state machine transitions to TIMED_OUT. The adapter also handles bank-specific pacs.002 parsing — some banks include non-standard extensions.</p>`,chips:[{t:'pacs.008 builder',c:'chip-blue'},{t:'UETR generation',c:'chip-teal'},{t:'8s timeout enforced',c:'chip-red'},{t:'pacs.002 parser',c:'chip-blue'}]},
+        'db-sct':{tag:'GCP · Storage',title:'Spanner / Cloud SQL',body:`<p>Use <strong>Cloud Spanner</strong> for multi-region or high transaction volumes — external consistency across regions makes it ideal for cross-border operations. Use <strong>Cloud SQL (PostgreSQL)</strong> for single-region deployments — lower cost, simpler ops, migration path to Spanner when needed.</p><p>The state machine is the only writer to payment state. Other services read but never write state directly.</p>`,chips:[{t:'Global → Spanner',c:'chip-teal'},{t:'Regional → Cloud SQL',c:'chip-blue'},{t:'State machine writes only',c:'chip-gray'}]},
+        'db-inst':{tag:'GCP · Storage',title:'Spanner / Cloud SQL — SCT Inst',body:`<p>For SCT Inst the idempotency check uses a <strong>strong read</strong> — never stale. Use optimistic locking: read → check → write in a single transaction. If the UETR already exists, return the cached result immediately without re-initiating.</p>`,chips:[{t:'Strong read',c:'chip-red'},{t:'Optimistic lock',c:'chip-teal'},{t:'No stale reads',c:'chip-red'}]},
+        'ledger':{tag:'Fintech · Accounting',title:'Ledger Service',body:`<p>The ledger is the authoritative record of money movement — separate from the payment state database. Where Spanner/SQL tracks payment lifecycle states (CREATED, IN_FLIGHT, COMPLETED), the ledger tracks actual money movement using <strong>double-entry bookkeeping</strong>.</p><p>Two types of entries:</p><p><strong>Pending entry (pre-flight / reservation)</strong> — written at initiation time to reserve the funds before submission to the bank. For SCT this is optional but recommended to prevent overdraft scenarios during batch processing. For SCT Inst this is written synchronously before pacs.008 is sent.</p><p><strong>Confirmed entry (post-settlement)</strong> — written after ACCP confirmation. This is the final, immutable record of the debit and credit. For SCT Inst: written synchronously in the return path before HTTP 200 is returned — annotated as <em>immediate confirmation → final entry</em>. For SCT: written asynchronously after pain.002 ACCP arrives.</p>`,chips:[{t:'Pending entry',c:'chip-amber'},{t:'Confirmed entry',c:'chip-teal'},{t:'Double-entry',c:'chip-blue'},{t:'Pre-flight reservation',c:'chip-gray'},{t:'GDPR-sensitive',c:'chip-red'}]},
+        'ledger-db':{tag:'Fintech · Storage',title:'Ledger Database',body:`<p>A dedicated database for ledger entries — separate from the payment state database. Typically PostgreSQL or Spanner with append-only write semantics (ledger entries are never updated, only new entries are appended as corrections or reversals).</p><p>The separation matters for compliance: the payment DB can be queried by engineering for debugging, but the ledger DB should have strict access controls — finance and compliance teams only.</p>`,chips:[{t:'Append-only',c:'chip-teal'},{t:'Strict access control',c:'chip-red'},{t:'Audit immutable',c:'chip-gray'}]},
+        'recon':{tag:'Fintech · Operations',title:'Reconciliation Engine',body:`<p>The reconciliation engine matches what your <strong>ledger says happened</strong> against what the <strong>bank statement says happened</strong>. These two sources of truth diverge regularly — due to timing differences, bank fees, failed payments that partially settled, or system errors.</p><p>It runs as a scheduled job (nightly for SCT batch) or near-real-time (for SCT Inst using streaming from BigQuery). Mismatches are classified by Vertex AI and routed to the ops queue. Common mismatch types: bank fee deductions, FX rounding, timing gaps between systems.</p>`,chips:[{t:'Ledger vs bank statement',c:'chip-teal'},{t:'Nightly for SCT',c:'chip-gray'},{t:'Real-time for SCT Inst',c:'chip-green'},{t:'Feeds Vertex AI',c:'chip-amber'}]},
+        'pubsub-sct':{tag:'GCP · Messaging',title:'Cloud Pub/Sub — SCT',body:`<p>Decouples payment initiation from all downstream processing. After the state machine transitions to SUBMITTED, it publishes a payment.initiated event. Multiple subscribers fan out independently — the bank submission worker, analytics pipeline, ledger service, notification service, and audit log all consume from this topic.</p><p>Enable exactly-once delivery with deduplication. All subscribers must be idempotent regardless.</p>`,chips:[{t:'Fan-out',c:'chip-purple'},{t:'Exactly-once delivery',c:'chip-teal'},{t:'Multiple subscribers',c:'chip-gray'}]},
+        'pubsub-inst':{tag:'GCP · Messaging',title:'Cloud Pub/Sub — SCT Inst',body:`<p>The Pub/Sub publish fires <strong>after</strong> the pacs.002 response has been written and the HTTP 200 returned to the caller. This keeps the synchronous path lean. The payment.completed event feeds the Dataflow PII pipeline, monitoring systems, and reconciliation engine asynchronously.</p>`,chips:[{t:'Post-confirmation',c:'chip-purple'},{t:'Async downstream',c:'chip-gray'},{t:'UETR in payload',c:'chip-teal'}]},
+        'dataflow':{tag:'GCP · Data Processing',title:'Dataflow — PII Removal',body:`<p>Sits between Pub/Sub and BigQuery for GDPR compliance. Payment transactions contain PII — beneficiary names, IBANs, addresses. Storing raw events in BigQuery creates a compliance risk.</p><p>The Dataflow pipeline tokenises IBANs with internal reference IDs and strips beneficiary names before events reach BigQuery. Original PII stays in Spanner/SQL and the Ledger DB with strict access controls.</p>`,chips:[{t:'GDPR compliance',c:'chip-red'},{t:'IBAN tokenisation',c:'chip-teal'},{t:'PII removal',c:'chip-red'}]},
+        'bigquery':{tag:'GCP · Analytics',title:'BigQuery',body:`<p>Stores PII-cleaned transaction events for analytics, reconciliation, and SLA tracking. For SCT Inst, BigQuery tracks actual end-to-end latency per payment against the 10-second EPC deadline — p99 degradation shows up here before it becomes an incident.</p>`,chips:[{t:'Recon queries',c:'chip-teal'},{t:'SLA tracking',c:'chip-blue'},{t:'Settlement reports',c:'chip-gray'}]},
+        'vertexai':{tag:'GCP AI · Decision Assist',title:'Vertex AI (Gemini) — Decision Assist Only',body:`<p>Two roles in the payment flow, both as <strong>decision-assist</strong> — never autonomous routing for regulated payment actions:</p><p><strong>SCT reconciliation</strong>: classifies mismatches (bank fee, FX rounding, system error, or unknown) and surfaces a suggested resolution for the ops team to approve. The reconciliation engine does not auto-resolve based on AI output alone.</p><p><strong>SCT Inst RJCT classification</strong>: classifies pacs.002 RJCT reason codes (DS04, AM18, AG01, NARR) into suggested routing categories for the ops queue. A human operator reviews and approves any compliance-sensitive routing (e.g. DS04 flagged for AML review). Gemini output is logged as a suggestion, not an action.</p><p><strong>Important</strong>: under PSD2 and EPC regulations, routing and rejection decisions that affect customers must be explainable and human-auditable. AI is a productivity tool here, not an autonomous decision-maker.</p>`,chips:[{t:'Decision-assist only',c:'chip-red'},{t:'Human approves routing',c:'chip-orange'},{t:'Mismatch classification',c:'chip-amber'},{t:'Audit-logged suggestions',c:'chip-gray'},{t:'Not autonomous',c:'chip-red'}]},
+        'dlq':{tag:'Recovery · GCP',title:'Dead Letter Queue',body:`<p>Any message that fails processing after exhausting all configured retries lands in the DLQ. Without a DLQ, failed messages are silently dropped — payments disappear with no visibility.</p><p>In GCP, Pub/Sub topics have native dead letter topic support. Cloud Tasks has a similar mechanism. Every subscription and task queue in the payment flow should have a DLQ configured with a Cloud Monitoring alert on queue depth. A non-empty DLQ should page the on-call engineer.</p>`,chips:[{t:'Pub/Sub dead letter topic',c:'chip-red'},{t:'Cloud Tasks DLQ',c:'chip-red'},{t:'Alert on depth > 0',c:'chip-orange'},{t:'Never silent drop',c:'chip-gray'}]},
+        'retry':{tag:'Recovery · Pattern',title:'Retry Mechanism + Circuit Breaker',body:`<p>Different retry strategies per component. <strong>Cloud Tasks</strong> uses exponential backoff for pain.002 polling — starting at 30 seconds, doubling up to a max of 24 hours before DLQ. <strong>Pub/Sub</strong> has configurable retry policies per subscription.</p><p>The bank adapter implements a <strong>circuit breaker</strong> — if a bank's API returns 5xx errors more than a configured threshold, the circuit opens and stops sending requests for a cooldown period. This prevents hammering a degraded bank endpoint and conserves your retry budget.</p><p><strong>Per-service rate limits</strong>: Cloud Run concurrency is set per service to prevent overwhelming downstream systems. The bank adapter enforces a per-bank TPS limit (banks publish their API quotas — do not exceed them or you risk being rate-limited or blocked). Apigee enforces caller-level quotas at the gateway, but Cloud Run must also self-throttle to protect the bank.</p>`,chips:[{t:'Exponential backoff',c:'chip-orange'},{t:'Circuit breaker',c:'chip-red'},{t:'Cloud Run concurrency limit',c:'chip-blue'},{t:'Per-bank TPS cap',c:'chip-amber'},{t:'Cooldown period',c:'chip-orange'}]},
+        'manual-review':{tag:'Recovery · Ops',title:'Manual Review Queue',body:`<p>Payments that exhaust all automated retry attempts, or that land in states requiring human judgement (NARR rejections, ambiguous TIMED_OUT, reconciliation mismatches with low AI confidence), route to the manual review queue.</p><p>This is typically a simple ops dashboard backed by a Spanner query filtered on terminal failure states. The ops engineer investigates, resolves, and either triggers a compensation flow or marks the payment as closed.</p>`,chips:[{t:'Ops dashboard',c:'chip-gray'},{t:'NARR rejections',c:'chip-red'},{t:'Low-confidence mismatches',c:'chip-orange'}]},
+        'timeout-inst':{tag:'SCT Inst · Recovery',title:'Timeout Handler',body:`<p>When Cloud Run's 8-second internal timeout fires without a pacs.002 response, the timeout handler takes over. It immediately transitions the state machine to TIMED_OUT, publishes a timeout event to the DLQ, and returns an HTTP 504 to the caller.</p><p>A TIMED_OUT payment is <strong>ambiguous</strong> — the bank may or may not have processed it. The reconciliation engine will resolve the ambiguity when the bank statement arrives. Until then, the ledger holds a provisional reversal entry.</p>`,chips:[{t:'8s timeout fires',c:'chip-red'},{t:'State → TIMED_OUT',c:'chip-red'},{t:'Ambiguous — needs recon',c:'chip-orange'},{t:'Provisional reversal',c:'chip-amber'}]},
 
-'idempotency':{tag:'SCT · Idempotency',title:'Idempotency Service',body:`<p>The idempotency service sits immediately after Apigee and runs <strong>before any business logic</strong> — before the balance check, before the state machine, before any database write. Its only job is to answer one question: have we seen this request before?</p><p>It checks the incoming <strong>idempotency_key</strong> (also called request_id) against a fast-read store — Cloud Spanner or Redis — using a strong consistency read. Two outcomes:</p><p><strong>New request</strong> — key not found → continue to balance check → normal processing flow.</p><p><strong>Duplicate request</strong> → return the cached result from the original request immediately. No processing, no double charges, no duplicate state transitions.</p><p>This is what makes a payment API safe to retry. Without it, a network timeout on the client side followed by a retry would create two payments.</p>`,chips:[{t:'request_id check',c:'chip-blue'},{t:'Spanner / Redis',c:'chip-teal'},{t:'New → continue',c:'chip-green'},{t:'Duplicate → cached result',c:'chip-amber'},{t:'Before all business logic',c:'chip-red'}]},
-'idempotency-inst':{tag:'SCT Inst · Idempotency',title:'Idempotency Service — SCT Inst',body:`<p>For SCT Inst the idempotency check is even more critical because the synchronous response window is only 10 seconds. The check must complete in <strong>under 50ms</strong> — use a Redis cache as the first layer with Spanner as the source of truth behind it.</p><p>Two outcomes:</p><p><strong>New request (UETR not seen)</strong> → continue to balance check → IN_FLIGHT → pacs.008 submission.</p><p><strong>Duplicate (UETR already exists)</strong> → return the cached pacs.002 result immediately. If the original is still IN_FLIGHT, return a 202 with a status check URL. This prevents a retry from creating a second in-flight payment while the first is still clearing through RT1/TIPS.</p>`,chips:[{t:'UETR deduplication',c:'chip-blue'},{t:'Redis + Spanner',c:'chip-teal'},{t:'<50ms target',c:'chip-red'},{t:'In-flight duplicate safe',c:'chip-amber'}]},
-'cloudtasks':{tag:'GCP · Scheduling',title:'Cloud Tasks',body:`<p>Manages the pain.002 polling loop for SCT — scheduling status checks at defined intervals with exponential backoff. When pain.002 arrives with ACCP or RJCT, Cloud Tasks notifies the state machine which writes the final state. Exhausted retries go to the DLQ.</p>`,chips:[{t:'Exponential backoff',c:'chip-gray'},{t:'Dead-letter queue',c:'chip-red'},{t:'pain.002 parser',c:'chip-blue'}]},
-'debtor-bank':{tag:'External',title:'Debtor Bank',body:`<p>Receives the pain.001 from the bank adapter. Validates format, checks balance, runs AML and sanctions screening, then batches and submits to EBA STEP2. Returns a synchronous ACK — not a settlement confirmation.</p>`,chips:[{t:'pain.001 receiver',c:'chip-gray'},{t:'AML screening',c:'chip-gray'},{t:'ACK only',c:'chip-gray'}]},
-'step2':{tag:'External · Clearing',title:'EBA STEP2',body:`<p>Pan-European ACH operated by EBA Clearing. Processes SCT in batch cycles — 4 per business day — routing between debtor and creditor banks. Settlement via TARGET2 next business day. Your system never contacts STEP2 directly — your acquiring bank handles submission.</p>`,chips:[{t:'4 cycles/day',c:'chip-gray'},{t:'TARGET2 settlement',c:'chip-gray'}]},
-'rt1tips':{tag:'External · Instant Clearing',title:'RT1 / TIPS (ECB)',body:`<p>RT1 (EBA Clearing) and TIPS (ECB) both process SCT Inst 24/7/365 with a hard 10-second deadline. No batch cycles — every payment is individual and real-time. Auto-reject and full refund if the 10-second window expires.</p>`,chips:[{t:'24/7/365',c:'chip-teal'},{t:'10s hard deadline',c:'chip-red'},{t:'Auto-reject timeout',c:'chip-red'}]},
-'pacs002':{tag:'ISO 20022',title:'pacs.002 — Payment Status Report',body:`<p>Synchronous response to pacs.008. <strong>ACCP</strong> = funds credited. <strong>RJCT</strong> = rejected with reason code: DS04 (creditor bank rejected), AM18 (over €100k), AG01 (forbidden account type), NARR (AML free-text — needs human review).</p>`,chips:[{t:'ACCP = funded',c:'chip-teal'},{t:'RJCT = rejected',c:'chip-red'},{t:'Reason codes',c:'chip-gray'}]},
-'monitoring-sct':{tag:'GCP · Observability',title:'Cloud Monitoring — SCT',body:`<p>Monitors DLQ depth (alert on > 0), Cloud Tasks failure rates, pain.002 polling latency, and reconciliation mismatch rates. For SCT the critical alert is a DLQ with unprocessed messages — this means payments are stuck in an unknown state.</p>`,chips:[{t:'DLQ depth alert',c:'chip-red'},{t:'Task failure rate',c:'chip-orange'},{t:'Recon mismatch rate',c:'chip-amber'}]},
-'monitoring-inst':{tag:'GCP · Observability',title:'Cloud Monitoring — SCT Inst',body:`<p>p99 latency dashboards that alert at 7 seconds — giving ops margin before the 10-second EPC deadline becomes an incident. Cloud Trace for distributed tracing across the full synchronous path. PagerDuty integration for TIMED_OUT events and DLQ depth alerts.</p>`,chips:[{t:'p99 alert at 7s',c:'chip-red'},{t:'Distributed tracing',c:'chip-blue'},{t:'TIMED_OUT pager',c:'chip-red'}]}
-};
+        'idempotency':{tag:'SCT · Idempotency',title:'Idempotency Service',body:`<p>The idempotency service sits immediately after Apigee and runs <strong>before any business logic</strong> — before the balance check, before the state machine, before any database write. Its only job is to answer one question: have we seen this request before?</p><p>It checks the incoming <strong>idempotency_key</strong> (also called request_id) against a fast-read store — Cloud Spanner or Redis — using a strong consistency read. Two outcomes:</p><p><strong>New request</strong> — key not found → continue to balance check → normal processing flow.</p><p><strong>Duplicate request</strong> → return the cached result from the original request immediately. No processing, no double charges, no duplicate state transitions.</p><p>This is what makes a payment API safe to retry. Without it, a network timeout on the client side followed by a retry would create two payments.</p>`,chips:[{t:'request_id check',c:'chip-blue'},{t:'Spanner / Redis',c:'chip-teal'},{t:'New → continue',c:'chip-green'},{t:'Duplicate → cached result',c:'chip-amber'},{t:'Before all business logic',c:'chip-red'}]},
+        'idempotency-inst':{tag:'SCT Inst · Idempotency',title:'Idempotency Service — SCT Inst',body:`<p>For SCT Inst the idempotency check is even more critical because the synchronous response window is only 10 seconds. The check must complete in <strong>under 50ms</strong> — use a Redis cache as the first layer with Spanner as the source of truth behind it.</p><p>Two outcomes:</p><p><strong>New request (UETR not seen)</strong> → continue to balance check → IN_FLIGHT → pacs.008 submission.</p><p><strong>Duplicate (UETR already exists)</strong> → return the cached pacs.002 result immediately. If the original is still IN_FLIGHT, return a 202 with a status check URL. This prevents a retry from creating a second in-flight payment while the first is still clearing through RT1/TIPS.</p>`,chips:[{t:'UETR deduplication',c:'chip-blue'},{t:'Redis + Spanner',c:'chip-teal'},{t:'<50ms target',c:'chip-red'},{t:'In-flight duplicate safe',c:'chip-amber'}]},
+        'cloudtasks':{tag:'GCP · Scheduling',title:'Cloud Tasks',body:`<p>Manages the pain.002 polling loop for SCT — scheduling status checks at defined intervals with exponential backoff. When pain.002 arrives with ACCP or RJCT, Cloud Tasks notifies the state machine which writes the final state. Exhausted retries go to the DLQ.</p>`,chips:[{t:'Exponential backoff',c:'chip-gray'},{t:'Dead-letter queue',c:'chip-red'},{t:'pain.002 parser',c:'chip-blue'}]},
+        'debtor-bank':{tag:'External',title:'Debtor Bank',body:`<p>Receives the pain.001 from the bank adapter. Validates format, checks balance, runs AML and sanctions screening, then batches and submits to EBA STEP2. Returns a synchronous ACK — not a settlement confirmation.</p>`,chips:[{t:'pain.001 receiver',c:'chip-gray'},{t:'AML screening',c:'chip-gray'},{t:'ACK only',c:'chip-gray'}]},
+        'step2':{tag:'External · Clearing',title:'EBA STEP2',body:`<p>Pan-European ACH operated by EBA Clearing. Processes SCT in batch cycles — 4 per business day — routing between debtor and creditor banks. Settlement via TARGET2 next business day. Your system never contacts STEP2 directly — your acquiring bank handles submission.</p>`,chips:[{t:'4 cycles/day',c:'chip-gray'},{t:'TARGET2 settlement',c:'chip-gray'}]},
+        'rt1tips':{tag:'External · Instant Clearing',title:'RT1 / TIPS (ECB)',body:`<p>RT1 (EBA Clearing) and TIPS (ECB) both process SCT Inst 24/7/365 with a hard 10-second deadline. No batch cycles — every payment is individual and real-time. Auto-reject and full refund if the 10-second window expires.</p>`,chips:[{t:'24/7/365',c:'chip-teal'},{t:'10s hard deadline',c:'chip-red'},{t:'Auto-reject timeout',c:'chip-red'}]},
+        'pacs002':{tag:'ISO 20022',title:'pacs.002 — Payment Status Report',body:`<p>Synchronous response to pacs.008. <strong>ACCP</strong> = funds credited. <strong>RJCT</strong> = rejected with reason code: DS04 (creditor bank rejected), AM18 (over €100k), AG01 (forbidden account type), NARR (AML free-text — needs human review).</p>`,chips:[{t:'ACCP = funded',c:'chip-teal'},{t:'RJCT = rejected',c:'chip-red'},{t:'Reason codes',c:'chip-gray'}]},
+        'monitoring-sct':{tag:'GCP · Observability',title:'Cloud Monitoring — SCT',body:`<p>Monitors DLQ depth (alert on > 0), Cloud Tasks failure rates, pain.002 polling latency, and reconciliation mismatch rates. For SCT the critical alert is a DLQ with unprocessed messages — this means payments are stuck in an unknown state.</p>`,chips:[{t:'DLQ depth alert',c:'chip-red'},{t:'Task failure rate',c:'chip-orange'},{t:'Recon mismatch rate',c:'chip-amber'}]},
+        'monitoring-inst':{tag:'GCP · Observability',title:'Cloud Monitoring — SCT Inst',body:`<p>p99 latency dashboards that alert at 7 seconds — giving ops margin before the 10-second EPC deadline becomes an incident. Cloud Trace for distributed tracing across the full synchronous path including the Bank Adapter — bank-side latency degradation shows up here first. PagerDuty integration for TIMED_OUT events and DLQ depth alerts.</p>`,chips:[{t:'p99 alert at 7s',c:'chip-red'},{t:'Distributed tracing',c:'chip-blue'},{t:'TIMED_OUT pager',c:'chip-red'},{t:'Bank adapter latency',c:'chip-orange'}]},
 
-function om(id){
-  const d=D[id];if(!d)return;
-  document.getElementById('mtag').textContent=d.tag;
-  document.getElementById('mtitle').textContent=d.title;
-  let h=d.body;
-  if(d.chips&&d.chips.length){h+='<div class="chips">';d.chips.forEach(c=>{h+=`<span class="chip ${c.c}">${c.t}</span>`;});h+='</div>';}
-  document.getElementById('mbody').innerHTML=h;
-  document.getElementById('mbg').classList.add('open');
-  document.body.style.overflow='hidden';
-}
-function cm(){document.getElementById('mbg').classList.remove('open');document.body.style.overflow='';}
-function cbg(e){if(e.target===document.getElementById('mbg'))cm();}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')cm();});
+        'schema-validation':{tag:'SCT · Input Validation',title:'Schema Validation',body:`<p>The first business logic gate after Apigee. Validates every incoming request against the published API contract — required fields (IBAN format, BIC, amount > 0, currency code), field lengths, and data types. Any invalid request is immediately rejected with HTTP 400 before touching any database or downstream service.</p><p>This prevents malformed messages from propagating through the state machine and avoids wasted retries against the bank with structurally invalid ISO 20022 messages. Keep validation logic versioned alongside the API contract.</p>`,chips:[{t:'HTTP 400 on reject',c:'chip-red'},{t:'IBAN format check',c:'chip-blue'},{t:'BIC / currency',c:'chip-gray'},{t:'Pre-idempotency check',c:'chip-orange'}]},
+        'schema-validation-inst':{tag:'SCT Inst · Input Validation',title:'Schema Validation — SCT Inst',body:`<p>Same contract enforcement as SCT but must complete in under <strong>5ms</strong> — use an in-process validator (e.g. JSON Schema compiled at startup), never a remote call. The 10-second EPC window leaves no room for network round-trips in validation.</p><p>Reject invalid requests with HTTP 400 before any Spanner or Redis read. This is also your first line of defence against malformed pacs.008 messages that would be rejected by RT1/TIPS at the very end of the critical path.</p>`,chips:[{t:'<5ms in-process',c:'chip-red'},{t:'No remote call',c:'chip-red'},{t:'Compiled validator',c:'chip-teal'},{t:'HTTP 400 fast reject',c:'chip-gray'}]},
+        'aml-sanctions':{tag:'SCT · Compliance',title:'AML / Sanctions Screening',body:`<p>Every payment is screened against internal AML rules and external sanctions lists (EU Consolidated, OFAC, UN) before submission to the bank. For SCT the latency budget is relaxed — a synchronous call to a dedicated screening service is acceptable.</p><p>Two outcomes: <strong>PASS</strong> — continue to state machine. <strong>BLOCK</strong> — state machine transitions to BLOCKED_COMPLIANCE, ledger reservation is released, and a compliance alert is raised for human review. The payment never reaches the bank.</p><p>Never log flagged payment details in standard application logs — compliance events go to a separate, access-controlled audit log only.</p>`,chips:[{t:'EU Consolidated list',c:'chip-red'},{t:'OFAC / UN screening',c:'chip-red'},{t:'PASS → continue',c:'chip-teal'},{t:'BLOCK → compliance alert',c:'chip-orange'},{t:'Audit log only',c:'chip-gray'}]},
+        'aml-sanctions-inst':{tag:'SCT Inst · Compliance',title:'AML / Sanctions Screening — SCT Inst',body:`<p>For SCT Inst, AML/Sanctions screening must be <strong>pre-cached</strong> — a synchronous call to a remote sanctions service during the 10-second window is too risky. Maintain a local in-memory cache of the sanctions list, refreshed on a regular schedule (e.g. every 15 minutes via a background task).</p><p>Supplementary async AML scoring can run after the pacs.002 response has been returned. If post-hoc AML flags a completed payment, trigger a recall flow (pacs.007). This is the standard industry pattern for instant payments.</p>`,chips:[{t:'Pre-cached list',c:'chip-teal'},{t:'In-memory · &lt;50ms',c:'chip-red'},{t:'Async AML post-confirmation',c:'chip-purple'},{t:'Recall on post-hoc flag',c:'chip-orange'}]},
+        'compensation-sct':{tag:'SCT · Compensation',title:'Compensation Flow — SCT',body:`<p>When an SCT payment enters FAILED or is triggered for recall by ops, the compensation flow initiates a <strong>pacs.007 (payment return)</strong> or <strong>camt.056 (cancellation request)</strong> depending on the stage the payment reached.</p><p>Critical: the ledger reversal is <strong>gated behind reconciliation confirmation</strong>. The reversal entry is only written after the reconciliation engine confirms the debit did not settle. Writing a reversal before confirmation risks creating a double-credit if the bank later confirms settlement.</p><p>All compensation actions are idempotent — re-triggering with the same payment ID returns the cached result without creating a second reversal entry.</p>`,chips:[{t:'pacs.007 / camt.056',c:'chip-blue'},{t:'Recon gate before reversal',c:'chip-red'},{t:'Idempotent',c:'chip-teal'},{t:'COMPENSATING → REVERSED',c:'chip-orange'}]},
+        'webhook-service':{tag:'SCT Inst · Notification',title:'Webhook / Callback Service',body:`<p>After the synchronous HTTP response is sent, an async webhook notification is dispatched to any registered callback URLs. This covers clients that disconnect before receiving the synchronous response, polling-based integrations, and third-party PSPs that rely on push notifications.</p><p>All outgoing webhooks are <strong>HMAC-signed</strong> (e.g. SHA-256 with a shared secret) so recipients can verify authenticity. The webhook service retries with exponential backoff for non-2xx responses. After exhausting retries, the event lands in the DLQ and a monitoring alert fires.</p>`,chips:[{t:'HMAC-signed payload',c:'chip-teal'},{t:'Exponential backoff retry',c:'chip-orange'},{t:'DLQ on exhaustion',c:'chip-red'},{t:'Async · post-confirmation',c:'chip-purple'}]},
+        'ledger-reversal-gate':{tag:'Fintech · Safety Pattern',title:'Ledger Reversal — Reconciliation Gate',body:`<p>A ledger reversal is never written speculatively on timeout alone. The reconciliation engine must first confirm the payment outcome against the bank statement (camt.054 / MT940).</p><p><strong>Recon confirms FAILED / not settled</strong> → reversal entry is written and marked final. Balance is restored to the account. State machine moves to FAILED.</p><p><strong>Recon confirms ACCP / settled</strong> → provisional reversal is voided. Payment state moves to COMPLETED. Any pending balance reservation is released as confirmed debit.</p><p>This gate prevents the most dangerous double-credit scenario in instant payment systems. All reversal writes are idempotent — replaying the event with the same UETR has no effect if a reversal already exists.</p>`,chips:[{t:'Recon confirms first',c:'chip-red'},{t:'FAILED → reversal final',c:'chip-teal'},{t:'ACCP → void provisional',c:'chip-orange'},{t:'Idempotent write',c:'chip-teal'},{t:'Never speculative',c:'chip-red'}]}
+    };
+
+    function om(id){
+        const d=D[id];if(!d)return;
+        document.getElementById('mtag').textContent=d.tag;
+        document.getElementById('mtitle').textContent=d.title;
+        let h=d.body;
+        if(d.chips&&d.chips.length){h+='<div class="chips">';d.chips.forEach(c=>{h+=`<span class="chip ${c.c}">${c.t}</span>`;});h+='</div>';}
+        document.getElementById('mbody').innerHTML=h;
+        document.getElementById('mbg').classList.add('open');
+        document.body.style.overflow='hidden';
+    }
+    function cm(){document.getElementById('mbg').classList.remove('open');document.body.style.overflow='';}
+    function cbg(e){if(e.target===document.getElementById('mbg'))cm();}
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')cm();});
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
