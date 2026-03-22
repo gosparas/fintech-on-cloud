@@ -1,6 +1,5 @@
-# SEPA Glossary — Credit Transfer & Instant Credit Transfer
+# Glossary
 
-> Reference companion to **[SEPA Credit Transfer vs SEPA Instant — Production-Grade GCP Architecture](https://fintechoncloud.substack.com)**
 > Part of the Fintech on Cloud · SEPA Series
 
 ---
