@@ -1,6 +1,6 @@
 # Glossary
 
-> Part of the Fintech on Cloud · SEPA Series
+> Reference companion to the Fintech on Cloud - Payment Series
 
 ---
 
