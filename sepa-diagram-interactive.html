@@ -201,9 +201,9 @@
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">HTTPS</div></div>
             <div class="box box-blue" onclick="om('apigee-sct')"><div class="bt">Apigee X</div><div class="bs">Auth · rate limit · LB</div></div>
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-            <div class="box box-gray" onclick="om('schema-validation')"><div class="bt">Schema Validation</div><div class="bs">Contract · reject invalid</div></div>
+            <div class="box box-gray" onclick="om('schema-validation')"><div class="bt">Schema Validation</div><div class="bs">Contract · reject invalid</div><div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:#64748B;margin-top:3px;border-top:1px dashed #CBD5E1;padding-top:3px">IBAN · cutoff · format</div></div>
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">valid</div></div>
-            <div class="box box-orange" onclick="om('idempotency')"><div class="bt">Idempotency Service</div><div class="bs">Check BEFORE processing</div></div>
+            <div class="box box-orange" onclick="om('idempotency')" style="position:relative"><div class="bt">Idempotency Service</div><div class="bs">Check BEFORE processing</div><div style="font-family:'JetBrains Mono',monospace;font-size:7.5px;color:#EA580C;margin-top:3px;border-top:1px dashed #FED7AA;padding-top:3px">duplicate → cached response</div></div>
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">new</div></div>
             <div class="box box-yellow" onclick="om('balance-check')"><div class="bt">Balance Check</div><div class="bs">Reserve funds (pending)</div></div>
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
@@ -211,7 +211,7 @@
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">pass</div></div>
             <div class="box box-orange" onclick="om('state-machine-sct')"><div class="bt">State Machine</div><div class="bs">CREATED → SUBMITTED</div></div>
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-            <div class="box box-blue" onclick="om('bank-adapter-sct')"><div class="bt">Bank Adapter Layer</div><div class="bs">per-bank → pain.001</div></div>
+            <div class="box box-blue" onclick="om('bank-adapter-sct')"><div class="bt">Bank Adapter Layer</div><div class="bs">per-bank → pain.001</div><div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:#3B82F6;margin-top:3px;border-top:1px dashed #93C5FD;padding-top:3px">Protocol · retry · SLA</div></div>
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
             <div class="box box-teal" onclick="om('db-sct')"><div class="bt">Spanner / SQL</div><div class="bs">Persist state</div></div>
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
@@ -229,7 +229,7 @@
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">batch</div></div>
             <div class="box box-ext" onclick="om('step2')"><div class="bt">EBA STEP2</div><div class="bs">4 cycles/day</div></div>
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">D+1</div></div>
-            <div class="box box-blue" onclick="om('cloudtasks')"><div class="bt">Cloud Tasks</div><div class="bs">pain.002 + camt.054 poll</div></div>
+            <div class="box box-blue" onclick="om('cloudtasks')"><div class="bt">Cloud Tasks</div><div class="bs">pain.002 + camt.054 poll</div><div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:#3B82F6;margin-top:3px;border-top:1px dashed #93C5FD;padding-top:3px">Polling / file / API per bank</div></div>
             <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">status</div></div>
             <div class="box box-orange" onclick="om('state-machine-sct')"><div class="bt">State Machine</div><div class="bs">→ COMPLETED / FAILED</div></div>
             <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">write</div></div>
@@ -277,7 +277,7 @@
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
             <div class="box box-teal" onclick="om('bigquery')"><div class="bt">BigQuery</div><div class="bs">Transaction warehouse</div></div>
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-            <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Ledger vs bank statement</div></div>
+            <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Ledger vs bank statement</div><div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:#059669;margin-top:3px;border-top:1px dashed #A7F3D0;padding-top:3px">Final source of truth · resolves timeouts</div></div>
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
             <div class="box box-amber" onclick="om('vertexai')"><div class="bt">Vertex AI (Gemini)</div><div class="bs">Mismatch explain</div></div>
         </div>
@@ -329,9 +329,9 @@
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">HTTPS</div></div>
             <div class="box box-blue" onclick="om('apigee-inst')"><div class="bt">Apigee X</div><div class="bs">Auth · minimal policies</div></div>
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-            <div class="box box-gray" onclick="om('schema-validation-inst')"><div class="bt">Schema Validation</div><div class="bs">Contract · fast reject</div></div>
+            <div class="box box-gray" onclick="om('schema-validation-inst')"><div class="bt">Schema Validation</div><div class="bs">Contract · fast reject</div><div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:#64748B;margin-top:3px;border-top:1px dashed #CBD5E1;padding-top:3px">IBAN · cutoff · format</div></div>
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">valid</div></div>
-            <div class="box box-orange" onclick="om('idempotency-inst')"><div class="bt">Idempotency Service</div><div class="bs">Check BEFORE processing</div></div>
+            <div class="box box-orange" onclick="om('idempotency-inst')"><div class="bt">Idempotency Service</div><div class="bs">Check BEFORE processing</div><div style="font-family:'JetBrains Mono',monospace;font-size:7.5px;color:#EA580C;margin-top:3px;border-top:1px dashed #FED7AA;padding-top:3px">duplicate → cached response</div></div>
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">new</div></div>
             <div class="box box-yellow" onclick="om('balance-check-inst')"><div class="bt">Balance Check</div><div class="bs">Ledger pre-flight · &lt;100ms</div></div>
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
@@ -339,7 +339,7 @@
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">pass</div></div>
             <div class="box box-orange" onclick="om('state-machine-inst')"><div class="bt">State Machine</div><div class="bs">CREATED → IN_FLIGHT</div></div>
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
-            <div class="box box-blue" onclick="om('bank-adapter-inst')"><div class="bt">Bank Adapter Layer</div><div class="bs">per-bank → pacs.008</div></div>
+            <div class="box box-blue" onclick="om('bank-adapter-inst')"><div class="bt">Bank Adapter Layer</div><div class="bs">per-bank → pacs.008</div><div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:#3B82F6;margin-top:3px;border-top:1px dashed #93C5FD;padding-top:3px">Protocol · retry · SLA</div></div>
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
             <div class="box box-teal" onclick="om('db-inst')"><div class="bt">Spanner / SQL</div><div class="bs">Strong read · lock</div></div>
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">sync</div></div>
@@ -397,7 +397,7 @@
             <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">alert</div></div>
             <div class="box box-teal" onclick="om('monitoring-inst')"><div class="bt">Cloud Monitoring</div><div class="bs">PagerDuty · ops alert</div></div>
             <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">resolve</div></div>
-            <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Gate: confirm FAILED before reversal</div></div>
+            <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Gate: confirm FAILED before reversal</div><div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:#059669;margin-top:3px;border-top:1px dashed #A7F3D0;padding-top:3px">Final source of truth · resolves ambiguity</div></div>
             <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">confirmed</div></div>
             <div class="box box-yellow" onclick="om('ledger-reversal-gate')"><div class="bt">Ledger Reversal</div><div class="bs">Idempotent · recon-gated</div></div>
             <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">final</div></div>
@@ -415,7 +415,7 @@
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
             <div class="box box-teal" onclick="om('bigquery')"><div class="bt">BigQuery</div><div class="bs">SLA · analytics</div></div>
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
-            <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Ledger vs settlement · resolves TIMEOUT</div></div>
+            <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Ledger vs settlement · resolves TIMEOUT</div><div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:#059669;margin-top:3px;border-top:1px dashed #A7F3D0;padding-top:3px">Final source of truth · resolves ambiguity</div></div>
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
             <div class="box box-amber" onclick="om('vertexai')"><div class="bt">Vertex AI (Gemini)</div><div class="bs">RJCT · mismatch classify</div></div>
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
@@ -437,7 +437,7 @@
             <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">route</div></div>
             <div class="box box-orange" onclick="om('retry')"><div class="bt">Retry / Circuit Breaker</div><div class="bs">Backoff · concurrency limit</div></div>
             <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">recon↓</div></div>
-            <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Confirm outcome first</div></div>
+            <div class="box box-green" onclick="om('recon')"><div class="bt">Reconciliation Engine</div><div class="bs">Confirm outcome first</div><div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:#059669;margin-top:3px;border-top:1px dashed #A7F3D0;padding-top:3px">Final source of truth · resolves ambiguity</div></div>
             <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">if FAILED</div></div>
             <div class="box box-yellow" onclick="om('ledger-reversal-gate')"><div class="bt">Ledger Reversal</div><div class="bs">Idempotent · recon-gated</div></div>
         </div>
@@ -546,10 +546,6 @@
 </script>
 </body>
 </html>
-
-
-
-
 
 
 
