@@ -60,6 +60,8 @@
         .box-amber{background:#FFFBEB;border-color:#FCD34D}.box-amber .bt{color:#78350F}.box-amber .bs{color:#D97706}
         .box-gray{background:#F8FAFC;border-color:#CBD5E1}.box-gray .bt{color:#475569}.box-gray .bs{color:#94A3B8}
         .box-ext{background:#F1F5F9;border-color:#CBD5E1;border-style:dashed}.box-ext .bt{color:#475569}.box-ext .bs{color:#94A3B8}
+        .box-ext-creditor{background:#EFF6FF;border-color:#60A5FA;border-style:dashed}.box-ext-creditor .bt{color:#1E40AF}.box-ext-creditor .bs{color:#3B82F6}
+        .box-ext-debtor{background:#FFF1F2;border-color:#FDA4AF;border-style:dashed}.box-ext-debtor .bt{color:#9F1239}.box-ext-debtor .bs{color:#E11D48}
         .box-red{background:#FEF2F2;border-color:#FECACA}.box-red .bt{color:#B91C1C}.box-red .bs{color:#EF4444}
         .box-orange{background:#FFF7ED;border-color:#FED7AA}.box-orange .bt{color:#C2410C}.box-orange .bs{color:#EA580C}
         .box-green{background:#F0FDF4;border-color:#A7F3D0}.box-green .bt{color:#065F46}.box-green .bs{color:#059669}
@@ -76,7 +78,7 @@
         .eb-p{background:#F5F3FF;border-color:#C4B5FD}.eb-p .et{color:#4C1D95}.eb-p .es{color:#7C3AED}
         .eb-c{background:#ECFEFF;border-color:#A5F3FC}.eb-c .et{color:#0E4F6B}.eb-c .es{color:#0891B2}
         /* ── ARROWS ── */
-        .arr{flex-shrink:1;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 4px;min-width:48px;max-width:72px;position:relative;overflow:visible}
+        .arr{flex-shrink:1;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 4px;min-width:48px;max-width:80px;position:relative;overflow:visible}
         .arr-line{height:2px;width:100%;position:relative;flex-shrink:0}
         .arr-line::after{content:'▶';position:absolute;right:-6px;top:50%;transform:translateY(-50%);font-size:8px}
         .arr-sync .arr-line{background:#7C3AED}.arr-sync .arr-line::after{color:#7C3AED}
@@ -84,7 +86,7 @@
         .arr-return .arr-line{background:transparent;border-top:2px dashed #059669}.arr-return .arr-line::after{color:#059669}
         .arr-warn .arr-line{background:transparent;border-top:2px dashed #EA580C}.arr-warn .arr-line::after{color:#EA580C}
         .arr-danger .arr-line{background:transparent;border-top:2px dashed #DC2626}.arr-danger .arr-line::after{color:#DC2626}
-        .arr-label{font-family:'JetBrains Mono',monospace;font-size:8px;margin-top:3px;white-space:nowrap;text-align:center;max-width:80px;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+        .arr-label{font-family:'JetBrains Mono',monospace;font-size:8px;margin-top:3px;white-space:nowrap;text-align:center;max-width:80px;overflow:visible;line-height:1.2}
         .arr-sync .arr-label{color:#7C3AED}
         .arr-async .arr-label{color:#0891B2}
         .arr-return .arr-label{color:#059669}
@@ -149,7 +151,7 @@
     <a class="back" href="https://fintechoncloud.substack.com">← Back to blog</a>
 </div>
 <div class="hero">
-    <div class="eyebrow">// Production Architecture · Post #2 · SEPA Series</div>
+    <div class="eyebrow">// Production Architecture · Post #2 · European Payment Series</div>
     <h1>SEPA Direct Debit (Core &amp; B2B)<br/>Production-Grade GCP Architecture</h1>
     <p>Click any component for a full explanation. Covers mandate management, pre-notification, debit execution (D-1 submission), R-transactions (returns, refusals, reversals, refunds), reconciliation and dispute handling — all on GCP.</p>
     <div class="tags">
@@ -191,7 +193,7 @@
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
             <div class="box box-amber" onclick="om('mandate_event')"><div class="bt">Cloud Pub/Sub</div><div class="bs">mandate.created / amended</div></div>
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">notify</div></div>
-            <div class="box box-ext" onclick="om('debtor_bank_mandate')"><div class="bt">Debtor Bank</div><div class="bs">Optional (B2B: required)</div></div>
+            <div class="box box-ext-debtor" onclick="om('debtor_bank_mandate')"><div class="bt">Debtor Bank</div><div class="bs">Optional (B2B: required)</div></div>
         </div>
     </div>
 
@@ -224,6 +226,54 @@
         </div>
     </div>
 
+    <!-- PHASE 1b: File Processing Layer -->
+    <div class="flow-area">
+        <div class="flow-label purple">// Phase 1b — File processing layer: raw file ingest → parse → XML validation (pain/pacs/camt) before business logic</div>
+        <div class="flow-row">
+            <div class="box box-teal" onclick="om('file_storage_raw')"><div class="bt">Cloud Storage (Raw)</div><div class="bs">Raw file landing zone</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">trigger</div></div>
+            <div class="box box-blue" onclick="om('parser_service')"><div class="bt">Parser Service</div><div class="bs">XML / CSV / MT940 parse</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">parsed</div></div>
+            <div class="box box-purple" onclick="om('xml_validation_svc')"><div class="bt">XML Validation</div><div class="bs">pain.008 · pacs.004 · camt.054</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">valid</div></div>
+            <div class="box box-orange" onclick="om('state_machine_core')"><div class="bt">State Machine</div><div class="bs">Route validated payload</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('pubsub_initiated_core')"><div class="bt">Cloud Pub/Sub</div><div class="bs">file.validated event</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 1c: EBICS / FileAct Service -->
+    <div class="flow-area">
+        <div class="flow-label purple">// Phase 1c — EBICS / FileAct service: secure bank connectivity with key management, order management, and file signing</div>
+        <div class="flow-row">
+            <div class="box box-blue" onclick="om('bank_adapter_core')"><div class="bt">Bank Adapter Layer</div><div class="bs">Outbound pain.008</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">submit</div></div>
+            <div class="box box-indigo" onclick="om('ebics_fileact_svc')"><div class="bt">EBICS / FileAct Svc</div><div class="bs">Key · order · sign</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">signed</div></div>
+            <div class="box box-purple" onclick="om('ebics_key_mgmt')"><div class="bt">Key Management</div><div class="bs">HSM · rotate · INI/HIA</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">order</div></div>
+            <div class="box box-orange" onclick="om('ebics_order_mgmt')"><div class="bt">Order Management</div><div class="bs">HAC/HTD · order tracking</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">transmit</div></div>
+            <div class="box box-ext-creditor" onclick="om('creditor_bank')"><div class="bt">Creditor Bank</div><div class="bs">EBICS / FileAct endpoint</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 1d: Liquidity / Treasury Service -->
+    <div class="flow-area">
+        <div class="flow-label purple">// Phase 1d — Liquidity / Treasury: balance checks and prefunding validation before batch submission</div>
+        <div class="flow-row">
+            <div class="box box-orange" onclick="om('cutoff_service')"><div class="bt">Cut-Off Service</div><div class="bs">Pre-submit trigger</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">check</div></div>
+            <div class="box box-cyan" onclick="om('liquidity_treasury_svc')"><div class="bt">Liquidity / Treasury</div><div class="bs">Balance · prefunding</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">funded</div></div>
+            <div class="box box-teal" onclick="om('treasury_balance_check')"><div class="bt">Balance Check</div><div class="bs">Account position · limits</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">ok</div></div>
+            <div class="box box-yellow" onclick="om('treasury_prefunding')"><div class="bt">Prefunding Logic</div><div class="bs">Reserve · settle window</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">approved</div></div>
+            <div class="box box-blue" onclick="om('bank_adapter_core')"><div class="bt">Bank Adapter Layer</div><div class="bs">Proceed to submit</div></div>
+        </div>
+    </div>
+
     <!-- PHASE 2: Async Clearing -->
     <div class="flow-area">
         <div class="flow-label purple">// Phase 2 — Async clearing: D-1 batch → STEP2 SDD CSM → debtor bank → pain.002 + camt.054 → state update</div>
@@ -232,11 +282,11 @@
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">check</div></div>
             <div class="box box-orange" onclick="om('cutoff_service')"><div class="bt">Cut-Off Service</div><div class="bs">D-1 FRST · D-2 RCUR/FNAL</div></div>
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">batch</div></div>
-            <div class="box box-ext" onclick="om('creditor_bank')"><div class="bt">Creditor Bank</div><div class="bs">Submit pain.008 to CSM</div></div>
+            <div class="box box-ext-creditor" onclick="om('creditor_bank')"><div class="bt">Creditor Bank</div><div class="bs">Submit pain.008 to CSM</div></div>
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">route</div></div>
             <div class="box box-ext" onclick="om('step2_sdd')"><div class="bt">EBA STEP2 / CSM</div><div class="bs">4 cycles/day · D+0 settle</div></div>
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">debit</div></div>
-            <div class="box box-ext" onclick="om('debtor_bank_debit')"><div class="bt">Debtor Bank</div><div class="bs">Debits account · pain.002</div></div>
+            <div class="box box-ext-debtor" onclick="om('debtor_bank_debit')"><div class="bt">Debtor Bank</div><div class="bs">Debits account · pain.002</div></div>
             <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">status</div></div>
             <div class="box box-blue" onclick="om('cloud_tasks_poll')"><div class="bt">Cloud Tasks</div><div class="bs">pain.002 + camt.054 poll</div></div>
             <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">update</div></div>
@@ -246,23 +296,95 @@
         </div>
     </div>
 
-    <!-- PHASE 2b: R-Transactions -->
-    <div class="flow-area rtx-row">
-        <div class="flow-label danger">// Phase 2b — R-Transaction handling: return (pacs.004) · refusal (pain.002 RJCT) · reversal (pacs.007) · refund (camt.055)</div>
+    <!-- PHASE 2a: Inbound Bank Gateway -->
+    <div class="flow-area">
+        <div class="flow-label purple">// Phase 2a — Inbound bank gateway: receive bank response files via drop / pull, trigger parsing pipeline</div>
         <div class="flow-row">
+            <div class="box box-ext-creditor" onclick="om('creditor_bank')"><div class="bt">Creditor Bank</div><div class="bs">File drop / response</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">drop/pull</div></div>
+            <div class="box box-blue" onclick="om('inbound_bank_gw')"><div class="bt">Inbound Bank GW</div><div class="bs">File drop · pull · trigger</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">ingest</div></div>
+            <div class="box box-teal" onclick="om('file_storage_raw')"><div class="bt">Cloud Storage (Raw)</div><div class="bs">Inbound file staging</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">trigger</div></div>
+            <div class="box box-blue" onclick="om('parser_service')"><div class="bt">Parser Service</div><div class="bs">pain.002 · camt.054 parse</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">validated</div></div>
+            <div class="box box-purple" onclick="om('xml_validation_svc')"><div class="bt">XML Validation</div><div class="bs">Schema + biz rules</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">route</div></div>
+            <div class="box box-orange" onclick="om('state_machine_settle')"><div class="bt">State Machine</div><div class="bs">Update on response</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 2b: R-Transactions — classifier -->
+    <div class="flow-area rtx-row">
+        <div class="flow-label danger">// Phase 2b — R-Transaction classifier: inbound R-tx → classify type → branch to distinct handling path per R-type</div>
+        <div class="flow-row">
+            <div class="box box-orange" onclick="om('state_machine_settle')"><div class="bt">State Machine</div><div class="bs">R-tx event received</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">classify</div></div>
             <div class="box box-red" onclick="om('r_transaction_handler')"><div class="bt">R-Tx Handler</div><div class="bs">Classify type · reason code</div></div>
-            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">return</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">branch ×4</div></div>
+            <div class="box box-amber" onclick="om('pubsub_rtx')"><div class="bt">Cloud Pub/Sub</div><div class="bs">r-tx.classified fan-out</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 2b-i: Return (pacs.004) -->
+    <div class="flow-area rtx-row">
+        <div class="flow-label danger">// Phase 2b-i — Return (pacs.004): debtor bank reverses post-settlement · D+5 Core / D+2 B2B · AC04/AM04/MD01</div>
+        <div class="flow-row">
             <div class="box box-red" onclick="om('return_flow')"><div class="bt">Return (pacs.004)</div><div class="bs">Post-settle · D+5 · AC04/AM04</div></div>
-            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">refusal</div></div>
-            <div class="box box-red" onclick="om('refusal_flow')"><div class="bt">Refusal (RJCT)</div><div class="bs">Pre-settle · MD01/MD02</div></div>
-            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">reversal</div></div>
-            <div class="box box-orange" onclick="om('reversal_flow')"><div class="bt">Reversal (pacs.007)</div><div class="bs">Creditor-init · D+5</div></div>
-            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">refund</div></div>
-            <div class="box box-orange" onclick="om('refund_flow')"><div class="bt">Refund (camt.055)</div><div class="bs">8-week · Core only</div></div>
-            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">recon↓</div></div>
-            <div class="box box-yellow" onclick="om('ledger_reversal_core')"><div class="bt">Ledger Reversal</div><div class="bs">Recon-gated · idempotent</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">→ RETURNED</div></div>
+            <div class="box box-orange" onclick="om('state_machine_core')"><div class="bt">State Machine</div><div class="bs">→ RETURNED</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">recon gate</div></div>
+            <div class="box box-yellow" onclick="om('ledger_reversal_core')"><div class="bt">Ledger Reversal</div><div class="bs">Recon-gated · reverse debit</div></div>
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
-            <div class="box box-amber" onclick="om('pubsub_rtx')"><div class="bt">Cloud Pub/Sub</div><div class="bs">collection.returned / refunded</div></div>
+            <div class="box box-amber" onclick="om('pubsub_rtx')"><div class="bt">Cloud Pub/Sub</div><div class="bs">collection.returned</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">MD01?</div></div>
+            <div class="box box-purple" onclick="om('mandate_registry')"><div class="bt">Mandate Freeze</div><div class="bs">MD01 → freeze + investigate</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 2b-ii: Refusal (pain.002 RJCT) -->
+    <div class="flow-area rtx-row">
+        <div class="flow-label danger">// Phase 2b-ii — Refusal (pain.002 RJCT): debtor bank rejects pre-settlement · no funds move · void pending entry</div>
+        <div class="flow-row">
+            <div class="box box-red" onclick="om('refusal_flow')"><div class="bt">Refusal (RJCT)</div><div class="bs">Pre-settle · MD01/MD02/MS02</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">→ REFUSED</div></div>
+            <div class="box box-orange" onclick="om('state_machine_core')"><div class="bt">State Machine</div><div class="bs">→ REFUSED</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">void</div></div>
+            <div class="box box-yellow" onclick="om('ledger_void_core')"><div class="bt">Ledger Void</div><div class="bs">Void pending entry · no reversal</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('pubsub_rtx')"><div class="bt">Cloud Pub/Sub</div><div class="bs">collection.refused</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 2b-iii: Reversal (pacs.007) -->
+    <div class="flow-area rtx-row">
+        <div class="flow-label danger">// Phase 2b-iii — Reversal (pacs.007): creditor-initiated cancellation of settled collection · D+5 Core / D+2 B2B</div>
+        <div class="flow-row">
+            <div class="box box-orange" onclick="om('reversal_flow')"><div class="bt">Reversal (pacs.007)</div><div class="bs">Creditor-init · D+5</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">→ REVERSED</div></div>
+            <div class="box box-orange" onclick="om('state_machine_core')"><div class="bt">State Machine</div><div class="bs">→ REVERSED</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">recon gate</div></div>
+            <div class="box box-yellow" onclick="om('ledger_reversal_core')"><div class="bt">Ledger Reversal</div><div class="bs">Recon-gated · credit back</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">generate</div></div>
+            <div class="box box-blue" onclick="om('bank_adapter_core')"><div class="bt">Bank Adapter</div><div class="bs">Generate pacs.007</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('pubsub_rtx')"><div class="bt">Cloud Pub/Sub</div><div class="bs">collection.reversed</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 2b-iv: Refund (camt.055) — Core Only -->
+    <div class="flow-area rtx-row">
+        <div class="flow-label danger">// Phase 2b-iv — Refund (camt.055): debtor's 8-week unconditional right · Core only · B2B has no refund path</div>
+        <div class="flow-row">
+            <div class="box box-orange" onclick="om('refund_flow')"><div class="bt">Refund (camt.055)</div><div class="bs">8-week · Core only</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">→ REFUNDED</div></div>
+            <div class="box box-orange" onclick="om('state_machine_core')"><div class="bt">State Machine</div><div class="bs">→ REFUNDED</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">recon gate</div></div>
+            <div class="box box-yellow" onclick="om('ledger_reversal_core')"><div class="bt">Ledger Reversal</div><div class="bs">Recon-gated · refund entry</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">review</div></div>
+            <div class="box box-purple" onclick="om('mandate_registry')"><div class="bt">Mandate Review</div><div class="bs">Repeated refunds → flag</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('pubsub_rtx')"><div class="bt">Cloud Pub/Sub</div><div class="bs">collection.refunded</div></div>
         </div>
     </div>
 
@@ -309,6 +431,22 @@
             <div class="box box-red" onclick="om('manual_review_core')"><div class="bt">Manual Review Queue</div><div class="bs">Ops · dispute · mandate freeze</div></div>
             <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">resolve</div></div>
             <div class="box box-orange" onclick="om('state_machine_core')"><div class="bt">State Machine</div><div class="bs">FAILED / COMPENSATING</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 6: Audit Service -->
+    <div class="flow-area">
+        <div class="flow-label purple">// Phase 6 — Audit service: append-only immutable log for every state change, with regulator export capability</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('pubsub_analytics_core')"><div class="bt">Cloud Pub/Sub</div><div class="bs">All lifecycle events</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">stream</div></div>
+            <div class="box box-indigo" onclick="om('audit_service')"><div class="bt">Audit Service</div><div class="bs">Append-only · immutable</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">persist</div></div>
+            <div class="box box-teal" onclick="om('audit_store')"><div class="bt">Audit Store</div><div class="bs">Tamper-proof · encrypted</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">export</div></div>
+            <div class="box box-green" onclick="om('regulator_export')"><div class="bt">Regulator Export</div><div class="bs">EPC · NCB · PSD2 reports</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">archive</div></div>
+            <div class="box box-teal" onclick="om('audit_archive')"><div class="bt">Long-Term Archive</div><div class="bs">GCS Coldline · 10yr</div></div>
         </div>
     </div>
 </div>
@@ -360,7 +498,7 @@
             <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">HTTPS</div></div>
             <div class="box box-cyan" onclick="om('b2b_mandate_registry')"><div class="bt">Mandate Registry (B2B)</div><div class="bs">MRN + debtor bank notify</div></div>
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">notify</div></div>
-            <div class="box box-ext" onclick="om('b2b_debtor_bank_mandate')"><div class="bt">Debtor Bank (B2B)</div><div class="bs">Store mandate · ACK</div></div>
+            <div class="box box-ext-debtor" onclick="om('b2b_debtor_bank_mandate')"><div class="bt">Debtor Bank (B2B)</div><div class="bs">Store mandate · ACK</div></div>
             <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">ACK</div></div>
             <div class="box box-cyan" onclick="om('b2b_mandate_ack')"><div class="bt">Mandate ACK Store</div><div class="bs">Track ACK · block if pending</div></div>
         </div>
@@ -385,17 +523,89 @@
         </div>
     </div>
 
+    <!-- B2B: File Processing Layer -->
+    <div class="flow-area b2b-row">
+        <div class="flow-label cyan">// B2B File Processing — Raw file ingest → parse → XML validation (pain/pacs/camt) · same pipeline, B2B schema rules</div>
+        <div class="flow-row">
+            <div class="box box-teal" onclick="om('b2b_file_storage_raw')"><div class="bt">Cloud Storage (Raw)</div><div class="bs">B2B file landing zone</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">trigger</div></div>
+            <div class="box box-blue" onclick="om('b2b_parser_service')"><div class="bt">Parser Service</div><div class="bs">XML · B2BB format</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">parsed</div></div>
+            <div class="box box-cyan" onclick="om('b2b_xml_validation')"><div class="bt">XML Validation (B2B)</div><div class="bs">pain.008 B2BB · pacs · camt</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">route</div></div>
+            <div class="box box-amber" onclick="om('pubsub_initiated_core')"><div class="bt">Cloud Pub/Sub</div><div class="bs">file.validated.b2b</div></div>
+        </div>
+    </div>
+
+    <!-- B2B: EBICS / FileAct Service -->
+    <div class="flow-area b2b-row">
+        <div class="flow-label cyan">// B2B EBICS / FileAct — Secure bank connectivity: key management, order lifecycle, file signing for B2B transmissions</div>
+        <div class="flow-row">
+            <div class="box box-blue" onclick="om('b2b_bank_adapter')"><div class="bt">Bank Adapter (B2B)</div><div class="bs">Outbound pain.008</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">submit</div></div>
+            <div class="box box-indigo" onclick="om('b2b_ebics_fileact')"><div class="bt">EBICS / FileAct (B2B)</div><div class="bs">Key · order · sign</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">signed</div></div>
+            <div class="box box-cyan" onclick="om('ebics_key_mgmt')"><div class="bt">Key Management</div><div class="bs">HSM · B2B certs</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">transmit</div></div>
+            <div class="box box-ext-creditor" onclick="om('b2b_step2')"><div class="bt">Creditor Bank (B2B)</div><div class="bs">EBICS / FileAct endpoint</div></div>
+        </div>
+    </div>
+
+    <!-- B2B: Liquidity / Treasury Service -->
+    <div class="flow-area b2b-row">
+        <div class="flow-label cyan">// B2B Liquidity / Treasury — Balance checks and prefunding for B2B collections (typically higher-value corporate debits)</div>
+        <div class="flow-row">
+            <div class="box box-blue" onclick="om('b2b_bank_adapter')"><div class="bt">Bank Adapter (B2B)</div><div class="bs">Pre-submit gate</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">check</div></div>
+            <div class="box box-cyan" onclick="om('b2b_liquidity_treasury')"><div class="bt">Liquidity / Treasury</div><div class="bs">B2B balance · prefund</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">funded</div></div>
+            <div class="box box-teal" onclick="om('treasury_balance_check')"><div class="bt">Balance Check</div><div class="bs">Corporate position</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">ok</div></div>
+            <div class="box box-yellow" onclick="om('treasury_prefunding')"><div class="bt">Prefunding Logic</div><div class="bs">Reserve · high-value gate</div></div>
+        </div>
+    </div>
+
     <!-- B2B PHASE 2: Clearing + R-Tx -->
     <div class="flow-area">
         <div class="flow-label cyan">// B2B Phase 2 — Clearing: debtor bank validates mandate on receipt · D+2 return window · no refund path</div>
         <div class="flow-row">
             <div class="box box-ext" onclick="om('b2b_step2')"><div class="bt">EBA STEP2 / SDD CSM</div><div class="bs">Routes B2B pain.008</div></div>
             <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">validate</div></div>
-            <div class="box box-ext" onclick="om('b2b_debtor_bank_debit')"><div class="bt">Debtor Bank (B2B)</div><div class="bs">Check mandate · debit · D+2</div></div>
+            <div class="box box-ext-debtor" onclick="om('b2b_debtor_bank_debit')"><div class="bt">Debtor Bank (B2B)</div><div class="bs">Check mandate · debit · D+2</div></div>
             <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">status</div></div>
             <div class="box box-red" onclick="om('b2b_r_tx')"><div class="bt">R-Tx Handler (B2B)</div><div class="bs">Return/Refusal/Reversal only</div></div>
             <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">recon↓</div></div>
             <div class="box box-yellow" onclick="om('b2b_ledger')"><div class="bt">Ledger Service</div><div class="bs">Double-entry · recon-gated</div></div>
+        </div>
+    </div>
+
+    <!-- B2B: Inbound Bank Gateway -->
+    <div class="flow-area b2b-row">
+        <div class="flow-label cyan">// B2B Inbound Bank Gateway — Receive bank response files (pain.002, pacs), trigger parsing for B2B responses</div>
+        <div class="flow-row">
+            <div class="box box-ext-creditor" onclick="om('b2b_step2')"><div class="bt">Creditor Bank (B2B)</div><div class="bs">Response file</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">drop/pull</div></div>
+            <div class="box box-cyan" onclick="om('b2b_inbound_bank_gw')"><div class="bt">Inbound Bank GW (B2B)</div><div class="bs">File drop · pull · trigger</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">ingest</div></div>
+            <div class="box box-teal" onclick="om('b2b_file_storage_raw')"><div class="bt">Cloud Storage (Raw)</div><div class="bs">B2B inbound staging</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">parse</div></div>
+            <div class="box box-blue" onclick="om('b2b_parser_service')"><div class="bt">Parser Service</div><div class="bs">pain.002 · pacs parse</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">route</div></div>
+            <div class="box box-red" onclick="om('b2b_r_tx')"><div class="bt">R-Tx Handler (B2B)</div><div class="bs">Classify response</div></div>
+        </div>
+    </div>
+
+    <!-- B2B: Audit Service -->
+    <div class="flow-area b2b-row">
+        <div class="flow-label cyan">// B2B Audit — Append-only immutable audit trail with regulator export for B2B SDD lifecycle</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('pubsub_initiated_core')"><div class="bt">Cloud Pub/Sub</div><div class="bs">B2B lifecycle events</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">stream</div></div>
+            <div class="box box-indigo" onclick="om('b2b_audit_service')"><div class="bt">Audit Service (B2B)</div><div class="bs">Append-only · immutable</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">persist</div></div>
+            <div class="box box-teal" onclick="om('audit_store')"><div class="bt">Audit Store</div><div class="bs">Tamper-proof · encrypted</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">export</div></div>
+            <div class="box box-green" onclick="om('regulator_export')"><div class="bt">Regulator Export</div><div class="bs">EPC · NCB · B2B compliance</div></div>
         </div>
     </div>
 </div>
@@ -416,7 +626,9 @@
         <div class="li"><div class="lb" style="background:#F0FDF4;border:1.5px solid #A7F3D0"></div>Reconciliation</div>
         <div class="li"><div class="lb" style="background:#FEF2F2;border:1.5px solid #FECACA"></div>R-Transaction / DLQ</div>
         <div class="li"><div class="lb" style="background:#ECFEFF;border:1.5px solid #A5F3FC"></div>B2B specific</div>
-        <div class="li"><div class="lb" style="background:#F1F5F9;border:1.5px dashed #CBD5E1"></div>External (bank / CSM)</div>
+        <div class="li"><div class="lb" style="background:#EFF6FF;border:1.5px dashed #60A5FA"></div>Creditor Bank (external)</div>
+        <div class="li"><div class="lb" style="background:#FFF1F2;border:1.5px dashed #FDA4AF"></div>Debtor Bank (external)</div>
+        <div class="li"><div class="lb" style="background:#F1F5F9;border:1.5px dashed #CBD5E1"></div>CSM / Infrastructure (external)</div>
     </div>
 </div>
 
@@ -468,8 +680,9 @@ const D={
     'refusal_flow':{tag:'R-Transaction · Refusal',title:'Refusal (pain.002 RJCT)',body:`<p>Debtor bank rejects the instruction before settlement — no funds move. Common codes: <code>MD01</code> (no mandate), <code>MD02</code> (mandate data wrong), <code>MS02</code> (unspecified). State machine: SUBMITTED → REFUSED → ledger void of pending entry → webhook to creditor. B2B MD01 indicates mandate sync issue.</p>`,chips:[{t:'Pre-settlement',c:'chip-gray'},{t:'No funds move',c:'chip-teal'},{t:'MD01 / MD02 / MS02',c:'chip-red'},{t:'Void pending entry',c:'chip-amber'}]},
     'reversal_flow':{tag:'R-Transaction · Reversal',title:'Reversal (pacs.007)',body:`<p>Creditor-initiated cancellation of a settled collection — used for errors. Window: D+5 Core / D+2 B2B. <strong>Critical</strong>: ledger reversal is recon-gated — only written after reconciliation confirms the original settlement and that no reversal already exists. Idempotent: replaying produces no second reversal.</p>`,chips:[{t:'Creditor-initiated',c:'chip-orange'},{t:'D+5 Core / D+2 B2B',c:'chip-gray'},{t:'Recon-gated',c:'chip-red'},{t:'Idempotent',c:'chip-teal'}]},
     'refund_flow':{tag:'R-Transaction · Refund',title:'Refund (camt.055) — Core Only',body:`<p>Under SDD Core, a debtor has an <strong>unconditional right to a refund within 8 weeks</strong> of the debit — no reason required. After 8 weeks up to 13 months: refund only if no valid mandate. <strong>B2B has no such right</strong> — a key commercial advantage for creditors. Flow: camt.055 received → state machine SETTLED → REFUNDED → recon-gated ledger reversal → mandate review triggered.</p>`,chips:[{t:'8-week window',c:'chip-amber'},{t:'Core only',c:'chip-purple'},{t:'No B2B refund right',c:'chip-cyan'},{t:'Mandate review triggered',c:'chip-red'}]},
-    'ledger_reversal_core':{tag:'SDD Core · Safety',title:'Ledger Reversal — Recon-Gated',body:`<p>A critical safety pattern: <strong>ledger reversals are never triggered directly by an R-transaction event</strong>. Gated behind reconciliation confirmation to prevent double-reversal. Gate logic: reconciliation engine matches R-transaction against original settled entry, confirms correct amount and MRN, confirms not already reversed — then writes the reversal double-entry. All writes are idempotent.</p>`,chips:[{t:'Recon confirms first',c:'chip-red'},{t:'Never direct trigger',c:'chip-red'},{t:'Double-reversal prevention',c:'chip-teal'},{t:'Idempotent write',c:'chip-teal'}]},
-    'pubsub_rtx':{tag:'Messaging · R-Transactions',title:'Cloud Pub/Sub — R-Transaction Events',body:`<p>Publishes typed events: <code>collection.returned</code>, <code>collection.refused</code>, <code>collection.reversed</code>, <code>collection.refunded</code>. Consumed by the creditor webhook service, ledger (recon-gated reversal), analytics (R-rate tracking), and mandate service (freeze/cancel on MD01).</p>`,chips:[{t:'collection.returned',c:'chip-red'},{t:'collection.refused',c:'chip-red'},{t:'collection.reversed',c:'chip-orange'},{t:'collection.refunded',c:'chip-amber'}]},
+    'ledger_reversal_core':{tag:'SDD Core · Safety',title:'Ledger Reversal — Recon-Gated',body:`<p>A critical safety pattern: <strong>ledger reversals are never triggered directly by an R-transaction event</strong>. Gated behind reconciliation confirmation to prevent double-reversal. Gate logic: reconciliation engine matches R-transaction against original settled entry, confirms correct amount and MRN, confirms not already reversed — then writes the reversal double-entry. All writes are idempotent.</p><p>Applies to <strong>Returns (pacs.004), Reversals (pacs.007), and Refunds (camt.055)</strong> — these all reverse a confirmed/settled debit. Does <strong>not</strong> apply to Refusals (RJCT) — those void a pending entry instead (see Ledger Void).</p>`,chips:[{t:'Recon confirms first',c:'chip-red'},{t:'Never direct trigger',c:'chip-red'},{t:'Double-reversal prevention',c:'chip-teal'},{t:'Idempotent write',c:'chip-teal'},{t:'Return/Reversal/Refund only',c:'chip-amber'}]},
+    'ledger_void_core':{tag:'SDD Core · Accounting',title:'Ledger Void — Pending Entry Cancellation',body:`<p>When a collection is <strong>refused (pain.002 RJCT)</strong> pre-settlement, no funds have moved — so there is no debit to reverse. Instead, the <strong>pending ledger entry</strong> created at collection initiation is voided. This is fundamentally different from a ledger reversal: no recon gate required (nothing settled to reconcile against), no double-entry reversal (the pending entry is simply marked as cancelled).</p><p>Void is immediate and does not wait for reconciliation. The original pending entry remains in the ledger for audit (append-only) with a <code>status = VOIDED</code> flag and reference to the RJCT reason code. Available balance is restored immediately.</p>`,chips:[{t:'Pre-settlement only',c:'chip-gray'},{t:'No recon gate needed',c:'chip-teal'},{t:'Void ≠ reversal',c:'chip-red'},{t:'Immediate balance restore',c:'chip-amber'},{t:'RJCT reason preserved',c:'chip-purple'}]},
+    'pubsub_rtx':{tag:'Messaging · R-Transactions',title:'Cloud Pub/Sub — R-Transaction Events',body:`<p>Publishes <strong>four distinct event types</strong> — each triggers different downstream behaviour:</p><p><strong>collection.returned</strong> — triggers recon-gated ledger reversal + creditor webhook + MD01 mandate freeze check.<br/><strong>collection.refused</strong> — triggers ledger void (pending entry) + creditor webhook. No recon gate needed (pre-settlement).<br/><strong>collection.reversed</strong> — triggers recon-gated ledger reversal + creditor webhook + pacs.007 generation via bank adapter.<br/><strong>collection.refunded</strong> — triggers recon-gated ledger reversal + creditor webhook + mandate review for repeat refunds.</p><p>All events consumed by analytics (R-rate tracking) and mandate service (freeze/cancel on MD01). Events are typed — consumers subscribe with filters per R-type.</p>`,chips:[{t:'collection.returned',c:'chip-red'},{t:'collection.refused',c:'chip-red'},{t:'collection.reversed',c:'chip-orange'},{t:'collection.refunded',c:'chip-amber'},{t:'Typed event filters',c:'chip-blue'}]},
     'ledger_service_core':{tag:'SDD Core · Accounting',title:'Ledger Service',body:`<p>Two-stage ledger lifecycle: <strong>Pending entry</strong> written at collection initiation to reserve the expected credit; <strong>Confirmed entry</strong> written on ACCP to finalise the debit. On R-transaction: writes a recon-gated reversal double-entry. All entries are append-only and immutable.</p>`,chips:[{t:'Pending entry',c:'chip-amber'},{t:'Confirmed on ACCP',c:'chip-teal'},{t:'Reversal on R-tx',c:'chip-red'},{t:'Double-entry',c:'chip-blue'}]},
     'ledger_db_core':{tag:'Storage · Ledger',title:'Ledger DB',body:`<p>Dedicated append-only database for ledger entries — separate from the payment state DB. Strict access controls: finance and compliance teams only. Entries are never updated — corrections appear as new rows with a reference to the original entry being corrected.</p>`,chips:[{t:'Append-only',c:'chip-teal'},{t:'Strict access',c:'chip-red'},{t:'Immutable audit',c:'chip-gray'}]},
     'ledger_event_core':{tag:'Messaging · Ledger',title:'Cloud Pub/Sub — ledger.updated',body:`<p>Published after each ledger write. Consumed by treasury management (available balance update), reporting, and BI dashboards. Contains only a reference ID — never raw PII. Recipients query the ledger service for details using authorised access.</p>`,chips:[{t:'ledger.updated',c:'chip-teal'},{t:'No PII in event',c:'chip-red'},{t:'Reference ID only',c:'chip-gray'}]},
@@ -493,7 +706,34 @@ const D={
     'b2b_step2':{tag:'External · B2B CSM',title:'EBA STEP2 / SDD CSM (B2B)',body:`<p>Routes B2B pain.008 (<code>LclInstrm = B2BB</code>) through the <strong>separate B2B scheme</strong> at STEP2. Instructions not conforming to B2B format are rejected at CSM. Same 4-cycle/day schedule as Core.</p>`,chips:[{t:'B2B scheme separate',c:'chip-cyan'},{t:'LclInstrm validation',c:'chip-red'},{t:'4 cycles/day',c:'chip-gray'}]},
     'b2b_debtor_bank_debit':{tag:'External · B2B',title:'Debtor Bank (B2B) — Debit Validation',body:`<p>Validates each incoming pain.008 against its stored mandate copy before debiting. If mandate not found or mismatched: refuses <code>MD01</code>. <strong>D+2 return window</strong> vs D+5 for Core. Post-settlement certainty is much higher.</p>`,chips:[{t:'Mandate validation on each debit',c:'chip-cyan'},{t:'D+2 return window',c:'chip-amber'},{t:'MD01 if mismatch',c:'chip-red'},{t:'No refund right',c:'chip-red'}]},
     'b2b_r_tx':{tag:'B2B · R-Transactions',title:'R-Transaction Handler (B2B)',body:`<p>Same types as Core but with key differences: <strong>no unconditional refund (camt.055)</strong> — REFUNDED state does not exist for B2B. <strong>D+2 return window</strong> vs D+5 for Core. <strong>MD01 returns are rarer</strong> (mandate pre-validated by debtor bank) — when they occur, investigate mandate sync.</p>`,chips:[{t:'No refund path',c:'chip-red'},{t:'D+2 return window',c:'chip-cyan'},{t:'MD01 → mandate sync check',c:'chip-amber'},{t:'Return/Refusal/Reversal only',c:'chip-gray'}]},
-    'b2b_ledger':{tag:'B2B · Accounting',title:'Ledger Service (B2B)',body:`<p>Same double-entry pattern as Core. B2B-specific: no camt.055 refund reversal path. Recon gate before ledger reversal still applies — even with B2B's higher post-settlement certainty, double-reversal prevention is non-negotiable. Idempotent writes throughout.</p>`,chips:[{t:'Double-entry',c:'chip-teal'},{t:'No refund reversal path',c:'chip-red'},{t:'Recon-gated',c:'chip-amber'},{t:'Idempotent',c:'chip-teal'}]}
+    'b2b_ledger':{tag:'B2B · Accounting',title:'Ledger Service (B2B)',body:`<p>Same double-entry pattern as Core. B2B-specific: no camt.055 refund reversal path. Recon gate before ledger reversal still applies — even with B2B's higher post-settlement certainty, double-reversal prevention is non-negotiable. Idempotent writes throughout.</p>`,chips:[{t:'Double-entry',c:'chip-teal'},{t:'No refund reversal path',c:'chip-red'},{t:'Recon-gated',c:'chip-amber'},{t:'Idempotent',c:'chip-teal'}]},
+    // ── File Processing Layer ──
+    'file_storage_raw':{tag:'GCP · File Processing',title:'Cloud Storage — Raw File Landing Zone',body:`<p>Immutable landing zone for all inbound and outbound files. <strong>Inbound:</strong> bank response files (pain.002, pacs.004, camt.054) arrive via SFTP/EBICS pull or direct file drop. <strong>Outbound:</strong> generated pain.008 batches staged before bank submission. Files are written once with content-hash naming — never overwritten. Object lifecycle policy moves processed files to Coldline after 30 days. Cloud Storage notifications trigger the Parser Service on new file arrival.</p><p>Separate buckets per direction (inbound/outbound) and per scheme (Core/B2B) with IAM isolation. All objects encrypted with CMEK (Cloud KMS).</p>`,chips:[{t:'Inbound + outbound',c:'chip-teal'},{t:'Content-hash naming',c:'chip-gray'},{t:'CMEK encryption',c:'chip-red'},{t:'GCS notifications',c:'chip-blue'},{t:'30d → Coldline',c:'chip-amber'}]},
+    'parser_service':{tag:'GCP · File Processing',title:'Parser Service',body:`<p>Stateless Cloud Run service that parses raw banking files into structured internal representations. Supports multiple formats: <strong>ISO 20022 XML</strong> (pain.008, pain.002, pacs.004, pacs.007, camt.054, camt.055), <strong>SWIFT MT</strong> (MT940 bank statements), and <strong>CSV</strong> (legacy bank formats). Uses streaming XML parsers for large batch files (100K+ transactions) to avoid memory spikes.</p><p>Parser extracts individual transactions, assigns correlation IDs, and forwards each to the XML Validation service. Malformed files go to a quarantine bucket with an ops alert. Parse metrics (file size, tx count, parse duration) emitted to Cloud Monitoring.</p>`,chips:[{t:'Cloud Run stateless',c:'chip-blue'},{t:'ISO 20022 XML',c:'chip-purple'},{t:'MT940 / CSV legacy',c:'chip-gray'},{t:'Streaming parser',c:'chip-teal'},{t:'Quarantine on failure',c:'chip-red'}]},
+    'xml_validation_svc':{tag:'File Processing · Validation',title:'XML Validation Service (pain / pacs / camt)',body:`<p>Deep validation of parsed XML against ISO 20022 schemas and business rules. Validates: <strong>pain.008</strong> (outbound collections), <strong>pain.002</strong> (status reports), <strong>pacs.004</strong> (returns), <strong>pacs.007</strong> (reversals), <strong>camt.054</strong> (credit notifications), <strong>camt.055</strong> (refund requests). Checks include: XSD schema compliance, namespace versioning, mandatory field presence, IBAN checksum (MOD-97), BIC format, amount/currency validation, date logic (business day, cut-off), and cross-field consistency (seq type vs mandate history).</p><p>Returns structured validation results with per-field error codes. Invalid files are rejected with full error details and routed to ops. Valid files proceed to business logic.</p>`,chips:[{t:'pain.008 / pain.002',c:'chip-purple'},{t:'pacs.004 / pacs.007',c:'chip-red'},{t:'camt.054 / camt.055',c:'chip-amber'},{t:'XSD + biz rules',c:'chip-blue'},{t:'Per-field errors',c:'chip-gray'}]},
+    // ── EBICS / FileAct Service ──
+    'ebics_fileact_svc':{tag:'Bank Connectivity · Protocol',title:'EBICS / FileAct Service',body:`<p>Manages secure file exchange with banks using two primary protocols: <strong>EBICS</strong> (Electronic Banking Internet Communication Standard — dominant in DACH, France, and increasingly pan-EU) and <strong>SWIFT FileAct</strong> (global bank-to-bank file transfer via SWIFTNet). This service is the single point for all bank file transmissions.</p><p>Core responsibilities: <strong>Session management</strong> — establish and maintain EBICS/FileAct sessions. <strong>File segmentation</strong> — split large pain.008 batches per bank limits. <strong>Transport encryption</strong> — TLS 1.3 for EBICS, SWIFTNet PKI for FileAct. <strong>Retry on transport failure</strong> — idempotent upload with server-side dedup. <strong>Audit</strong> — every file transmission logged with timestamp, hash, bank endpoint, and response code.</p>`,chips:[{t:'EBICS protocol',c:'chip-purple'},{t:'SWIFT FileAct',c:'chip-blue'},{t:'Session management',c:'chip-gray'},{t:'File segmentation',c:'chip-amber'},{t:'Transport encryption',c:'chip-red'}]},
+    'ebics_key_mgmt':{tag:'EBICS · Security',title:'Key Management (HSM-backed)',body:`<p>Manages the full EBICS key lifecycle using a <strong>Cloud HSM</strong> (FIPS 140-2 Level 3). Handles: <strong>INI letter</strong> (initial key exchange with bank), <strong>HIA</strong> (authentication/encryption key upload), <strong>HPB</strong> (bank public key download), <strong>Key rotation</strong> (scheduled re-keying per bank policy, typically annual). Keys never leave the HSM boundary — signing operations happen inside the HSM.</p><p>For SWIFT FileAct: manages SWIFTNet PKI certificates (RMA authorisation, LAU keys). Alerts on certificate expiry (30/14/7 day warnings). Supports multi-bank key isolation — each bank connection has its own key set.</p>`,chips:[{t:'Cloud HSM',c:'chip-red'},{t:'INI / HIA / HPB',c:'chip-purple'},{t:'Annual rotation',c:'chip-amber'},{t:'FIPS 140-2 L3',c:'chip-gray'},{t:'Multi-bank isolation',c:'chip-blue'}]},
+    'ebics_order_mgmt':{tag:'EBICS · Operations',title:'Order Management',body:`<p>Tracks the lifecycle of every EBICS order (file upload/download). EBICS operations: <strong>FUL</strong> (file upload — pain.008), <strong>FDL</strong> (file download — pain.002, camt.054), <strong>HAC</strong> (order status — confirms bank received and processed), <strong>HTD</strong> (available order types query). Each order has a unique <code>OrderID</code> tracked through: SUBMITTED → ACKNOWLEDGED → PROCESSED / REJECTED.</p><p>Implements <strong>distributed signature</strong> support (ES/T/TS) when bank requires multiple authorisers for high-value batches. Monitors order processing SLA — alerts if HAC shows no progress within configurable window (e.g., 2h).</p>`,chips:[{t:'FUL / FDL orders',c:'chip-blue'},{t:'HAC status tracking',c:'chip-teal'},{t:'HTD discovery',c:'chip-gray'},{t:'Distributed signature',c:'chip-purple'},{t:'Order SLA monitoring',c:'chip-amber'}]},
+    // ── Inbound Bank Gateway ──
+    'inbound_bank_gw':{tag:'GCP · Bank Integration',title:'Inbound Bank Gateway',body:`<p>Dedicated service handling all inbound file reception from banks. Three ingestion modes: <strong>(1) File drop</strong> — banks push files to a designated SFTP endpoint (Cloud Run + managed SFTP); <strong>(2) Scheduled pull</strong> — Cloud Scheduler triggers EBICS FDL/FileAct download at configurable intervals (e.g., every 30 min during clearing hours); <strong>(3) Webhook/push notification</strong> — banks notify of available files via callback URL.</p><p>On receipt: validates file integrity (checksum, size, naming convention), writes to Cloud Storage raw bucket, and triggers the Parser Service via Pub/Sub or Eventarc. Handles duplicate file detection (content hash dedup). Maintains a file registry (filename, bank, received_at, status, tx_count) for ops visibility.</p>`,chips:[{t:'SFTP file drop',c:'chip-blue'},{t:'Scheduled EBICS pull',c:'chip-purple'},{t:'Webhook push',c:'chip-teal'},{t:'Checksum validation',c:'chip-gray'},{t:'Duplicate detection',c:'chip-red'},{t:'File registry',c:'chip-amber'}]},
+    // ── Liquidity / Treasury Service ──
+    'liquidity_treasury_svc':{tag:'Treasury · Pre-Submit',title:'Liquidity / Treasury Service',body:`<p>Pre-submission gate ensuring sufficient liquidity before batch files are sent to the bank. For SDD, the creditor's bank account must have adequate balance or credit facility to cover potential returns and reversals. This service aggregates the total batch value and checks against available position.</p><p>Two modes: <strong>Balance check</strong> — real-time query of account position via bank API or internal ledger. <strong>Prefunding</strong> — for schemes/banks requiring prefunded accounts, reserves the batch amount before submission. Integrates with the Ledger Service for internal position tracking and with bank APIs for external position confirmation.</p>`,chips:[{t:'Pre-submit gate',c:'chip-red'},{t:'Batch aggregation',c:'chip-amber'},{t:'Real-time position',c:'chip-teal'},{t:'Prefunding support',c:'chip-blue'},{t:'Return buffer calc',c:'chip-orange'}]},
+    'treasury_balance_check':{tag:'Treasury · Check',title:'Balance Check',body:`<p>Queries the current account position from two sources: <strong>Internal ledger</strong> — real-time available balance after pending debits/credits. <strong>External bank API</strong> — camt.052 (intraday balance report) or proprietary bank API. Compares batch submission amount against available balance minus a configurable <strong>return reserve buffer</strong> (typically 5-10% of batch value for Core, lower for B2B due to reduced refund risk).</p><p>Returns: SUFFICIENT / INSUFFICIENT / PARTIAL (with available amount). On INSUFFICIENT: batch is held pending treasury action — never auto-rejected. Ops alerted via PagerDuty.</p>`,chips:[{t:'Internal + external',c:'chip-teal'},{t:'Return reserve buffer',c:'chip-amber'},{t:'camt.052 intraday',c:'chip-blue'},{t:'INSUFFICIENT → hold',c:'chip-red'},{t:'PagerDuty alert',c:'chip-orange'}]},
+    'treasury_prefunding':{tag:'Treasury · Prefunding',title:'Prefunding Logic',body:`<p>For schemes or bank arrangements requiring prefunded collection accounts: <strong>Reserves</strong> the batch amount in the prefunding account before submission. <strong>Settlement window</strong> — calculates when funds will be credited (D+0 for STEP2) and when the reserve can be released. <strong>Shortfall handling</strong> — if prefunding account is short, calculates the delta and triggers an internal transfer request to treasury.</p><p>Maintains a prefunding ledger: reserved amounts, expected settlement dates, actual settlements, and releases. Reconciles daily against bank statements. Configurable per bank — some banks require 100% prefunding, others accept partial or no prefunding.</p>`,chips:[{t:'Reserve before submit',c:'chip-red'},{t:'Settlement window calc',c:'chip-amber'},{t:'Shortfall handling',c:'chip-orange'},{t:'Prefunding ledger',c:'chip-teal'},{t:'Per-bank configurable',c:'chip-gray'}]},
+    // ── Audit Service ──
+    'audit_service':{tag:'Compliance · Audit',title:'Audit Service',body:`<p>Central <strong>append-only, immutable</strong> audit trail for every state change, API call, file transmission, and compliance decision across the SDD platform. Every event is written with: timestamp (Cloud-sourced), actor (service/user), action, entity (collection/mandate ID), before/after state, and a cryptographic hash chaining to the previous entry (tamper evidence).</p><p>Designed for <strong>regulatory examination</strong>: supports queries by collection ID, mandate MRN, time range, actor, or action type. Strict write-only access — no service can update or delete audit entries. Retained for 10+ years per PSD2 and national regulator requirements. Separate from operational logs — audit data has its own storage, access controls, and retention policy.</p>`,chips:[{t:'Append-only',c:'chip-red'},{t:'Hash-chained entries',c:'chip-purple'},{t:'10+ year retention',c:'chip-gray'},{t:'Write-only access',c:'chip-red'},{t:'PSD2 compliant',c:'chip-blue'}]},
+    'audit_store':{tag:'Storage · Audit',title:'Audit Store — Tamper-Proof',body:`<p>Dedicated storage for audit entries — separate from all operational databases. Options: <strong>BigQuery</strong> (append-only table with column-level encryption, streaming inserts), <strong>Spanner</strong> (strongly consistent, global), or <strong>Cloud Storage + BigQuery</strong> (Parquet files for long-term, BQ for active queries). All data encrypted with CMEK, access restricted to audit service (write) and compliance team (read-only).</p><p>Integrity verification: periodic background job computes and verifies hash chains, alerts on any discontinuity. Supports point-in-time queries for regulator requests.</p>`,chips:[{t:'CMEK encryption',c:'chip-red'},{t:'Hash chain verification',c:'chip-purple'},{t:'Compliance read-only',c:'chip-gray'},{t:'Point-in-time queries',c:'chip-teal'},{t:'Streaming inserts',c:'chip-blue'}]},
+    'regulator_export':{tag:'Compliance · Reporting',title:'Regulator Export',body:`<p>Automated and on-demand export capabilities for regulatory reporting: <strong>EPC scheme compliance</strong> (R-transaction rates, mandate statistics, SDD volume reports), <strong>National Central Bank (NCB)</strong> reporting (payment statistics, cross-border flow data), <strong>PSD2 / PSR</strong> audit trail exports, <strong>AML/CFT</strong> suspicious activity reports.</p><p>Exports in regulator-specified formats (XML, CSV, PDF). Scheduled reports run automatically; ad-hoc exports triggered by compliance team. All exports logged in the audit trail. Data minimisation applied — only required fields included per report type.</p>`,chips:[{t:'EPC compliance',c:'chip-purple'},{t:'NCB reporting',c:'chip-blue'},{t:'PSD2 audit export',c:'chip-red'},{t:'Scheduled + ad-hoc',c:'chip-amber'},{t:'Data minimisation',c:'chip-teal'}]},
+    'audit_archive':{tag:'Storage · Long-Term',title:'Long-Term Archive (GCS Coldline)',body:`<p>Audit entries older than the active query window (typically 2 years) are archived to <strong>GCS Coldline</strong> storage for cost-efficient long-term retention. Minimum 10-year retention per PSD2 requirements — configurable up to 15 years for specific jurisdictions.</p><p>Archives are immutable (Object Lock / retention policy), encrypted (CMEK), and indexed for retrieval. Monthly integrity checks verify archive completeness against the audit store. Retrieval SLA: within 24h for regulatory requests.</p>`,chips:[{t:'GCS Coldline',c:'chip-teal'},{t:'10-15 year retention',c:'chip-gray'},{t:'Object Lock',c:'chip-red'},{t:'Monthly integrity check',c:'chip-amber'},{t:'24h retrieval SLA',c:'chip-blue'}]},
+    // ── B2B variants of new components ──
+    'b2b_file_storage_raw':{tag:'B2B · File Processing',title:'Cloud Storage — Raw (B2B)',body:`<p>Dedicated B2B file landing zone with separate bucket isolation from Core. Same architecture: immutable, content-hash named, CMEK encrypted. B2B files are typically lower volume but higher value per transaction. Separate IAM policies ensure B2B files are only accessible to B2B processing services.</p>`,chips:[{t:'B2B bucket isolation',c:'chip-cyan'},{t:'CMEK encrypted',c:'chip-red'},{t:'Higher value / lower volume',c:'chip-amber'}]},
+    'b2b_parser_service':{tag:'B2B · File Processing',title:'Parser Service (B2B)',body:`<p>Same stateless parser as Core, but configured for B2B-specific format requirements: validates <code>LclInstrm = B2BB</code> presence, rejects Core-format files submitted on B2B channels. Forwards parsed payloads to B2B XML Validation for schema and business rule checks.</p>`,chips:[{t:'B2BB format check',c:'chip-cyan'},{t:'Reject Core format',c:'chip-red'},{t:'Stateless Cloud Run',c:'chip-blue'}]},
+    'b2b_xml_validation':{tag:'B2B · Validation',title:'XML Validation (B2B)',body:`<p>Same schema validation engine as Core with B2B overlay rules: <code>LclInstrm = B2BB</code> mandatory, debtor bank ACK cross-reference, D-1 cut-off for all sequence types (no D-2 exception), corporate debtor IBAN validation. Rejects any payload not conforming to B2B scheme rules.</p>`,chips:[{t:'B2BB mandatory',c:'chip-cyan'},{t:'ACK cross-ref',c:'chip-amber'},{t:'D-1 all seq types',c:'chip-red'},{t:'Corporate IBAN',c:'chip-teal'}]},
+    'b2b_ebics_fileact':{tag:'B2B · Bank Connectivity',title:'EBICS / FileAct (B2B)',body:`<p>Same EBICS/FileAct engine as Core, using the B2B bank connection profile. B2B connections may use different EBICS subscriber IDs, key sets, and bank host IDs compared to Core. Ensures B2B files are routed through the correct bank channel to reach the B2B scheme at STEP2.</p>`,chips:[{t:'B2B subscriber ID',c:'chip-cyan'},{t:'Separate key set',c:'chip-red'},{t:'B2B channel routing',c:'chip-blue'}]},
+    'b2b_inbound_bank_gw':{tag:'B2B · Bank Integration',title:'Inbound Bank Gateway (B2B)',body:`<p>Same inbound gateway architecture as Core, configured for B2B bank connections. Handles B2B-specific response files: pain.002 with B2B reason codes, pacs.004 (D+2 window), no camt.055 (no refund path). Triggers B2B Parser Service on file arrival. Maintains separate file registry for B2B traffic.</p>`,chips:[{t:'B2B response files',c:'chip-cyan'},{t:'D+2 returns only',c:'chip-amber'},{t:'No camt.055',c:'chip-red'},{t:'B2B file registry',c:'chip-teal'}]},
+    'b2b_liquidity_treasury':{tag:'B2B · Treasury',title:'Liquidity / Treasury (B2B)',body:`<p>Same treasury gate as Core but calibrated for B2B characteristics: <strong>higher individual transaction values</strong> (corporate debits), <strong>lower return reserve buffer</strong> (B2B has no refund right and shorter return window), <strong>corporate credit facility integration</strong>. May connect to corporate treasury management systems (TMS) for real-time cash position across multiple banks.</p>`,chips:[{t:'Higher value calibration',c:'chip-cyan'},{t:'Lower return buffer',c:'chip-teal'},{t:'TMS integration',c:'chip-blue'},{t:'Corporate credit facility',c:'chip-amber'}]},
+    'b2b_audit_service':{tag:'B2B · Compliance',title:'Audit Service (B2B)',body:`<p>Same append-only, immutable audit service as Core, capturing all B2B-specific events: mandate ACK lifecycle, debtor bank validation results, B2B scheme routing decisions, D+2 return processing. B2B audit entries are tagged with <code>scheme=B2B</code> for filtered regulator exports. Shares the same audit store and archive infrastructure as Core.</p>`,chips:[{t:'B2B scheme tag',c:'chip-cyan'},{t:'ACK lifecycle audit',c:'chip-amber'},{t:'Shared audit store',c:'chip-teal'},{t:'Append-only',c:'chip-red'}]}
 };
 
 function om(id){
