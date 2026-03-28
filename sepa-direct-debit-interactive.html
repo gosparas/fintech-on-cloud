@@ -137,12 +137,33 @@
         .chip-purple{background:#EDE9FE;color:#4C1D95}
         .chip-orange{background:#FFEDD5;color:#C2410C}
         .chip-cyan{background:#CFFAFE;color:#0E7490}
+        .chip-green{background:#D1FAE5;color:#065F46}
         .footer{text-align:center;margin-top:36px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#CBD5E1;padding:16px;background:#18181B}
         .footer a{color:#34D399;text-decoration:none}
         .screenshot-btn{display:block;padding:7px 18px;background:#18181B;color:#fff;font-family:'JetBrains Mono',monospace;font-size:11px;border:none;border-radius:6px;cursor:pointer;letter-spacing:0.05em}
         .screenshot-btn:hover{background:#334155}
         body.screenshot-mode .modal-bg{display:none!important}
-        @media print{.modal-bg,.screenshot-btn{display:none!important}body{padding:0!important}.section{padding:8px 6px 0!important}.flow-area{break-inside:avoid;margin-bottom:4px!important}.box{max-width:140px!important;min-width:80px!important}.arr{min-width:24px!important}}
+        /* ── STAGE FILTER ── */
+        .stage-bar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:12px 14px 6px;max-width:1300px;margin:0 auto}
+        .stage-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:6px 14px;border-radius:6px;border:1.5px solid #E2E8F0;background:#FFFFFF;color:#64748B;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;text-transform:uppercase}
+        .stage-btn:hover{border-color:#94A3B8;color:#18181B}
+        .stage-btn.active{background:#18181B;color:#F8FAFC;border-color:#18181B}
+        .stage-btn.active:hover{background:#334155;border-color:#334155}
+        .stage-divider{width:1px;height:24px;background:#E2E8F0;align-self:center}
+        .section[data-section="core"] .flow-area[data-stage]{transition:opacity 0.2s,max-height 0.3s}
+        .section[data-section="core"].filtering .flow-area[data-stage]{display:none}
+        .section[data-section="core"].filtering .flow-area[data-stage].stage-visible{display:block}
+        .section[data-section="b2b"] .flow-area[data-stage]{transition:opacity 0.2s,max-height 0.3s}
+        .section[data-section="b2b"].filtering .flow-area[data-stage]{display:none}
+        .section[data-section="b2b"].filtering .flow-area[data-stage].stage-visible{display:block}
+        .section.filtering .section-header,.section.filtering .banner,.section.filtering .compare-grid{display:none}
+        .section.filtering .section-header.stage-visible{display:flex}
+        .stage-title{text-align:center;padding:8px 14px 0;max-width:1300px;margin:0 auto}
+        .stage-title h3{font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:#18181B;margin-bottom:2px}
+        .stage-title p{font-family:'JetBrains Mono',monospace;font-size:10px;color:#94A3B8;letter-spacing:0.08em}
+        .stage-title{display:none}
+        .stage-title.active{display:block}
+        @media print{.modal-bg,.screenshot-btn,.stage-bar{display:none!important}body{padding:0!important}.section{padding:8px 6px 0!important}.flow-area{break-inside:avoid;margin-bottom:4px!important}.box{max-width:140px!important;min-width:80px!important}.arr{min-width:24px!important}}
     </style>
 </head>
 <body>
@@ -167,8 +188,42 @@
 </div>
 <div class="hint" style="display:flex;align-items:center;justify-content:center;gap:16px;">Click any box to learn more <span>→</span><button class="screenshot-btn" onclick="document.body.classList.toggle('screenshot-mode');this.textContent=document.body.classList.contains('screenshot-mode')?'Exit compact mode':'Compact view for screenshot'">Compact view for screenshot</button></div>
 
+<!-- STAGE FILTER BAR -->
+<div class="stage-bar" id="stageBar">
+    <button class="stage-btn active" data-filter="all" onclick="filterStage('all')">Show All</button>
+    <div class="stage-divider"></div>
+    <button class="stage-btn" data-filter="happy" onclick="filterStage('happy')">☀ Happy Flow</button>
+    <button class="stage-btn" data-filter="rtx" onclick="filterStage('rtx')">⚡ Unhappy Flow</button>
+    <button class="stage-btn" data-filter="recon" onclick="filterStage('recon')">✓ Reconciliation &amp; Analytics</button>
+    <button class="stage-btn" data-filter="recovery" onclick="filterStage('recovery')">🛡 Recovery &amp; Audit</button>
+    <div class="stage-divider"></div>
+    <button class="stage-btn" data-filter="b2b" onclick="filterStage('b2b')">◆ B2B Differences</button>
+</div>
+
+<!-- STAGE TITLES (shown when filtered) -->
+<div class="stage-title" id="st-happy">
+    <h3>☀ Stage 1 — Happy Flow (Core &amp; B2B)</h3>
+    <p>MANDATE → COLLECTION → FILE PROCESSING → EBICS → LIQUIDITY CHECK → CLEARING → SETTLEMENT → LEDGER</p>
+</div>
+<div class="stage-title" id="st-rtx">
+    <h3>⚡ Stage 2 — Unhappy Flow: R-Transactions (Core &amp; B2B)</h3>
+    <p>RETURN (pacs.004) · REFUSAL (pain.002 RJCT) · REVERSAL (pacs.007) · REFUND (camt.055 — CORE ONLY)</p>
+</div>
+<div class="stage-title" id="st-recon">
+    <h3>✓ Stage 3 — Reconciliation &amp; Analytics (Core &amp; B2B)</h3>
+    <p>PII-STRIPPED EVENTS → DATAFLOW → BIGQUERY → RECON ENGINE → AI CLASSIFY · LEDGER VS BANK STATEMENT</p>
+</div>
+<div class="stage-title" id="st-recovery">
+    <h3>🛡 Stage 4 — Recovery &amp; Audit (Core &amp; B2B)</h3>
+    <p>DLQ · RETRY · CIRCUIT BREAKER · MANUAL REVIEW · APPEND-ONLY AUDIT · REGULATOR EXPORT · 10YR ARCHIVE</p>
+</div>
+<div class="stage-title" id="st-b2b">
+    <h3>◆ SDD B2B vs Core — Key Differences</h3>
+    <p>SIDE-BY-SIDE COMPARISON · DEBTOR BANK VALIDATES MANDATE · NO REFUND RIGHT · D+2 RETURN · D-1 ALL SEQ TYPES</p>
+</div>
+
 <!-- ══════════════════════════════════════ SDD CORE ══════════════════════════════════════ -->
-<div class="section">
+<div class="section" data-section="core">
     <div class="section-header sh-core">
         <div>
             <h2>SEPA Direct Debit — Core (SDD Core)</h2>
@@ -177,7 +232,7 @@
     </div>
 
     <!-- PHASE 0: Mandate Lifecycle -->
-    <div class="flow-area mandate-row">
+    <div class="flow-area mandate-row" data-stage="happy">
         <div class="flow-label purple">// Phase 0 — Mandate lifecycle: creditor stores and versions SEPA mandates before any collection</div>
         <div class="flow-row">
             <div class="entry-group">
@@ -198,7 +253,7 @@
     </div>
 
     <!-- PHASE 1: Collection Initiation -->
-    <div class="flow-area">
+    <div class="flow-area" data-stage="happy">
         <div class="flow-label purple">// Phase 1 — Collection initiation: pre-notification → schema validation → idempotency → mandate check → AML → state machine → bank adapter → pain.008</div>
         <div class="flow-row">
             <div class="entry-group">
@@ -227,7 +282,7 @@
     </div>
 
     <!-- PHASE 1b: File Processing Layer -->
-    <div class="flow-area">
+    <div class="flow-area" data-stage="happy">
         <div class="flow-label purple">// Phase 1b — File processing layer: raw file ingest → parse → XML validation (pain/pacs/camt) before business logic</div>
         <div class="flow-row">
             <div class="box box-teal" onclick="om('file_storage_raw')"><div class="bt">Cloud Storage (Raw)</div><div class="bs">Raw file landing zone</div></div>
@@ -243,7 +298,7 @@
     </div>
 
     <!-- PHASE 1c: EBICS / FileAct Service -->
-    <div class="flow-area">
+    <div class="flow-area" data-stage="happy">
         <div class="flow-label purple">// Phase 1c — EBICS / FileAct service: secure bank connectivity with key management, order management, and file signing</div>
         <div class="flow-row">
             <div class="box box-blue" onclick="om('bank_adapter_core')"><div class="bt">Bank Adapter Layer</div><div class="bs">Outbound pain.008</div></div>
@@ -259,7 +314,7 @@
     </div>
 
     <!-- PHASE 1d: Liquidity / Treasury Service -->
-    <div class="flow-area">
+    <div class="flow-area" data-stage="happy">
         <div class="flow-label purple">// Phase 1d — Liquidity / Treasury: balance checks and prefunding validation before batch submission</div>
         <div class="flow-row">
             <div class="box box-orange" onclick="om('cutoff_service')"><div class="bt">Cut-Off Service</div><div class="bs">Pre-submit trigger</div></div>
@@ -275,7 +330,7 @@
     </div>
 
     <!-- PHASE 2: Async Clearing -->
-    <div class="flow-area">
+    <div class="flow-area" data-stage="happy">
         <div class="flow-label purple">// Phase 2 — Async clearing: D-1 batch → STEP2 SDD CSM → debtor bank → pain.002 + camt.054 → state update</div>
         <div class="flow-row">
             <div class="box box-amber" onclick="om('pubsub_worker_core')"><div class="bt">Cloud Pub/Sub</div><div class="bs">worker · D-1 cut-off check</div></div>
@@ -297,7 +352,7 @@
     </div>
 
     <!-- PHASE 2a: Inbound Bank Gateway -->
-    <div class="flow-area">
+    <div class="flow-area" data-stage="happy">
         <div class="flow-label purple">// Phase 2a — Inbound bank gateway: receive bank response files via drop / pull, trigger parsing pipeline</div>
         <div class="flow-row">
             <div class="box box-ext-creditor" onclick="om('creditor_bank')"><div class="bt">Creditor Bank</div><div class="bs">File drop / response</div></div>
@@ -315,7 +370,7 @@
     </div>
 
     <!-- PHASE 2b: R-Transactions — classifier -->
-    <div class="flow-area rtx-row">
+    <div class="flow-area rtx-row" data-stage="rtx">
         <div class="flow-label danger">// Phase 2b — R-Transaction classifier: inbound R-tx → classify type → branch to distinct handling path per R-type</div>
         <div class="flow-row">
             <div class="box box-orange" onclick="om('state_machine_settle')"><div class="bt">State Machine</div><div class="bs">R-tx event received</div></div>
@@ -327,7 +382,7 @@
     </div>
 
     <!-- PHASE 2b-i: Return (pacs.004) -->
-    <div class="flow-area rtx-row">
+    <div class="flow-area rtx-row" data-stage="rtx">
         <div class="flow-label danger">// Phase 2b-i — Return (pacs.004): debtor bank reverses post-settlement · D+5 Core / D+2 B2B · AC04/AM04/MD01</div>
         <div class="flow-row">
             <div class="box box-red" onclick="om('return_flow')"><div class="bt">Return (pacs.004)</div><div class="bs">Post-settle · D+5 · AC04/AM04</div></div>
@@ -343,7 +398,7 @@
     </div>
 
     <!-- PHASE 2b-ii: Refusal (pain.002 RJCT) -->
-    <div class="flow-area rtx-row">
+    <div class="flow-area rtx-row" data-stage="rtx">
         <div class="flow-label danger">// Phase 2b-ii — Refusal (pain.002 RJCT): debtor bank rejects pre-settlement · no funds move · void pending entry</div>
         <div class="flow-row">
             <div class="box box-red" onclick="om('refusal_flow')"><div class="bt">Refusal (RJCT)</div><div class="bs">Pre-settle · MD01/MD02/MS02</div></div>
@@ -357,7 +412,7 @@
     </div>
 
     <!-- PHASE 2b-iii: Reversal (pacs.007) -->
-    <div class="flow-area rtx-row">
+    <div class="flow-area rtx-row" data-stage="rtx">
         <div class="flow-label danger">// Phase 2b-iii — Reversal (pacs.007): creditor-initiated cancellation of settled collection · D+5 Core / D+2 B2B</div>
         <div class="flow-row">
             <div class="box box-orange" onclick="om('reversal_flow')"><div class="bt">Reversal (pacs.007)</div><div class="bs">Creditor-init · D+5</div></div>
@@ -373,7 +428,7 @@
     </div>
 
     <!-- PHASE 2b-iv: Refund (camt.055) — Core Only -->
-    <div class="flow-area rtx-row">
+    <div class="flow-area rtx-row" data-stage="rtx">
         <div class="flow-label danger">// Phase 2b-iv — Refund (camt.055): debtor's 8-week unconditional right · Core only · B2B has no refund path</div>
         <div class="flow-row">
             <div class="box box-orange" onclick="om('refund_flow')"><div class="bt">Refund (camt.055)</div><div class="bs">8-week · Core only</div></div>
@@ -389,7 +444,7 @@
     </div>
 
     <!-- PHASE 3: Ledger -->
-    <div class="flow-area ledger-row">
+    <div class="flow-area ledger-row" data-stage="happy">
         <div class="flow-label warn">// Phase 3 — Ledger: pending debit on initiation → confirmed on ACCP → reversed on R-transaction</div>
         <div class="flow-row">
             <div class="box box-orange" onclick="om('state_machine_core')"><div class="bt">State Machine</div><div class="bs">ACCP / RJCT confirmed</div></div>
@@ -403,7 +458,7 @@
     </div>
 
     <!-- PHASE 4: Analytics + Reconciliation -->
-    <div class="flow-area recon-row">
+    <div class="flow-area recon-row" data-stage="recon">
         <div class="flow-label success">// Phase 4 — Analytics + reconciliation: PII-stripped events → BigQuery → recon engine → AI classify</div>
         <div class="flow-row">
             <div class="box box-amber" onclick="om('pubsub_analytics_core')"><div class="bt">Cloud Pub/Sub</div><div class="bs">transaction events fan-out</div></div>
@@ -419,7 +474,7 @@
     </div>
 
     <!-- PHASE 5: Recovery -->
-    <div class="flow-area recovery">
+    <div class="flow-area recovery" data-stage="recovery">
         <div class="flow-label warn">// Phase 5 — Recovery layer: DLQ · retry · circuit breaker · cut-off miss · manual review</div>
         <div class="flow-row">
             <div class="box box-red" onclick="om('dlq_core')"><div class="bt">Dead Letter Queue</div><div class="bs">Pub/Sub DLQ · cut-off miss</div></div>
@@ -435,7 +490,7 @@
     </div>
 
     <!-- PHASE 6: Audit Service -->
-    <div class="flow-area">
+    <div class="flow-area" data-stage="recovery">
         <div class="flow-label purple">// Phase 6 — Audit service: append-only immutable log for every state change, with regulator export capability</div>
         <div class="flow-row">
             <div class="box box-amber" onclick="om('pubsub_analytics_core')"><div class="bt">Cloud Pub/Sub</div><div class="bs">All lifecycle events</div></div>
@@ -452,7 +507,7 @@
 </div>
 
 <!-- ══════════════════════════════════════ SDD B2B ══════════════════════════════════════ -->
-<div class="section" style="margin-top:28px">
+<div class="section" data-section="b2b" style="margin-top:28px">
     <div class="section-header sh-b2b">
         <div>
             <h2>SEPA Direct Debit — B2B (SDD B2B)</h2>
@@ -488,7 +543,7 @@
     </div>
 
     <!-- B2B PHASE 0: Mandate with ACK -->
-    <div class="flow-area b2b-row">
+    <div class="flow-area b2b-row" data-stage="happy">
         <div class="flow-label cyan">// B2B Phase 0 — Mandate registration: creditor AND debtor bank both receive and store mandate copy</div>
         <div class="flow-row">
             <div class="entry-group">
@@ -505,7 +560,7 @@
     </div>
 
     <!-- B2B PHASE 1: Collection -->
-    <div class="flow-area">
+    <div class="flow-area" data-stage="happy">
         <div class="flow-label cyan">// B2B Phase 1 — Collection: no pre-notification required · D-1 all seq types · ACK gate before submit</div>
         <div class="flow-row">
             <div class="entry-group">
@@ -524,7 +579,7 @@
     </div>
 
     <!-- B2B: File Processing Layer -->
-    <div class="flow-area b2b-row">
+    <div class="flow-area b2b-row" data-stage="happy">
         <div class="flow-label cyan">// B2B File Processing — Raw file ingest → parse → XML validation (pain/pacs/camt) · same pipeline, B2B schema rules</div>
         <div class="flow-row">
             <div class="box box-teal" onclick="om('b2b_file_storage_raw')"><div class="bt">Cloud Storage (Raw)</div><div class="bs">B2B file landing zone</div></div>
@@ -538,7 +593,7 @@
     </div>
 
     <!-- B2B: EBICS / FileAct Service -->
-    <div class="flow-area b2b-row">
+    <div class="flow-area b2b-row" data-stage="happy">
         <div class="flow-label cyan">// B2B EBICS / FileAct — Secure bank connectivity: key management, order lifecycle, file signing for B2B transmissions</div>
         <div class="flow-row">
             <div class="box box-blue" onclick="om('b2b_bank_adapter')"><div class="bt">Bank Adapter (B2B)</div><div class="bs">Outbound pain.008</div></div>
@@ -552,7 +607,7 @@
     </div>
 
     <!-- B2B: Liquidity / Treasury Service -->
-    <div class="flow-area b2b-row">
+    <div class="flow-area b2b-row" data-stage="happy">
         <div class="flow-label cyan">// B2B Liquidity / Treasury — Balance checks and prefunding for B2B collections (typically higher-value corporate debits)</div>
         <div class="flow-row">
             <div class="box box-blue" onclick="om('b2b_bank_adapter')"><div class="bt">Bank Adapter (B2B)</div><div class="bs">Pre-submit gate</div></div>
@@ -565,22 +620,78 @@
         </div>
     </div>
 
-    <!-- B2B PHASE 2: Clearing + R-Tx -->
-    <div class="flow-area">
-        <div class="flow-label cyan">// B2B Phase 2 — Clearing: debtor bank validates mandate on receipt · D+2 return window · no refund path</div>
+    <!-- B2B PHASE 2b: R-Transactions — classifier -->
+    <div class="flow-area rtx-row" data-stage="rtx">
+        <div class="flow-label danger">// B2B Phase 2b — R-Transaction classifier: inbound R-tx → classify type → branch (3 types only — no refund)</div>
         <div class="flow-row">
-            <div class="box box-ext" onclick="om('b2b_step2')"><div class="bt">EBA STEP2 / SDD CSM</div><div class="bs">Routes B2B pain.008</div></div>
-            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">validate</div></div>
-            <div class="box box-ext-debtor" onclick="om('b2b_debtor_bank_debit')"><div class="bt">Debtor Bank (B2B)</div><div class="bs">Check mandate · debit · D+2</div></div>
+            <div class="box box-ext-debtor" onclick="om('b2b_debtor_bank_debit')"><div class="bt">Debtor Bank (B2B)</div><div class="bs">Mandate validated · D+2</div></div>
             <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">status</div></div>
-            <div class="box box-red" onclick="om('b2b_r_tx')"><div class="bt">R-Tx Handler (B2B)</div><div class="bs">Return/Refusal/Reversal only</div></div>
-            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">recon↓</div></div>
-            <div class="box box-yellow" onclick="om('b2b_ledger')"><div class="bt">Ledger Service</div><div class="bs">Double-entry · recon-gated</div></div>
+            <div class="box box-red" onclick="om('b2b_r_tx')"><div class="bt">R-Tx Handler (B2B)</div><div class="bs">Classify type · reason code</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">branch ×3</div></div>
+            <div class="box box-amber" onclick="om('b2b_pubsub_rtx')"><div class="bt">Cloud Pub/Sub</div><div class="bs">r-tx.classified.b2b fan-out</div></div>
+        </div>
+    </div>
+
+    <!-- B2B PHASE 2b-i: Return (pacs.004) — D+2 -->
+    <div class="flow-area rtx-row" data-stage="rtx">
+        <div class="flow-label danger">// B2B Phase 2b-i — Return (pacs.004): debtor bank reverses post-settlement · D+2 window (shorter than Core D+5) · mandate pre-validated</div>
+        <div class="flow-row">
+            <div class="box box-red" onclick="om('b2b_return_flow')"><div class="bt">Return (pacs.004)</div><div class="bs">Post-settle · D+2 · AC04/AM04</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">→ RETURNED</div></div>
+            <div class="box box-orange" onclick="om('b2b_r_tx')"><div class="bt">State Machine (B2B)</div><div class="bs">→ RETURNED</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">recon gate</div></div>
+            <div class="box box-yellow" onclick="om('b2b_ledger')"><div class="bt">Ledger Reversal</div><div class="bs">Recon-gated · reverse debit</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('b2b_pubsub_rtx')"><div class="bt">Cloud Pub/Sub</div><div class="bs">collection.returned.b2b</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">MD01?</div></div>
+            <div class="box box-cyan" onclick="om('b2b_mandate_registry')"><div class="bt">Mandate Sync Check</div><div class="bs">MD01 → investigate bank sync</div></div>
+        </div>
+    </div>
+
+    <!-- B2B PHASE 2b-ii: Refusal (pain.002 RJCT) -->
+    <div class="flow-area rtx-row" data-stage="rtx">
+        <div class="flow-label danger">// B2B Phase 2b-ii — Refusal (pain.002 RJCT): debtor bank rejects pre-settlement · mandate mismatch is primary cause</div>
+        <div class="flow-row">
+            <div class="box box-red" onclick="om('b2b_refusal_flow')"><div class="bt">Refusal (RJCT)</div><div class="bs">Pre-settle · MD01/MD02</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">→ REFUSED</div></div>
+            <div class="box box-orange" onclick="om('b2b_r_tx')"><div class="bt">State Machine (B2B)</div><div class="bs">→ REFUSED</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">void</div></div>
+            <div class="box box-yellow" onclick="om('b2b_ledger')"><div class="bt">Ledger Void</div><div class="bs">Void pending · no reversal</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('b2b_pubsub_rtx')"><div class="bt">Cloud Pub/Sub</div><div class="bs">collection.refused.b2b</div></div>
+        </div>
+    </div>
+
+    <!-- B2B PHASE 2b-iii: Reversal (pacs.007) — D+2 -->
+    <div class="flow-area rtx-row" data-stage="rtx">
+        <div class="flow-label danger">// B2B Phase 2b-iii — Reversal (pacs.007): creditor-initiated cancellation · D+2 window (shorter than Core D+5)</div>
+        <div class="flow-row">
+            <div class="box box-orange" onclick="om('b2b_reversal_flow')"><div class="bt">Reversal (pacs.007)</div><div class="bs">Creditor-init · D+2</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">→ REVERSED</div></div>
+            <div class="box box-orange" onclick="om('b2b_r_tx')"><div class="bt">State Machine (B2B)</div><div class="bs">→ REVERSED</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">recon gate</div></div>
+            <div class="box box-yellow" onclick="om('b2b_ledger')"><div class="bt">Ledger Reversal</div><div class="bs">Recon-gated · credit back</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">generate</div></div>
+            <div class="box box-blue" onclick="om('b2b_bank_adapter')"><div class="bt">Bank Adapter (B2B)</div><div class="bs">Generate pacs.007</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('b2b_pubsub_rtx')"><div class="bt">Cloud Pub/Sub</div><div class="bs">collection.reversed.b2b</div></div>
+        </div>
+    </div>
+
+    <!-- B2B: No Refund — explicit callout -->
+    <div class="flow-area rtx-row" data-stage="rtx">
+        <div class="flow-label danger">// B2B — NO REFUND PATH: B2B debtors have no unconditional refund right (no camt.055) — key commercial advantage for creditors</div>
+        <div class="flow-row">
+            <div class="box box-gray" onclick="om('b2b_no_refund')"><div class="bt">⊘ No Refund (B2B)</div><div class="bs">camt.055 not applicable</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">blocked</div></div>
+            <div class="box box-gray" onclick="om('b2b_no_refund')"><div class="bt">No 8-Week Right</div><div class="bs">Corporate debtors only</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">dispute?</div></div>
+            <div class="box box-red" onclick="om('b2b_no_refund')"><div class="bt">Legal Channel Only</div><div class="bs">Court / arbitration route</div></div>
         </div>
     </div>
 
     <!-- B2B: Inbound Bank Gateway -->
-    <div class="flow-area b2b-row">
+    <div class="flow-area b2b-row" data-stage="happy">
         <div class="flow-label cyan">// B2B Inbound Bank Gateway — Receive bank response files (pain.002, pacs), trigger parsing for B2B responses</div>
         <div class="flow-row">
             <div class="box box-ext-creditor" onclick="om('b2b_step2')"><div class="bt">Creditor Bank (B2B)</div><div class="bs">Response file</div></div>
@@ -595,8 +706,24 @@
         </div>
     </div>
 
+    <!-- B2B: Analytics + Reconciliation -->
+    <div class="flow-area recon-row" data-stage="recon">
+        <div class="flow-label success">// B2B Phase 4 — Analytics + reconciliation: PII-stripped events → BigQuery → recon engine · B2B-specific: mandate ACK recon + lower R-rate baseline</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('b2b_pubsub_rtx')"><div class="bt">Cloud Pub/Sub</div><div class="bs">B2B transaction events</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-teal" onclick="om('dataflow_core')"><div class="bt">Dataflow</div><div class="bs">PII removal · enrich</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-teal" onclick="om('bigquery_core')"><div class="bt">BigQuery</div><div class="bs">B2B R-rate · ACK stats</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-green" onclick="om('b2b_recon_engine')"><div class="bt">Recon Engine (B2B)</div><div class="bs">Ledger vs bank · ACK recon</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-purple" onclick="om('vertex_core')"><div class="bt">Vertex AI (Gemini)</div><div class="bs">MD01 classify · sync score</div></div>
+        </div>
+    </div>
+
     <!-- B2B: Audit Service -->
-    <div class="flow-area b2b-row">
+    <div class="flow-area b2b-row" data-stage="recovery">
         <div class="flow-label cyan">// B2B Audit — Append-only immutable audit trail with regulator export for B2B SDD lifecycle</div>
         <div class="flow-row">
             <div class="box box-amber" onclick="om('pubsub_initiated_core')"><div class="bt">Cloud Pub/Sub</div><div class="bs">B2B lifecycle events</div></div>
@@ -704,7 +831,7 @@ const D={
     'b2b_bank_adapter':{tag:'B2B · Integration',title:'Bank Adapter Layer (B2B)',body:`<p>Same as Core but sets <code>LclInstrm = B2BB</code> — routes through the B2B scheme at STEP2, not Core scheme. Enforces <strong>D-1 cut-off for all sequence types</strong> (unlike Core which uses D-2 for RCUR/FNAL).</p>`,chips:[{t:'LclInstrm: B2BB',c:'chip-cyan'},{t:'D-1 all seq types',c:'chip-amber'},{t:'B2B scheme routing',c:'chip-teal'}]},
     'b2b_spanner':{tag:'Storage · B2B',title:'Spanner / SQL (B2B)',body:`<p>Persists B2B collection state and cross-checks mandate ACK status on each write. Ensures no collection reaches SUBMITTED state without a confirmed debtor bank ACK.</p>`,chips:[{t:'ACK cross-check on write',c:'chip-cyan'},{t:'B2B state transitions',c:'chip-teal'}]},
     'b2b_step2':{tag:'External · B2B CSM',title:'EBA STEP2 / SDD CSM (B2B)',body:`<p>Routes B2B pain.008 (<code>LclInstrm = B2BB</code>) through the <strong>separate B2B scheme</strong> at STEP2. Instructions not conforming to B2B format are rejected at CSM. Same 4-cycle/day schedule as Core.</p>`,chips:[{t:'B2B scheme separate',c:'chip-cyan'},{t:'LclInstrm validation',c:'chip-red'},{t:'4 cycles/day',c:'chip-gray'}]},
-    'b2b_debtor_bank_debit':{tag:'External · B2B',title:'Debtor Bank (B2B) — Debit Validation',body:`<p>Validates each incoming pain.008 against its stored mandate copy before debiting. If mandate not found or mismatched: refuses <code>MD01</code>. <strong>D+2 return window</strong> vs D+5 for Core. Post-settlement certainty is much higher.</p>`,chips:[{t:'Mandate validation on each debit',c:'chip-cyan'},{t:'D+2 return window',c:'chip-amber'},{t:'MD01 if mismatch',c:'chip-red'},{t:'No refund right',c:'chip-red'}]},
+    'b2b_debtor_bank_debit':{tag:'External · B2B',title:'Debtor Bank (B2B) — Debit Validation',body:`<p>Validates each incoming pain.008 against its stored mandate copy before debiting. If mandate not found or mismatched: refuses <code>MD01</code>. <strong>D+2 return window</strong> vs D+5 for Core. Post-settlement certainty is much higher.</p>`,chips:[{t:'Mandate validation on each debit',c:'chip-cyan'},{t:'D+2 return window',c:'chip-amber'},{t:'MD01 → mandate sync check',c:'chip-red'},{t:'No refund right',c:'chip-red'}]},
     'b2b_r_tx':{tag:'B2B · R-Transactions',title:'R-Transaction Handler (B2B)',body:`<p>Same types as Core but with key differences: <strong>no unconditional refund (camt.055)</strong> — REFUNDED state does not exist for B2B. <strong>D+2 return window</strong> vs D+5 for Core. <strong>MD01 returns are rarer</strong> (mandate pre-validated by debtor bank) — when they occur, investigate mandate sync.</p>`,chips:[{t:'No refund path',c:'chip-red'},{t:'D+2 return window',c:'chip-cyan'},{t:'MD01 → mandate sync check',c:'chip-amber'},{t:'Return/Refusal/Reversal only',c:'chip-gray'}]},
     'b2b_ledger':{tag:'B2B · Accounting',title:'Ledger Service (B2B)',body:`<p>Same double-entry pattern as Core. B2B-specific: no camt.055 refund reversal path. Recon gate before ledger reversal still applies — even with B2B's higher post-settlement certainty, double-reversal prevention is non-negotiable. Idempotent writes throughout.</p>`,chips:[{t:'Double-entry',c:'chip-teal'},{t:'No refund reversal path',c:'chip-red'},{t:'Recon-gated',c:'chip-amber'},{t:'Idempotent',c:'chip-teal'}]},
     // ── File Processing Layer ──
@@ -733,7 +860,14 @@ const D={
     'b2b_ebics_fileact':{tag:'B2B · Bank Connectivity',title:'EBICS / FileAct (B2B)',body:`<p>Same EBICS/FileAct engine as Core, using the B2B bank connection profile. B2B connections may use different EBICS subscriber IDs, key sets, and bank host IDs compared to Core. Ensures B2B files are routed through the correct bank channel to reach the B2B scheme at STEP2.</p>`,chips:[{t:'B2B subscriber ID',c:'chip-cyan'},{t:'Separate key set',c:'chip-red'},{t:'B2B channel routing',c:'chip-blue'}]},
     'b2b_inbound_bank_gw':{tag:'B2B · Bank Integration',title:'Inbound Bank Gateway (B2B)',body:`<p>Same inbound gateway architecture as Core, configured for B2B bank connections. Handles B2B-specific response files: pain.002 with B2B reason codes, pacs.004 (D+2 window), no camt.055 (no refund path). Triggers B2B Parser Service on file arrival. Maintains separate file registry for B2B traffic.</p>`,chips:[{t:'B2B response files',c:'chip-cyan'},{t:'D+2 returns only',c:'chip-amber'},{t:'No camt.055',c:'chip-red'},{t:'B2B file registry',c:'chip-teal'}]},
     'b2b_liquidity_treasury':{tag:'B2B · Treasury',title:'Liquidity / Treasury (B2B)',body:`<p>Same treasury gate as Core but calibrated for B2B characteristics: <strong>higher individual transaction values</strong> (corporate debits), <strong>lower return reserve buffer</strong> (B2B has no refund right and shorter return window), <strong>corporate credit facility integration</strong>. May connect to corporate treasury management systems (TMS) for real-time cash position across multiple banks.</p>`,chips:[{t:'Higher value calibration',c:'chip-cyan'},{t:'Lower return buffer',c:'chip-teal'},{t:'TMS integration',c:'chip-blue'},{t:'Corporate credit facility',c:'chip-amber'}]},
-    'b2b_audit_service':{tag:'B2B · Compliance',title:'Audit Service (B2B)',body:`<p>Same append-only, immutable audit service as Core, capturing all B2B-specific events: mandate ACK lifecycle, debtor bank validation results, B2B scheme routing decisions, D+2 return processing. B2B audit entries are tagged with <code>scheme=B2B</code> for filtered regulator exports. Shares the same audit store and archive infrastructure as Core.</p>`,chips:[{t:'B2B scheme tag',c:'chip-cyan'},{t:'ACK lifecycle audit',c:'chip-amber'},{t:'Shared audit store',c:'chip-teal'},{t:'Append-only',c:'chip-red'}]}
+    'b2b_audit_service':{tag:'B2B · Compliance',title:'Audit Service (B2B)',body:`<p>Same append-only, immutable audit service as Core, capturing all B2B-specific events: mandate ACK lifecycle, debtor bank validation results, B2B scheme routing decisions, D+2 return processing. B2B audit entries are tagged with <code>scheme=B2B</code> for filtered regulator exports. Shares the same audit store and archive infrastructure as Core.</p>`,chips:[{t:'B2B scheme tag',c:'chip-cyan'},{t:'ACK lifecycle audit',c:'chip-amber'},{t:'Shared audit store',c:'chip-teal'},{t:'Append-only',c:'chip-red'}]},
+    // ── B2B R-Transaction Flows ──
+    'b2b_recon_engine':{tag:'B2B · Reconciliation',title:'Reconciliation Engine (B2B)',body:`<p>Same dual-role recon engine as Core, with B2B-specific overlays: <strong>(1) Standard recon</strong> — matches B2B ledger entries against bank statements (camt.054 / MT940), flags unmatched entries. <strong>(2) Recon gate for reversals</strong> — before any B2B ledger reversal (return/reversal only — no refund), confirms the R-transaction is valid and non-duplicate.</p><p>B2B-specific additions: <strong>Mandate ACK reconciliation</strong> — cross-references mandate ACK status against debtor bank records, detects sync drift that could cause future MD01 refusals. <strong>Lower R-rate baseline</strong> — B2B R-rates are typically much lower than Core due to mandate pre-validation; alerts trigger at lower thresholds (e.g. &gt;0.5% vs &gt;1% for Core). <strong>D+2 window tracking</strong> — monitors return timing to ensure debtor banks comply with the shorter B2B return window.</p>`,chips:[{t:'Ledger vs bank statement',c:'chip-teal'},{t:'Mandate ACK recon',c:'chip-cyan'},{t:'Lower R-rate threshold',c:'chip-amber'},{t:'D+2 window tracking',c:'chip-cyan'},{t:'No refund gate needed',c:'chip-gray'}]},
+    'b2b_return_flow':{tag:'B2B · R-Transaction · Return',title:'Return (pacs.004) — B2B D+2',body:`<p>Same mechanism as Core but with critical B2B differences: <strong>D+2 return window</strong> (vs D+5 for Core) — the debtor bank has only 2 business days post-settlement to return. This shorter window gives creditors much higher settlement certainty.</p><p>Because the debtor bank <strong>validates the mandate before debiting</strong>, MD01 returns (no mandate) are extremely rare in B2B — when they occur, it indicates a mandate synchronisation failure between creditor and debtor banks. Common B2B return reasons: <code>AC04</code> (account closed), <code>AM04</code> (insufficient funds), <code>AC01</code> (incorrect account). MD01 triggers an immediate mandate sync investigation rather than a simple freeze.</p>`,chips:[{t:'D+2 window (not D+5)',c:'chip-cyan'},{t:'AC04 / AM04 / AC01',c:'chip-red'},{t:'MD01 = sync failure',c:'chip-red'},{t:'Higher settlement certainty',c:'chip-teal'}]},
+    'b2b_refusal_flow':{tag:'B2B · R-Transaction · Refusal',title:'Refusal (pain.002 RJCT) — B2B',body:`<p>Pre-settlement rejection by the debtor bank — <strong>no funds move</strong>. In B2B, refusals are the <strong>primary defence mechanism</strong> because the debtor bank validates every instruction against its stored mandate copy. The most common B2B refusal code is <code>MD01</code> (no mandate found) — this means the debtor bank never received or stored the mandate. <code>MD02</code> (mandate data mismatch) indicates the creditor amended the mandate but the debtor bank has a stale copy.</p><p>B2B refusals almost always indicate a <strong>mandate sync issue</strong> — the creditor's Mandate ACK Store should have blocked submission if ACK was not confirmed. Investigating the ACK trail is the first step. State machine: SUBMITTED → REFUSED → ledger void of pending entry.</p>`,chips:[{t:'Pre-settlement',c:'chip-gray'},{t:'MD01 = mandate not stored',c:'chip-red'},{t:'MD02 = stale copy',c:'chip-red'},{t:'ACK trail investigation',c:'chip-cyan'},{t:'Void pending entry',c:'chip-amber'}]},
+    'b2b_reversal_flow':{tag:'B2B · R-Transaction · Reversal',title:'Reversal (pacs.007) — B2B D+2',body:`<p>Creditor-initiated cancellation of a settled B2B collection. Window: <strong>D+2</strong> (vs D+5 for Core). Used when the creditor discovers an error after settlement — wrong amount, wrong debtor, duplicate collection. The creditor generates a pacs.007 via the Bank Adapter and submits through STEP2.</p><p><strong>Critical</strong>: ledger reversal is recon-gated — identical safety pattern to Core. The shorter D+2 window means reversals must be initiated faster. Idempotent: replaying produces no second reversal. Because B2B has no refund path, reversal is the <strong>only creditor-initiated remedy</strong> after settlement.</p>`,chips:[{t:'D+2 window (not D+5)',c:'chip-cyan'},{t:'Creditor-initiated',c:'chip-orange'},{t:'Only post-settle remedy',c:'chip-red'},{t:'Recon-gated',c:'chip-red'},{t:'Idempotent',c:'chip-teal'}]},
+    'b2b_no_refund':{tag:'B2B · Key Difference',title:'No Refund Right (B2B)',body:`<p>Under SDD B2B, the debtor has <strong>no unconditional refund right</strong>. This is the single most important commercial difference vs Core. In Core, a debtor can request an unconditional refund within 8 weeks — no reason required. In B2B, <strong>this path does not exist</strong>.</p><p>The <code>camt.055</code> message type (refund request) is not applicable to B2B. The REFUNDED state does not exist in the B2B state machine. If a B2B debtor disputes a collection, the <strong>only recourse is through legal / arbitration channels</strong> outside the SEPA scheme — the creditor is protected by the mandate signed by the corporate debtor.</p><p>This makes B2B attractive for creditors with high-value recurring collections: no risk of surprise refunds, much higher post-settlement certainty, and predictable cash flow.</p>`,chips:[{t:'No 8-week right',c:'chip-red'},{t:'No camt.055',c:'chip-red'},{t:'No REFUNDED state',c:'chip-gray'},{t:'Legal recourse only',c:'chip-orange'},{t:'Key B2B advantage',c:'chip-cyan'}]},
+    'b2b_pubsub_rtx':{tag:'B2B · Messaging · R-Transactions',title:'Cloud Pub/Sub — B2B R-Transaction Events',body:`<p>Publishes <strong>three event types</strong> (not four — no refund):</p><p><strong>collection.returned.b2b</strong> — triggers recon-gated ledger reversal + creditor webhook + MD01 mandate sync investigation.<br/><strong>collection.refused.b2b</strong> — triggers ledger void (pending entry) + creditor webhook + ACK trail audit.<br/><strong>collection.reversed.b2b</strong> — triggers recon-gated ledger reversal + creditor webhook + pacs.007 confirmation.</p><p>All events tagged with <code>scheme=B2B</code> for filtered analytics. B2B R-rates are typically much lower than Core due to mandate pre-validation by debtor bank.</p>`,chips:[{t:'collection.returned.b2b',c:'chip-red'},{t:'collection.refused.b2b',c:'chip-red'},{t:'collection.reversed.b2b',c:'chip-orange'},{t:'No refund event',c:'chip-gray'},{t:'scheme=B2B tag',c:'chip-cyan'}]}
 };
 
 function om(id){
@@ -749,6 +883,78 @@ function om(id){
 function cm(){document.getElementById('mbg').classList.remove('open');document.body.style.overflow='';}
 function cbg(e){if(e.target===document.getElementById('mbg'))cm();}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')cm();});
+
+/* ── Stage Filter ── */
+function filterStage(stage){
+    // Update button active states
+    document.querySelectorAll('.stage-btn').forEach(b=>{
+        b.classList.toggle('active',b.getAttribute('data-filter')===stage);
+    });
+    // Update stage titles
+    document.querySelectorAll('.stage-title').forEach(t=>t.classList.remove('active'));
+    const stEl=document.getElementById('st-'+stage);
+    if(stEl)stEl.classList.add('active');
+    // Get both sections
+    const coreSection=document.querySelector('[data-section="core"]');
+    const b2bSection=document.querySelector('[data-section="b2b"]');
+    const allSections=[coreSection,b2bSection].filter(Boolean);
+    if(stage==='all'){
+        // Show everything
+        allSections.forEach(s=>{
+            s.classList.remove('filtering');
+            s.querySelectorAll('.flow-area[data-stage]').forEach(f=>f.classList.remove('stage-visible'));
+        });
+        // Reset any inline display overrides
+        if(b2bSection){
+            const banner=b2bSection.querySelector('.banner');
+            if(banner)banner.style.display='';
+            const cg=b2bSection.querySelector('.compare-grid');
+            if(cg)cg.style.display='';
+        }
+        return;
+    }
+    if(stage==='b2b'){
+        // B2B Differences: hide all flow areas, show only banner + compare-grid text
+        if(coreSection){
+            coreSection.classList.add('filtering');
+            coreSection.querySelectorAll('.flow-area[data-stage]').forEach(f=>f.classList.remove('stage-visible'));
+            const ch=coreSection.querySelector('.section-header');
+            if(ch)ch.classList.remove('stage-visible');
+        }
+        if(b2bSection){
+            b2bSection.classList.add('filtering');
+            // Hide all flow areas and section header
+            b2bSection.querySelectorAll('.flow-area[data-stage]').forEach(f=>f.classList.remove('stage-visible'));
+            // Force-show banner and compare-grid only (override CSS hiding)
+            const banner=b2bSection.querySelector('.banner');
+            if(banner)banner.style.display='block';
+            const cg=b2bSection.querySelector('.compare-grid');
+            if(cg)cg.style.display='grid';
+        }
+    } else {
+        // happy / rtx / recon / recovery: show matching flow areas in BOTH sections
+        allSections.forEach(s=>{
+            s.classList.add('filtering');
+            let hasVisible=false;
+            s.querySelectorAll('.flow-area[data-stage]').forEach(f=>{
+                const match=f.getAttribute('data-stage')===stage;
+                f.classList.toggle('stage-visible',match);
+                if(match)hasVisible=true;
+            });
+            const hdr=s.querySelector('.section-header');
+            if(hdr)hdr.classList.toggle('stage-visible',hasVisible);
+        });
+        // Reset banner/compare-grid inline styles (CSS .filtering hides them)
+        if(b2bSection){
+            const banner=b2bSection.querySelector('.banner');
+            if(banner)banner.style.display='';
+            const cg=b2bSection.querySelector('.compare-grid');
+            if(cg)cg.style.display='';
+        }
+    }
+    // Scroll to top of content
+    window.scrollTo({top:document.querySelector('.stage-bar').offsetTop-10,behavior:'smooth'});
+}
 </script>
 </body>
 </html>
