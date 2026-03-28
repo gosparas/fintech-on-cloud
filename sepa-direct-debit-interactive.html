@@ -192,8 +192,8 @@
 <div class="stage-bar" id="stageBar">
     <button class="stage-btn active" data-filter="all" onclick="filterStage('all')">Show All</button>
     <div class="stage-divider"></div>
-    <button class="stage-btn" data-filter="happy" onclick="filterStage('happy')">☀ Happy Flow</button>
-    <button class="stage-btn" data-filter="rtx" onclick="filterStage('rtx')">⚡ Unhappy Flow</button>
+    <button class="stage-btn" data-filter="happy" onclick="filterStage('happy')">☀ Nominal Flow</button>
+    <button class="stage-btn" data-filter="rtx" onclick="filterStage('rtx')">⚡ R-Transaction Flow</button>
     <button class="stage-btn" data-filter="recon" onclick="filterStage('recon')">✓ Reconciliation &amp; Analytics</button>
     <button class="stage-btn" data-filter="recovery" onclick="filterStage('recovery')">🛡 Recovery &amp; Audit</button>
     <div class="stage-divider"></div>
@@ -202,11 +202,11 @@
 
 <!-- STAGE TITLES (shown when filtered) -->
 <div class="stage-title" id="st-happy">
-    <h3>☀ Stage 1 — Happy Flow (Core &amp; B2B)</h3>
+    <h3>☀ Stage 1 — Nominal Flow (Core &amp; B2B)</h3>
     <p>MANDATE → COLLECTION → FILE PROCESSING → EBICS → LIQUIDITY CHECK → CLEARING → SETTLEMENT → LEDGER</p>
 </div>
 <div class="stage-title" id="st-rtx">
-    <h3>⚡ Stage 2 — Unhappy Flow: R-Transactions (Core &amp; B2B)</h3>
+    <h3>⚡ Stage 2 — R-Transaction Flow (Core &amp; B2B)</h3>
     <p>RETURN (pacs.004) · REFUSAL (pain.002 RJCT) · REVERSAL (pacs.007) · REFUND (camt.055 — CORE ONLY)</p>
 </div>
 <div class="stage-title" id="st-recon">
