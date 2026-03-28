@@ -35,13 +35,13 @@
         .sh-core{background:#F5F3FF;border-color:#7C3AED}.sh-core h2{color:#4C1D95}.sh-core p{color:#7C3AED}
         .sh-b2b{background:#ECFEFF;border-color:#0891B2}.sh-b2b h2{color:#0E4F6B}.sh-b2b p{color:#0891B2}
         /* ── FLOW AREAS ── */
-        .flow-area{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin-bottom:6px}
-        .flow-area.recovery{background:#FFF7ED;border-color:#FED7AA}
-        .flow-area.ledger-row{background:#FFFBEB;border-color:#FDE68A}
-        .flow-area.recon-row{background:#F0FDF4;border-color:#A7F3D0}
-        .flow-area.rtx-row{background:#FEF2F2;border-color:#FECACA}
-        .flow-area.mandate-row{background:#F5F3FF;border-color:#C4B5FD}
-        .flow-area.b2b-row{background:#ECFEFF;border-color:#A5F3FC}
+        .flow-area{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin-bottom:6px;border-left:4px solid #E2E8F0}
+        .flow-area.recovery{border-left-color:#FB923C}
+        .flow-area.ledger-row{border-left-color:#FACC15}
+        .flow-area.recon-row{border-left-color:#34D399}
+        .flow-area.rtx-row{border-left-color:#F87171}
+        .flow-area.mandate-row{border-left-color:#A78BFA}
+        .flow-area.b2b-row{border-left-color:#22D3EE}
         .flow-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#94A3B8;margin-bottom:10px}
         .flow-label.warn{color:#D97706}
         .flow-label.success{color:#059669}
@@ -50,33 +50,33 @@
         .flow-label.cyan{color:#0891B2}
         .flow-row{display:flex;align-items:center;flex-wrap:wrap;row-gap:8px;column-gap:0px;padding-bottom:2px}
         /* ── BOXES ── */
-        .box{flex-shrink:2;flex-grow:0;border-radius:7px;padding:7px 8px;cursor:pointer;border:1.5px solid;transition:transform 0.1s,box-shadow 0.1s;min-width:82px;max-width:148px;text-align:center}
-        .box:hover{transform:translateY(-2px);box-shadow:0 3px 12px rgba(0,0,0,0.08)}
+        .box{flex-shrink:2;flex-grow:0;border-radius:7px;padding:7px 8px;cursor:pointer;border:2px solid;transition:transform 0.1s,box-shadow 0.1s;min-width:82px;max-width:148px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+        .box:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,0.13)}
         .bt{font-family:'Outfit',sans-serif;font-size:10.5px;font-weight:600;margin-bottom:2px;line-height:1.2}
-        .bs{font-family:'JetBrains Mono',monospace;font-size:7.5px;line-height:1.35;opacity:0.8}
-        .box-blue{background:#EFF6FF;border-color:#93C5FD}.box-blue .bt{color:#1E3A8A}.box-blue .bs{color:#3B82F6}
-        .box-teal{background:#ECFDF5;border-color:#6EE7B7}.box-teal .bt{color:#064E3B}.box-teal .bs{color:#059669}
-        .box-purple{background:#F5F3FF;border-color:#C4B5FD}.box-purple .bt{color:#4C1D95}.box-purple .bs{color:#7C3AED}
-        .box-amber{background:#FFFBEB;border-color:#FCD34D}.box-amber .bt{color:#78350F}.box-amber .bs{color:#D97706}
-        .box-gray{background:#F8FAFC;border-color:#CBD5E1}.box-gray .bt{color:#475569}.box-gray .bs{color:#94A3B8}
-        .box-ext{background:#F1F5F9;border-color:#CBD5E1;border-style:dashed}.box-ext .bt{color:#475569}.box-ext .bs{color:#94A3B8}
-        .box-ext-creditor{background:#EFF6FF;border-color:#60A5FA;border-style:dashed}.box-ext-creditor .bt{color:#1E40AF}.box-ext-creditor .bs{color:#3B82F6}
-        .box-ext-debtor{background:#FFF1F2;border-color:#FDA4AF;border-style:dashed}.box-ext-debtor .bt{color:#9F1239}.box-ext-debtor .bs{color:#E11D48}
-        .box-red{background:#FEF2F2;border-color:#FECACA}.box-red .bt{color:#B91C1C}.box-red .bs{color:#EF4444}
-        .box-orange{background:#FFF7ED;border-color:#FED7AA}.box-orange .bt{color:#C2410C}.box-orange .bs{color:#EA580C}
-        .box-green{background:#F0FDF4;border-color:#A7F3D0}.box-green .bt{color:#065F46}.box-green .bs{color:#059669}
-        .box-yellow{background:#FEFCE8;border-color:#FEF08A}.box-yellow .bt{color:#713F12}.box-yellow .bs{color:#CA8A04}
-        .box-cyan{background:#ECFEFF;border-color:#A5F3FC}.box-cyan .bt{color:#0E4F6B}.box-cyan .bs{color:#0891B2}
-        .box-indigo{background:#EEF2FF;border-color:#A5B4FC}.box-indigo .bt{color:#3730A3}.box-indigo .bs{color:#4F46E5}
+        .bs{font-family:'JetBrains Mono',monospace;font-size:7.5px;line-height:1.35}
+        .box-blue{background:#DBEAFE;border-color:#93C5FD}.box-blue .bt{color:#1E3A8A}.box-blue .bs{color:#3B82F6}
+        .box-teal{background:#D1FAE5;border-color:#6EE7B7}.box-teal .bt{color:#064E3B}.box-teal .bs{color:#059669}
+        .box-purple{background:#EDE9FE;border-color:#C4B5FD}.box-purple .bt{color:#4C1D95}.box-purple .bs{color:#7C3AED}
+        .box-amber{background:#FEF3C7;border-color:#FCD34D}.box-amber .bt{color:#78350F}.box-amber .bs{color:#D97706}
+        .box-gray{background:#E2E8F0;border-color:#94A3B8}.box-gray .bt{color:#334155}.box-gray .bs{color:#64748B}
+        .box-ext{background:#E2E8F0;border-color:#94A3B8;border-style:dashed}.box-ext .bt{color:#334155}.box-ext .bs{color:#64748B}
+        .box-ext-creditor{background:#DBEAFE;border-color:#60A5FA;border-style:dashed}.box-ext-creditor .bt{color:#1E40AF}.box-ext-creditor .bs{color:#3B82F6}
+        .box-ext-debtor{background:#FFE4E6;border-color:#FB7185;border-style:dashed}.box-ext-debtor .bt{color:#9F1239}.box-ext-debtor .bs{color:#E11D48}
+        .box-red{background:#FECACA;border-color:#F87171}.box-red .bt{color:#991B1B}.box-red .bs{color:#DC2626}
+        .box-orange{background:#FED7AA;border-color:#FB923C}.box-orange .bt{color:#9A3412}.box-orange .bs{color:#EA580C}
+        .box-green{background:#A7F3D0;border-color:#34D399}.box-green .bt{color:#065F46}.box-green .bs{color:#059669}
+        .box-yellow{background:#FDE68A;border-color:#FACC15}.box-yellow .bt{color:#713F12}.box-yellow .bs{color:#A16207}
+        .box-cyan{background:#A5F3FC;border-color:#22D3EE}.box-cyan .bt{color:#0E4F6B}.box-cyan .bs{color:#0891B2}
+        .box-indigo{background:#C7D2FE;border-color:#818CF8}.box-indigo .bt{color:#3730A3}.box-indigo .bs{color:#4F46E5}
         /* ── ENTRY GROUP ── */
         .entry-group{display:flex;flex-direction:column;gap:5px;flex-shrink:0;margin-right:4px}
         .entry-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#94A3B8;text-align:center;margin-bottom:2px}
-        .entry-box{border-radius:6px;padding:6px 8px;cursor:pointer;border:1px solid;transition:transform 0.1s,box-shadow 0.1s;text-align:center;min-width:84px;max-width:110px}
-        .entry-box:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,0.07)}
+        .entry-box{border-radius:6px;padding:6px 8px;cursor:pointer;border:2px solid;transition:transform 0.1s,box-shadow 0.1s;text-align:center;min-width:84px;max-width:110px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+        .entry-box:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,0.12)}
         .entry-box .et{font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;margin-bottom:1px}
-        .entry-box .es{font-family:'JetBrains Mono',monospace;font-size:8px;opacity:0.7}
-        .eb-p{background:#F5F3FF;border-color:#C4B5FD}.eb-p .et{color:#4C1D95}.eb-p .es{color:#7C3AED}
-        .eb-c{background:#ECFEFF;border-color:#A5F3FC}.eb-c .et{color:#0E4F6B}.eb-c .es{color:#0891B2}
+        .entry-box .es{font-family:'JetBrains Mono',monospace;font-size:8px}
+        .eb-p{background:#EDE9FE;border-color:#C4B5FD}.eb-p .et{color:#4C1D95}.eb-p .es{color:#7C3AED}
+        .eb-c{background:#A5F3FC;border-color:#22D3EE}.eb-c .et{color:#0E4F6B}.eb-c .es{color:#0891B2}
         /* ── ARROWS ── */
         .arr{flex-shrink:1;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 4px;min-width:48px;max-width:80px;position:relative;overflow:visible}
         .arr-line{height:2px;width:100%;position:relative;flex-shrink:0}
@@ -745,17 +745,17 @@
         <div class="li"><div class="ld ld-r"></div>Status return</div>
         <div class="li"><div class="ld ld-w"></div>Recovery / warning</div>
         <div class="li"><div class="ld ld-d"></div>R-Transaction / failure</div>
-        <div class="li"><div class="lb" style="background:#EFF6FF;border:1.5px solid #93C5FD"></div>GCP compute</div>
-        <div class="li"><div class="lb" style="background:#ECFDF5;border:1.5px solid #6EE7B7"></div>Storage / analytics</div>
-        <div class="li"><div class="lb" style="background:#FFFBEB;border:1.5px solid #FCD34D"></div>Messaging / events</div>
-        <div class="li"><div class="lb" style="background:#F5F3FF;border:1.5px solid #C4B5FD"></div>State machine / mandate</div>
-        <div class="li"><div class="lb" style="background:#FEFCE8;border:1.5px solid #FEF08A"></div>Ledger / accounting</div>
-        <div class="li"><div class="lb" style="background:#F0FDF4;border:1.5px solid #A7F3D0"></div>Reconciliation</div>
-        <div class="li"><div class="lb" style="background:#FEF2F2;border:1.5px solid #FECACA"></div>R-Transaction / DLQ</div>
-        <div class="li"><div class="lb" style="background:#ECFEFF;border:1.5px solid #A5F3FC"></div>B2B specific</div>
-        <div class="li"><div class="lb" style="background:#EFF6FF;border:1.5px dashed #60A5FA"></div>Creditor Bank (external)</div>
-        <div class="li"><div class="lb" style="background:#FFF1F2;border:1.5px dashed #FDA4AF"></div>Debtor Bank (external)</div>
-        <div class="li"><div class="lb" style="background:#F1F5F9;border:1.5px dashed #CBD5E1"></div>CSM / Infrastructure (external)</div>
+        <div class="li"><div class="lb" style="background:#DBEAFE;border:1.5px solid #93C5FD"></div>GCP compute</div>
+        <div class="li"><div class="lb" style="background:#D1FAE5;border:1.5px solid #6EE7B7"></div>Storage / analytics</div>
+        <div class="li"><div class="lb" style="background:#FEF3C7;border:1.5px solid #FCD34D"></div>Messaging / events</div>
+        <div class="li"><div class="lb" style="background:#EDE9FE;border:1.5px solid #C4B5FD"></div>State machine / mandate</div>
+        <div class="li"><div class="lb" style="background:#FDE68A;border:1.5px solid #FACC15"></div>Ledger / accounting</div>
+        <div class="li"><div class="lb" style="background:#A7F3D0;border:1.5px solid #34D399"></div>Reconciliation</div>
+        <div class="li"><div class="lb" style="background:#FECACA;border:1.5px solid #F87171"></div>R-Transaction / DLQ</div>
+        <div class="li"><div class="lb" style="background:#A5F3FC;border:1.5px solid #22D3EE"></div>B2B specific</div>
+        <div class="li"><div class="lb" style="background:#DBEAFE;border:1.5px dashed #60A5FA"></div>Creditor Bank (external)</div>
+        <div class="li"><div class="lb" style="background:#FFE4E6;border:1.5px dashed #FB7185"></div>Debtor Bank (external)</div>
+        <div class="li"><div class="lb" style="background:#E2E8F0;border:1.5px dashed #94A3B8"></div>CSM / Infrastructure (external)</div>
     </div>
 </div>
 
