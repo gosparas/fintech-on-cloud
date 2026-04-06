@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>iDEAL — Production Architecture | Fintech on Cloud</title>
+    <title>iDEAL — Merchant-Side Production Architecture | Fintech on Cloud</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet"/>
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
@@ -185,9 +185,9 @@
     <a class="back" href="https://fintechoncloud.substack.com">← Back to blog</a>
 </div>
 <div class="hero">
-    <div class="eyebrow">// Production Architecture · Post #3 · European Payment Series</div>
-    <h1>iDEAL — Production-Grade GCP Architecture<br/>End-to-End Payment Flow</h1>
-    <p>Click any component for a full explanation. Covers payment initiation, redirect chain, bank authentication, async webhook processing, race condition handling, failure modes, reconciliation, and GCP-native architecture.</p>
+    <div class="eyebrow">// Production Architecture · Post #3 · European Payment Series · Merchant / PSP-Integrator Perspective</div>
+    <h1>iDEAL — Production-Grade GCP Architecture<br/>Merchant-Side Payment Flow</h1>
+    <p>Architecture from the <strong>merchant / PSP-integrator</strong> viewpoint — what <em>you</em> build and operate. External parties (PSP, iDEAL Hub, issuing bank, banking rails) shown as dashed-border components. Click any component for a full explanation.</p>
     <div class="tags">
         <span class="tag tag-cyan">iDEAL 1.x / 2.0</span>
         <span class="tag tag-blue">GCP</span>
@@ -199,7 +199,17 @@
         <span class="tag tag-gray">Mollie / Adyen / Stripe</span>
     </div>
 </div>
-<div class="hint" style="display:flex;align-items:center;justify-content:center;gap:16px;">Click any box to learn more <span>→</span><button class="screenshot-btn" onclick="document.body.classList.toggle('screenshot-mode');this.textContent=document.body.classList.contains('screenshot-mode')?'Exit compact mode':'Compact view for screenshot'">Compact view for screenshot</button></div>
+
+
+<div style="max-width:1300px;margin:12px auto 0;padding:0 14px">
+    <div class="banner banner-cyan" style="display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:16px;line-height:1">🏪</span>
+        <div>
+            <strong style="color:#0E4F6B">Perspective: Merchant / PSP-Integrator</strong><br/>
+            This diagram shows what <em>you</em> build and operate as the merchant integrating iDEAL via a PSP. <strong style="color:#0E4F6B">Solid-border boxes</strong> = your systems (Cloud Run, Pub/Sub, AlloyDB, etc.). <strong style="color:#0E4F6B">Dashed-border boxes</strong> = external parties you interact with (PSP API, iDEAL Hub, issuing bank, banking rails) — you do not control these.
+        </div>
+    </div>
+</div>
 
 <!-- STAGE FILTER BAR -->
 <div class="stage-bar" id="stageBar">
@@ -249,8 +259,8 @@
 <div class="section" data-section="ideal">
     <div class="section-header sh-ideal default-header" data-stage-header="all">
         <div>
-            <h2>iDEAL — End-to-End Payment Architecture</h2>
-            <p>PUSH PAYMENT · REDIRECT-BASED · iDEAL HUB · SCA AT BANK · NEAR-REAL-TIME SETTLEMENT · NL BANKING RAILS · PSP-MEDIATED</p>
+            <h2>iDEAL — Merchant-Side Payment Architecture</h2>
+            <p>YOUR SYSTEMS: API GATEWAY · PAYMENT API · STATE MACHINE · WEBHOOK HANDLER · DB · PUB/SUB · RECON | EXTERNAL: PSP · iDEAL HUB · ISSUING BANK · BANKING RAILS</p>
         </div>
     </div>
     <div class="section-header sh-ideal stage-header" data-stage-header="happy">
@@ -662,25 +672,36 @@
 
 <!-- LEGEND -->
 <div class="legend">
-    <div class="legend-inner">
-        <div class="li"><div class="ld ld-s"></div>Synchronous API call</div>
-        <div class="li"><div class="ld ld-r"></div>Browser redirect (HTTP 302)</div>
-        <div class="li"><div class="ld ld-a"></div>Asynchronous / Pub/Sub</div>
-        <div class="li"><div class="ld ld-w"></div>Webhook (PSP async push)</div>
-        <div class="li"><div class="ld ld-ret"></div>Status return / response</div>
-        <div class="li"><div class="ld ld-d"></div>Failure / error path</div>
-        <div class="li"><div class="lb" style="background:#1E40AF;border:1.5px solid #2563EB"></div>GCP compute (Cloud Run)</div>
-        <div class="li"><div class="lb" style="background:#065F46;border:1.5px solid #047857"></div>Storage / analytics</div>
-        <div class="li"><div class="lb" style="background:#92400E;border:1.5px solid #B45309"></div>Messaging (Pub/Sub)</div>
-        <div class="li"><div class="lb" style="background:#4C1D95;border:1.5px solid #6D28D9"></div>State machine / orchestration</div>
-        <div class="li"><div class="lb" style="background:#713F12;border:1.5px solid #CA8A04"></div>Recovery / warning path</div>
-        <div class="li"><div class="lb" style="background:#14532D;border:1.5px solid #16A34A"></div>Reconciliation</div>
-        <div class="li"><div class="lb" style="background:#991B1B;border:1.5px solid #DC2626"></div>Failure / DLQ</div>
-        <div class="li"><div class="lb" style="background:#1E3A8A;border:1.5px dashed #2563EB"></div>Customer Browser (external)</div>
-        <div class="li"><div class="lb" style="background:#881337;border:1.5px dashed #BE123C"></div>Issuing Bank (external)</div>
-        <div class="li"><div class="lb" style="background:#78350F;border:1.5px dashed #B45309"></div>PSP (Mollie/Adyen/Stripe)</div>
-        <div class="li"><div class="lb" style="background:#1E1B4B;border:1.5px dashed #4338CA"></div>iDEAL Hub (scheme routing)</div>
-        <div class="li"><div class="lb" style="background:#374151;border:1.5px dashed #6B7280"></div>NL Banking Rails / CSM</div>
+    <div class="legend-inner" style="flex-direction:column;align-items:stretch;gap:10px">
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:0.08em">Arrows</span>
+            <div class="li"><div class="ld ld-s"></div>Synchronous API call</div>
+            <div class="li"><div class="ld ld-r"></div>Browser redirect (HTTP 302)</div>
+            <div class="li"><div class="ld ld-a"></div>Asynchronous / Pub/Sub</div>
+            <div class="li"><div class="ld ld-w"></div>Webhook (PSP async push)</div>
+            <div class="li"><div class="ld ld-ret"></div>Status return / response</div>
+            <div class="li"><div class="ld ld-d"></div>Failure / error path</div>
+        </div>
+        <div style="height:1px;background:#E2E8F0"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:#065F46;text-transform:uppercase;letter-spacing:0.08em">Your Systems — solid border</span>
+            <div class="li"><div class="lb" style="background:#1E40AF;border:1.5px solid #2563EB"></div>GCP gateway / compute</div>
+            <div class="li"><div class="lb" style="background:#065F46;border:1.5px solid #047857"></div>Services / storage / analytics</div>
+            <div class="li"><div class="lb" style="background:#92400E;border:1.5px solid #B45309"></div>Messaging (Pub/Sub)</div>
+            <div class="li"><div class="lb" style="background:#4C1D95;border:1.5px solid #6D28D9"></div>State machine / orchestration</div>
+            <div class="li"><div class="lb" style="background:#14532D;border:1.5px solid #16A34A"></div>Reconciliation</div>
+            <div class="li"><div class="lb" style="background:#991B1B;border:1.5px solid #DC2626"></div>Failure / DLQ</div>
+            <div class="li"><div class="lb" style="background:#713F12;border:1.5px solid #CA8A04"></div>Recovery / warning path</div>
+        </div>
+        <div style="height:1px;background:#E2E8F0"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:#881337;text-transform:uppercase;letter-spacing:0.08em">External Parties — dashed border</span>
+            <div class="li"><div class="lb" style="background:#1E3A8A;border:1.5px dashed #2563EB"></div>Customer Browser</div>
+            <div class="li"><div class="lb" style="background:#78350F;border:1.5px dashed #B45309"></div>PSP (Mollie / Adyen / Stripe)</div>
+            <div class="li"><div class="lb" style="background:#1E1B4B;border:1.5px dashed #4338CA"></div>iDEAL Hub (Currence)</div>
+            <div class="li"><div class="lb" style="background:#881337;border:1.5px dashed #BE123C"></div>Issuing Bank</div>
+            <div class="li"><div class="lb" style="background:#374151;border:1.5px dashed #6B7280"></div>NL Banking Rails / CSM</div>
+        </div>
     </div>
 </div>
 
@@ -699,7 +720,7 @@
 </div>
 
 <div class="footer">
-    Interactive architecture diagram · <a href="https://fintechoncloud.substack.com">Fintech on Cloud</a> · Post #3: iDEAL — Production-Grade GCP Architecture · European Payment Series
+    Interactive architecture diagram · <a href="https://fintechoncloud.substack.com">Fintech on Cloud</a> · Post #3: iDEAL — Merchant-Side GCP Architecture · European Payment Series
 </div>
 
 <script>
