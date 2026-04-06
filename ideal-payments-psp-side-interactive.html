@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>iDEAL — Production Architecture | Fintech on Cloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet"/>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#FFFFFF;font-family:'Outfit',sans-serif;color:#18181B;min-height:100vh;padding:0 0 60px;min-width:320px}
+        .header{background:#18181B;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+        .brand{font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#F8FAFC}
+        .brand span{color:#34D399}
+        .back{font-family:'JetBrains Mono',monospace;font-size:11px;color:#52525B;text-decoration:none;letter-spacing:0.1em}
+        .back:hover{color:#94A3B8}
+        .hero{text-align:center;padding:32px 24px 20px;max-width:900px;margin:0 auto}
+        .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#0891B2;text-transform:uppercase;margin-bottom:8px}
+        .hero h1{font-family:'Fraunces',serif;font-size:clamp(20px,3.5vw,32px);font-weight:700;color:#18181B;line-height:1.15;margin-bottom:8px}
+        .hero p{font-size:13px;color:#64748B;margin-bottom:16px}
+        .tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+        .tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:3px;letter-spacing:0.1em;text-transform:uppercase}
+        .tag-blue{background:#DBEAFE;color:#1D4ED8}
+        .tag-green{background:#D1FAE5;color:#065F46}
+        .tag-gray{background:#F1F5F9;color:#475569}
+        .tag-red{background:#FEE2E2;color:#B91C1C}
+        .tag-purple{background:#EDE9FE;color:#4C1D95}
+        .tag-cyan{background:#CFFAFE;color:#0E7490}
+        .tag-amber{background:#FEF3C7;color:#78350F}
+        .tag-orange{background:#FFEDD5;color:#C2410C}
+        .hint{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#94A3B8;padding:9px;background:#F8FAFC;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;letter-spacing:0.05em}
+        /* ── SECTION ── */
+        .section{max-width:100%;margin:0 auto;padding:20px 12px 0}
+        .section-header{display:flex;align-items:flex-start;margin-bottom:12px;padding:12px 18px;border-radius:8px;border-left:4px solid}
+        .section-header h2{font-family:'Fraunces',serif;font-size:16px;font-weight:700;margin-bottom:3px}
+        .section-header p{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em}
+        .sh-ideal{background:#ECFEFF;border-color:#0891B2}.sh-ideal h2{color:#0E4F6B}.sh-ideal p{color:#0891B2}
+        .sh-failure{background:#FFF7ED;border-color:#EA580C}.sh-failure h2{color:#7C2D12}.sh-failure p{color:#EA580C}
+        /* ── FLOW AREAS ── */
+        .flow-area{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin-bottom:6px;border-left:4px solid #E2E8F0}
+        .flow-area.failure-row{border-left-color:#FB923C}
+        .flow-area.recon-row{border-left-color:#34D399}
+        .flow-area.recovery-row{border-left-color:#FACC15}
+        .flow-area.security-row{border-left-color:#A78BFA}
+        .flow-area.async-row{border-left-color:#22D3EE}
+        .flow-area.gcp-row{border-left-color:#4ADE80}
+        .flow-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#94A3B8;margin-bottom:10px}
+        .flow-label.warn{color:#D97706}
+        .flow-label.success{color:#059669}
+        .flow-label.danger{color:#DC2626}
+        .flow-label.cyan{color:#0891B2}
+        .flow-label.purple{color:#7C3AED}
+        .flow-label.security{color:#7C3AED}
+        .flow-label.gcp{color:#16A34A}
+        .flow-row{display:flex;align-items:center;flex-wrap:wrap;row-gap:10px;column-gap:0px;padding-bottom:4px}
+        /* ── BOXES ── */
+        .box{flex-shrink:2;flex-grow:0;border-radius:7px;padding:8px 10px;cursor:pointer;border:2px solid;transition:transform 0.1s,box-shadow 0.1s;min-width:90px;max-width:152px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.10)}
+        .box:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,0.15)}
+        .bt{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;margin-bottom:3px;line-height:1.25}
+        .bs{font-family:'JetBrains Mono',monospace;font-size:8px;line-height:1.4}
+        /* Solid boxes — deeper backgrounds for contrast */
+        .box-blue{background:#1E40AF;border-color:#1D4ED8}.box-blue .bt{color:#FFFFFF}.box-blue .bs{color:#BFDBFE}
+        .box-teal{background:#065F46;border-color:#047857}.box-teal .bt{color:#FFFFFF}.box-teal .bs{color:#A7F3D0}
+        .box-purple{background:#4C1D95;border-color:#6D28D9}.box-purple .bt{color:#FFFFFF}.box-purple .bs{color:#DDD6FE}
+        .box-amber{background:#92400E;border-color:#B45309}.box-amber .bt{color:#FFFFFF}.box-amber .bs{color:#FDE68A}
+        .box-gray{background:#334155;border-color:#475569}.box-gray .bt{color:#FFFFFF}.box-gray .bs{color:#CBD5E1}
+        .box-ext{background:#374151;border-color:#6B7280;border-style:dashed}.box-ext .bt{color:#F9FAFB}.box-ext .bs{color:#D1D5DB}
+        .box-ext-browser{background:#1E3A8A;border-color:#2563EB;border-style:dashed}.box-ext-browser .bt{color:#FFFFFF}.box-ext-browser .bs{color:#BFDBFE}
+        .box-ext-bank{background:#881337;border-color:#BE123C;border-style:dashed}.box-ext-bank .bt{color:#FFFFFF}.box-ext-bank .bs{color:#FECDD3}
+        .box-ext-psp{background:#78350F;border-color:#B45309;border-style:dashed}.box-ext-psp .bt{color:#FFFFFF}.box-ext-psp .bs{color:#FDE68A}
+        .box-ext-hub{background:#1E1B4B;border-color:#4338CA;border-style:dashed}.box-ext-hub .bt{color:#FFFFFF}.box-ext-hub .bs{color:#C7D2FE}
+        .box-red{background:#991B1B;border-color:#DC2626}.box-red .bt{color:#FFFFFF}.box-red .bs{color:#FECACA}
+        .box-orange{background:#9A3412;border-color:#EA580C}.box-orange .bt{color:#FFFFFF}.box-orange .bs{color:#FED7AA}
+        .box-green{background:#14532D;border-color:#16A34A}.box-green .bt{color:#FFFFFF}.box-green .bs{color:#BBF7D0}
+        .box-yellow{background:#713F12;border-color:#CA8A04}.box-yellow .bt{color:#FFFFFF}.box-yellow .bs{color:#FEF08A}
+        .box-cyan{background:#0E4F6B;border-color:#0891B2}.box-cyan .bt{color:#FFFFFF}.box-cyan .bs{color:#A5F3FC}
+        .box-indigo{background:#312E81;border-color:#4F46E5}.box-indigo .bt{color:#FFFFFF}.box-indigo .bs{color:#C7D2FE}
+        /* ── ENTRY GROUP ── */
+        .entry-group{display:flex;flex-direction:column;gap:5px;flex-shrink:0;margin-right:4px}
+        .entry-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#94A3B8;text-align:center;margin-bottom:2px}
+        .entry-box{border-radius:6px;padding:6px 8px;cursor:pointer;border:2px solid;transition:transform 0.1s,box-shadow 0.1s;text-align:center;min-width:84px;max-width:110px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+        .entry-box:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,0.12)}
+        .entry-box .et{font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;margin-bottom:1px}
+        .entry-box .es{font-family:'JetBrains Mono',monospace;font-size:8px}
+        .eb-browser{background:#1E3A8A;border-color:#2563EB}.eb-browser .et{color:#FFFFFF}.eb-browser .es{color:#BFDBFE}
+        .eb-merchant{background:#065F46;border-color:#047857}.eb-merchant .et{color:#FFFFFF}.eb-merchant .es{color:#A7F3D0}
+        /* ── ARROWS ── */
+        .arr{flex-shrink:1;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 6px;min-width:64px;max-width:96px;position:relative;overflow:visible}
+        .arr-line{height:2px;width:100%;position:relative;flex-shrink:0}
+        .arr-line::after{content:'▶';position:absolute;right:-7px;top:50%;transform:translateY(-50%);font-size:9px}
+        .arr-sync .arr-line{background:#0891B2}.arr-sync .arr-line::after{color:#0891B2}
+        .arr-redirect .arr-line{background:#7C3AED}.arr-redirect .arr-line::after{color:#7C3AED}
+        .arr-async .arr-line{background:transparent;border-top:2px dashed #0891B2}.arr-async .arr-line::after{color:#0891B2}
+        .arr-webhook .arr-line{background:transparent;border-top:2px dashed #EA580C}.arr-webhook .arr-line::after{color:#EA580C}
+        .arr-return .arr-line{background:transparent;border-top:2px dashed #059669}.arr-return .arr-line::after{color:#059669}
+        .arr-warn .arr-line{background:transparent;border-top:2px dashed #EA580C}.arr-warn .arr-line::after{color:#EA580C}
+        .arr-danger .arr-line{background:transparent;border-top:2px dashed #DC2626}.arr-danger .arr-line::after{color:#DC2626}
+        .arr-label{font-family:'JetBrains Mono',monospace;font-size:8px;margin-top:4px;white-space:normal;text-align:center;width:100%;line-height:1.3;word-break:break-word}
+        .arr-sync .arr-label{color:#0E7490}
+        .arr-redirect .arr-label{color:#5B21B6}
+        .arr-async .arr-label{color:#0E7490}
+        .arr-webhook .arr-label{color:#C2410C}
+        .arr-return .arr-label{color:#047857}
+        .arr-warn .arr-label{color:#C2410C}
+        .arr-danger .arr-label{color:#B91C1C}
+        .banner{border-radius:5px;padding:7px 12px;margin-bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;text-align:left;letter-spacing:0.04em}
+        .banner-amber{background:#FFFBEB;border:1px solid #FCD34D;color:#78350F}
+        .banner-red{background:#FFF1F2;border:1px solid #FDA4AF;color:#9F1239}
+        .banner-cyan{background:#ECFEFF;border:1px solid #A5F3FC;color:#0E4F6B}
+        /* ── COMPARE GRID ── */
+        .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+        .compare-card{border-radius:8px;padding:12px 14px;border:1px solid}
+        .compare-card h4{font-family:'Fraunces',serif;font-size:13px;font-weight:700;margin-bottom:8px}
+        .compare-card ul{padding-left:14px}
+        .compare-card li{font-size:11px;color:#475569;margin-bottom:4px;line-height:1.5}
+        .cc-ideal{background:#ECFEFF;border-color:#A5F3FC}.cc-ideal h4{color:#0E4F6B}
+        .cc-card{background:#F5F3FF;border-color:#C4B5FD}.cc-card h4{color:#4C1D95}
+        .cc-sepa{background:#D1FAE5;border-color:#6EE7B7}.cc-sepa h4{color:#064E3B}
+        /* ── LEGEND ── */
+        .legend{max-width:1300px;margin:16px auto 0;padding:0 14px}
+        .legend-inner{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center}
+        .li{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#64748B}
+        .ld{width:24px;height:2px}
+        .ld-s{background:#0891B2}
+        .ld-r{background:#7C3AED}
+        .ld-a{background:transparent;border-top:2px dashed #0891B2}
+        .ld-w{background:transparent;border-top:2px dashed #EA580C}
+        .ld-d{background:transparent;border-top:2px dashed #DC2626}
+        .ld-ret{background:transparent;border-top:2px dashed #059669}
+        .lb{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+        /* ── MODAL ── */
+        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+        .modal-bg.open{display:flex}
+        .modal{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;width:100%;max-width:540px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.12)}
+        .modal-head{padding:18px 22px 14px;border-bottom:1px solid #F1F5F9;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:#fff;z-index:1}
+        .modal-hl{flex:1}
+        .modal-tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#0891B2;margin-bottom:4px}
+        .modal-title{font-family:'Fraunces',serif;font-size:19px;font-weight:700;color:#18181B;line-height:1.2}
+        .modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:#94A3B8;flex-shrink:0;line-height:1}
+        .modal-x:hover{color:#18181B}
+        .modal-body{padding:18px 22px 22px}
+        .modal-body p{font-family:'Outfit',sans-serif;font-size:13px;color:#475569;line-height:1.75;margin-bottom:12px}
+        .modal-body p:last-child{margin-bottom:0}
+        .modal-body strong{color:#18181B;font-weight:600}
+        .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+        .chip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:4px}
+        .chip-blue{background:#DBEAFE;color:#1E3A8A}
+        .chip-teal{background:#D1FAE5;color:#064E3B}
+        .chip-amber{background:#FEF3C7;color:#78350F}
+        .chip-gray{background:#F1F5F9;color:#475569}
+        .chip-red{background:#FEE2E2;color:#B91C1C}
+        .chip-purple{background:#EDE9FE;color:#4C1D95}
+        .chip-orange{background:#FFEDD5;color:#C2410C}
+        .chip-cyan{background:#CFFAFE;color:#0E7490}
+        .chip-green{background:#D1FAE5;color:#065F46}
+        .chip-indigo{background:#E0E7FF;color:#3730A3}
+        .footer{text-align:center;margin-top:36px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#CBD5E1;padding:16px;background:#18181B}
+        .footer a{color:#34D399;text-decoration:none}
+        .screenshot-btn{display:block;padding:7px 18px;background:#18181B;color:#fff;font-family:'JetBrains Mono',monospace;font-size:11px;border:none;border-radius:6px;cursor:pointer;letter-spacing:0.05em}
+        .screenshot-btn:hover{background:#334155}
+        body.screenshot-mode .modal-bg{display:none!important}
+        /* ── STAGE FILTER ── */
+        .stage-bar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:12px 14px 6px;max-width:1300px;margin:0 auto}
+        .stage-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:6px 14px;border-radius:6px;border:1.5px solid #E2E8F0;background:#FFFFFF;color:#64748B;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;text-transform:uppercase}
+        .stage-btn:hover{border-color:#94A3B8;color:#18181B}
+        .stage-btn.active{background:#18181B;color:#F8FAFC;border-color:#18181B}
+        .stage-btn.active:hover{background:#334155;border-color:#334155}
+        .stage-divider{width:1px;height:24px;background:#E2E8F0;align-self:center}
+        .section[data-section].filtering .flow-area[data-stage]{display:none}
+        .section[data-section].filtering .flow-area[data-stage].stage-visible{display:block}
+        .section.filtering .section-header,.section.filtering > .banner,.section.filtering > .compare-grid{display:none}
+        .section.filtering .section-header.stage-visible{display:flex}
+        .section-header.stage-header{display:none}
+        .section.filtering .section-header.default-header{display:none}
+        .stage-title{text-align:center;padding:8px 14px 0;max-width:1300px;margin:0 auto}
+        .stage-title h3{font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:#18181B;margin-bottom:2px}
+        .stage-title p{font-family:'JetBrains Mono',monospace;font-size:10px;color:#94A3B8;letter-spacing:0.08em}
+        .stage-title{display:none}
+        .stage-title.active{display:block}
+        @media print{.modal-bg,.screenshot-btn,.stage-bar{display:none!important}body{padding:0!important}.section{padding:8px 6px 0!important}.flow-area{break-inside:avoid;margin-bottom:4px!important}.box{max-width:140px!important;min-width:80px!important}.arr{min-width:24px!important}}
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="brand">Fintech <span>on</span> Cloud</div>
+    <a class="back" href="https://fintechoncloud.substack.com">← Back to blog</a>
+</div>
+<div class="hero">
+    <div class="eyebrow">// Production Architecture · Post #3 · European Payment Series</div>
+    <h1>iDEAL — Production-Grade GCP Architecture<br/>End-to-End Payment Flow</h1>
+    <p>Click any component for a full explanation. Covers payment initiation, redirect chain, bank authentication, async webhook processing, race condition handling, failure modes, reconciliation, and GCP-native architecture.</p>
+    <div class="tags">
+        <span class="tag tag-cyan">iDEAL 1.x / 2.0</span>
+        <span class="tag tag-blue">GCP</span>
+        <span class="tag tag-amber">Redirect Flow</span>
+        <span class="tag tag-orange">Webhook / Async</span>
+        <span class="tag tag-red">Failure Handling</span>
+        <span class="tag tag-green">Reconciliation</span>
+        <span class="tag tag-purple">State Machine</span>
+        <span class="tag tag-gray">Mollie / Adyen / Stripe</span>
+    </div>
+</div>
+<div class="hint" style="display:flex;align-items:center;justify-content:center;gap:16px;">Click any box to learn more <span>→</span><button class="screenshot-btn" onclick="document.body.classList.toggle('screenshot-mode');this.textContent=document.body.classList.contains('screenshot-mode')?'Exit compact mode':'Compact view for screenshot'">Compact view for screenshot</button></div>
+
+<!-- STAGE FILTER BAR -->
+<div class="stage-bar" id="stageBar">
+    <button class="stage-btn active" data-filter="all" onclick="filterStage('all')">Show All</button>
+    <div class="stage-divider"></div>
+    <button class="stage-btn" data-filter="happy" onclick="filterStage('happy')">☀ Nominal Flow</button>
+    <button class="stage-btn" data-filter="async" onclick="filterStage('async')">⚡ Async / Webhook</button>
+    <button class="stage-btn" data-filter="failure" onclick="filterStage('failure')">✕ Failure Modes</button>
+    <button class="stage-btn" data-filter="recon" onclick="filterStage('recon')">✓ Reconciliation</button>
+    <button class="stage-btn" data-filter="recovery" onclick="filterStage('recovery')">🛡 Recovery &amp; Audit</button>
+    <div class="stage-divider"></div>
+    <button class="stage-btn" data-filter="gcp" onclick="filterStage('gcp')">☁ GCP Architecture</button>
+    <button class="stage-btn" data-filter="compare" onclick="filterStage('compare')">⚖ Architecture Comparison</button>
+</div>
+
+<!-- STAGE TITLES -->
+<div class="stage-title" id="st-happy">
+    <h3>☀ Stage 1 — Nominal Flow</h3>
+    <p>INITIATION → PSP CREATE → REDIRECT CHAIN → BANK AUTH (SCA) → SETTLEMENT → WEBHOOK → STATUS VERIFY → FULFIL</p>
+</div>
+<div class="stage-title" id="st-async">
+    <h3>⚡ Stage 2 — Async / Webhook Processing</h3>
+    <p>PSP WEBHOOK → PUB/SUB → WORKER → STATUS VERIFY → STATE MACHINE → RACE CONDITION HANDLING → POLLING GATE</p>
+</div>
+<div class="stage-title" id="st-failure">
+    <h3>✕ Stage 3 — Failure Modes</h3>
+    <p>EXPIRED · ABANDONED · BANK OUTAGE · FAILED AUTH · REDIRECT LOST · WEBHOOK MISSING · DUPLICATE WEBHOOK</p>
+</div>
+<div class="stage-title" id="st-recon">
+    <h3>✓ Stage 4 — Reconciliation &amp; Analytics</h3>
+    <p>EVENTS → DATAFLOW → BIGQUERY → RECON ENGINE → AI CLASSIFY · STALE PAYMENT SCAN · LEDGER VS PSP</p>
+</div>
+<div class="stage-title" id="st-recovery">
+    <h3>🛡 Stage 5 — Recovery &amp; Audit</h3>
+    <p>DLQ · RETRY · CIRCUIT BREAKER · MANUAL REVIEW · APPEND-ONLY AUDIT · REGULATOR EXPORT · 7YR ARCHIVE</p>
+</div>
+<div class="stage-title" id="st-gcp">
+    <h3>☁ GCP Architecture</h3>
+    <p>CLOUD RUN (minScale=1) · PUB/SUB · CLOUD TASKS · ALLOYDB / CLOUD SQL · APIGEE X · SECRET MANAGER · CLOUD ARMOR</p>
+</div>
+<div class="stage-title" id="st-compare">
+    <h3>⚖ Architecture Comparison</h3>
+    <p>iDEAL vs CARD vs SEPA · PUSH vs PULL · REDIRECT vs IFRAME · REAL-TIME vs D+5 · SCA AT BANK vs 3DS · CHARGEBACK vs IRREVOCABLE</p>
+</div>
+
+<!-- ══════════════════════════════════════ iDEAL MAIN FLOW ══════════════════════════════════════ -->
+<div class="section" data-section="ideal">
+    <div class="section-header sh-ideal default-header" data-stage-header="all">
+        <div>
+            <h2>iDEAL — End-to-End Payment Architecture</h2>
+            <p>PUSH PAYMENT · REDIRECT-BASED · iDEAL HUB · SCA AT BANK · NEAR-REAL-TIME SETTLEMENT · NL BANKING RAILS · PSP-MEDIATED</p>
+        </div>
+    </div>
+    <div class="section-header sh-ideal stage-header" data-stage-header="happy">
+        <div>
+            <h2>☀ iDEAL — Nominal Flow</h2>
+            <p>INITIATION → PSP CREATE → REDIRECT CHAIN → BANK AUTH (SCA) → SETTLEMENT → WEBHOOK → STATUS VERIFY → FULFIL</p>
+        </div>
+    </div>
+    <div class="section-header sh-ideal stage-header" data-stage-header="async">
+        <div>
+            <h2>⚡ iDEAL — Async / Webhook Processing</h2>
+            <p>PSP WEBHOOK → PUB/SUB → WORKER → STATUS VERIFY → STATE MACHINE → RACE CONDITION HANDLING → POLLING GATE</p>
+        </div>
+    </div>
+    <div class="section-header sh-failure stage-header" data-stage-header="failure">
+        <div>
+            <h2>✕ iDEAL — Failure Modes</h2>
+            <p>EXPIRED · ABANDONED · BANK OUTAGE · FAILED AUTH · REDIRECT LOST · WEBHOOK MISSING · DUPLICATE WEBHOOK</p>
+        </div>
+    </div>
+    <div class="section-header sh-ideal stage-header" data-stage-header="recon" style="border-color:#34D399">
+        <div>
+            <h2>✓ iDEAL — Reconciliation &amp; Analytics</h2>
+            <p>EVENTS → DATAFLOW → BIGQUERY → RECON ENGINE → AI CLASSIFY · STALE PAYMENT SCAN · LEDGER VS PSP</p>
+        </div>
+    </div>
+    <div class="section-header sh-ideal stage-header" data-stage-header="recovery" style="border-color:#FACC15">
+        <div>
+            <h2>🛡 iDEAL — Recovery &amp; Audit</h2>
+            <p>DLQ · RETRY · CIRCUIT BREAKER · MANUAL REVIEW · APPEND-ONLY AUDIT · REGULATOR EXPORT · 7YR ARCHIVE</p>
+        </div>
+    </div>
+    <div class="section-header sh-ideal stage-header" data-stage-header="gcp" style="border-color:#4ADE80">
+        <div>
+            <h2>☁ iDEAL — GCP Architecture</h2>
+            <p>CLOUD RUN (minScale=1) · PUB/SUB · CLOUD TASKS · ALLOYDB / CLOUD SQL · APIGEE X · SECRET MANAGER · CLOUD ARMOR</p>
+        </div>
+    </div>
+
+    <!-- PHASE 0: Payment Order + Idempotency -->
+    <div class="flow-area" data-stage="happy">
+        <div class="flow-label cyan">// Phase 0 — Payment order creation: merchant backend generates deterministic payment ID before any PSP call — first idempotency gate</div>
+        <div class="flow-row">
+            <div class="entry-group">
+                <div class="entry-label">Customer</div>
+                <div class="entry-box eb-browser" onclick="om('customer_browser')"><div class="et">Customer Browser</div><div class="es">Clicks "Pay iDEAL"</div></div>
+            </div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">HTTPS POST</div></div>
+            <div class="box box-blue" onclick="om('apigee_ideal')"><div class="bt">Apigee X</div><div class="bs">Auth · rate limit · LB</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">route</div></div>
+            <div class="box box-teal" onclick="om('payment_api')"><div class="bt">Payment API</div><div class="bs">Cloud Run · minScale=1</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">dedup</div></div>
+            <div class="box box-orange" onclick="om('idempotency_ideal')"><div class="bt">Idempotency</div><div class="bs">order_id hash · dedup</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">new</div></div>
+            <div class="box box-indigo" onclick="om('payment_db')"><div class="bt">AlloyDB / Cloud SQL</div><div class="bs">Persist payment_id first</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">stored</div></div>
+            <div class="box box-purple" onclick="om('state_machine_ideal')"><div class="bt">State Machine</div><div class="bs">→ PENDING</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 1: PSP Payment Creation -->
+    <div class="flow-area" data-stage="happy">
+        <div class="flow-label cyan">// Phase 1 — PSP payment creation: server-to-server API call → PSP returns checkoutUrl + psp_payment_id → persist BOTH before returning redirect</div>
+        <div class="flow-row">
+            <div class="box box-teal" onclick="om('payment_api')"><div class="bt">Payment API</div><div class="bs">Cloud Run</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">POST /v2/payments</div></div>
+            <div class="box box-ext-psp" onclick="om('psp_api')"><div class="bt">PSP API</div><div class="bs">Mollie / Adyen / Stripe</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">← checkoutUrl + psp_id</div></div>
+            <div class="box box-teal" onclick="om('payment_api')"><div class="bt">Payment API</div><div class="bs">Cloud Run</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">persist psp_id</div></div>
+            <div class="box box-indigo" onclick="om('payment_db')"><div class="bt">AlloyDB / Cloud SQL</div><div class="bs">psp_id · checkoutUrl · status</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('pubsub_initiated')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.initiated</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 2: Redirect Chain -->
+    <div class="flow-area security-row" data-stage="happy">
+        <div class="flow-label purple">// Phase 2 — Redirect chain: merchant → PSP checkout → iDEAL Hub (scheme routing) → issuing bank auth URL (signed JWT/JWS) — merchant has zero visibility from here</div>
+        <div class="flow-row">
+            <div class="box box-teal" onclick="om('payment_api')"><div class="bt">Payment API</div><div class="bs">Cloud Run</div></div>
+            <div class="arr arr-redirect"><div class="arr-line"></div><div class="arr-label">302 checkoutUrl</div></div>
+            <div class="box box-ext-browser" onclick="om('customer_browser')"><div class="bt">Customer Browser</div><div class="bs">Follows redirect</div></div>
+            <div class="arr arr-redirect"><div class="arr-line"></div><div class="arr-label">GET checkoutUrl</div></div>
+            <div class="box box-ext-psp" onclick="om('psp_checkout')"><div class="bt">PSP Checkout</div><div class="bs">Validates token · routes</div></div>
+            <div class="arr arr-redirect"><div class="arr-line"></div><div class="arr-label">route to Hub</div></div>
+            <div class="box box-ext-hub" onclick="om('ideal_hub')"><div class="bt">iDEAL Hub</div><div class="bs">Currence · scheme routing</div></div>
+            <div class="arr arr-redirect"><div class="arr-line"></div><div class="arr-label">302 bank auth URL</div></div>
+            <div class="box box-ext-browser" onclick="om('customer_browser')"><div class="bt">Customer Browser</div><div class="bs">Enters bank domain</div></div>
+            <div class="arr arr-redirect"><div class="arr-line"></div><div class="arr-label">GET signed JWT</div></div>
+            <div class="box box-ext-bank" onclick="om('issuing_bank')"><div class="bt">Issuing Bank</div><div class="bs">ING · ABN · Rabobank</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 3: Bank Authentication (SCA) -->
+    <div class="flow-area" data-stage="happy">
+        <div class="flow-label cyan">// Phase 3 — Bank SCA: customer authenticates at bank (iD check / app / OTP) → bank records authorisation → iDEAL Hub routes notification → initiates credit transfer (SCT Inst)</div>
+        <div class="flow-row">
+            <div class="box box-ext-browser" onclick="om('customer_browser')"><div class="bt">Customer Browser</div><div class="bs">At bank internet banking</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">SCA (biometric/OTP)</div></div>
+            <div class="box box-ext-bank" onclick="om('issuing_bank')"><div class="bt">Issuing Bank</div><div class="bs">SCA · authorise · record</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">notify Hub</div></div>
+            <div class="box box-ext-hub" onclick="om('ideal_hub')"><div class="bt">iDEAL Hub</div><div class="bs">Routes status to PSP</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">SCT Inst</div></div>
+            <div class="box box-ext" onclick="om('banking_rails')"><div class="bt">NL Banking Rails</div><div class="bs">iDEAL scheme · SCT Inst</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">settlement</div></div>
+            <div class="box box-ext-psp" onclick="om('psp_collection_acct')"><div class="bt">PSP Collection Acct</div><div class="bs">Funds credited</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">notify PSP</div></div>
+            <div class="box box-ext-psp" onclick="om('psp_api')"><div class="bt">PSP API</div><div class="bs">Payment status: paid</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 4: Dual Outbound (Redirect + Webhook) — Race Zone -->
+    <div class="flow-area async-row" data-stage="async">
+        <div class="flow-label warn">// Phase 4 — PSP dual outbound [RACE ZONE]: browser redirect and webhook fire concurrently — no guaranteed order — design for both arriving first</div>
+        <div class="flow-row">
+            <div class="box box-ext-psp" onclick="om('psp_api')"><div class="bt">PSP API</div><div class="bs">Payment authorised</div></div>
+            <div class="arr arr-redirect"><div class="arr-line"></div><div class="arr-label">302 returnUrl</div></div>
+            <div class="box box-ext-browser" onclick="om('return_url_handling')"><div class="bt">Customer Browser</div><div class="bs">Hits merchant returnUrl</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">GET /complete</div></div>
+            <div class="box box-teal" onclick="om('return_url_handling')"><div class="bt">Return Handler</div><div class="bs">Cloud Run · UX only</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">poll DB status</div></div>
+            <div class="box box-indigo" onclick="om('payment_db')"><div class="bt">AlloyDB / Cloud SQL</div><div class="bs">Read current status</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">pending → poll UI</div></div>
+            <div class="box box-teal" onclick="om('polling_gate')"><div class="bt">Polling Gate</div><div class="bs">2s × 15 attempts max</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 4b: Webhook Path -->
+    <div class="flow-area async-row" data-stage="async">
+        <div class="flow-label warn">// Phase 4b — Webhook path [ASYNC]: PSP POSTs psp_payment_id → return 200 immediately → publish to Pub/Sub → worker fetches authoritative status</div>
+        <div class="flow-row">
+            <div class="box box-ext-psp" onclick="om('psp_api')"><div class="bt">PSP Webhook</div><div class="bs">POST /webhooks/ideal</div></div>
+            <div class="arr arr-webhook"><div class="arr-line"></div><div class="arr-label">psp_id only</div></div>
+            <div class="box box-teal" onclick="om('webhook_handler')"><div class="bt">Webhook Handler</div><div class="bs">Cloud Run · 200 in &lt;200ms</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('pubsub_webhook')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.webhook topic</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">subscribe</div></div>
+            <div class="box box-teal" onclick="om('webhook_worker')"><div class="bt">Webhook Worker</div><div class="bs">Cloud Run · pull sub</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">GET /v2/payments/:id</div></div>
+            <div class="box box-ext-psp" onclick="om('psp_api')"><div class="bt">PSP API</div><div class="bs">Authoritative status fetch</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 5: Status Verification + State Transition -->
+    <div class="flow-area" data-stage="happy">
+        <div class="flow-label cyan">// Phase 5 — Status verification + state transition: worker fetches PSP status → SELECT FOR UPDATE → idempotency check → update state machine → fulfil</div>
+        <div class="flow-row">
+            <div class="box box-teal" onclick="om('webhook_worker')"><div class="bt">Webhook Worker</div><div class="bs">Cloud Run</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">lock row</div></div>
+            <div class="box box-indigo" onclick="om('payment_db')"><div class="bt">AlloyDB / Cloud SQL</div><div class="bs">SELECT FOR UPDATE</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">check state</div></div>
+            <div class="box box-purple" onclick="om('state_machine_ideal')"><div class="bt">State Machine</div><div class="bs">terminal? skip · else update</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">→ PAID</div></div>
+            <div class="box box-indigo" onclick="om('payment_db')"><div class="bt">AlloyDB / Cloud SQL</div><div class="bs">Write terminal state</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('pubsub_settled')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.paid event</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 5b: Order Fulfilment -->
+    <div class="flow-area gcp-row" data-stage="happy">
+        <div class="flow-label gcp">// Phase 5b — Order fulfilment: only after server-side paid confirmation — guard against double-fulfil — downstream fan-out</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('pubsub_settled')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.paid consumer</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">fan-out</div></div>
+            <div class="box box-teal" onclick="om('order_service')"><div class="bt">Order Service</div><div class="bs">Cloud Run · guard check</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">fulfil</div></div>
+            <div class="box box-green" onclick="om('order_db')"><div class="bt">Order DB</div><div class="bs">→ processing state</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">notify</div></div>
+            <div class="box box-teal" onclick="om('notification_service')"><div class="bt">Notification Svc</div><div class="bs">Email · confirmation</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-teal" onclick="om('ledger_service')"><div class="bt">Ledger Service</div><div class="bs">Pending → confirmed</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async</div></div>
+            <div class="box box-purple" onclick="om('fraud_service')"><div class="bt">Fraud / Risk Svc</div><div class="bs">Post-auth scoring</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 6: Failure — Expiry / Abandonment -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Phase 6a — Expiry / abandonment: customer closes browser or times out at bank — payment expires (15–30min) — reconciliation job catches stale payments</div>
+        <div class="flow-row">
+            <div class="box box-ext-browser" onclick="om('customer_browser')"><div class="bt">Customer Browser</div><div class="bs">Closed / timed out</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">no return</div></div>
+            <div class="box box-orange" onclick="om('stale_payment_scanner')"><div class="bt">Stale Payment Scanner</div><div class="bs">Cloud Tasks · every 5min</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">GET /v2/payments/:id</div></div>
+            <div class="box box-ext-psp" onclick="om('psp_api')"><div class="bt">PSP API</div><div class="bs">status: expired</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">expired</div></div>
+            <div class="box box-purple" onclick="om('state_machine_ideal')"><div class="bt">State Machine</div><div class="bs">→ EXPIRED</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('pubsub_failed')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.expired event</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 6b: Failure — Bank Outage -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Phase 6b — Bank outage / unavailable: PSP returns method_unavailable or bank redirect 503s — offer fallback · never silently defer</div>
+        <div class="flow-row">
+            <div class="box box-teal" onclick="om('payment_api')"><div class="bt">Payment API</div><div class="bs">POST /v2/payments</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">PSP error</div></div>
+            <div class="box box-ext-psp" onclick="om('psp_api')"><div class="bt">PSP API</div><div class="bs">method_unavailable</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">catch</div></div>
+            <div class="box box-orange" onclick="om('fallback_handler')"><div class="bt">Fallback Handler</div><div class="bs">Circuit breaker · per-bank</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">offer alt</div></div>
+            <div class="box box-gray" onclick="om('fallback_handler')"><div class="bt">Alt Methods</div><div class="bs">Other issuer · bank transfer</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">log</div></div>
+            <div class="box box-red" onclick="om('dlq_ideal')"><div class="bt">DLQ / Alert</div><div class="bs">PagerDuty · Pub/Sub DLQ</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 6c: Failure — Failed Auth -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Phase 6c — Failed authentication: customer cancels SCA or fails PIN — bank sets status=cancelled/failed — PSP redirects back with status hint</div>
+        <div class="flow-row">
+            <div class="box box-ext-browser" onclick="om('customer_browser')"><div class="bt">Customer Browser</div><div class="bs">Cancels at bank</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">cancel/fail SCA</div></div>
+            <div class="box box-ext-bank" onclick="om('issuing_bank')"><div class="bt">Issuing Bank</div><div class="bs">status: cancelled</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">notify PSP</div></div>
+            <div class="box box-ext-psp" onclick="om('psp_api')"><div class="bt">PSP API</div><div class="bs">payment: cancelled</div></div>
+            <div class="arr arr-webhook"><div class="arr-line"></div><div class="arr-label">webhook + redirect</div></div>
+            <div class="box box-teal" onclick="om('webhook_handler')"><div class="bt">Webhook Handler</div><div class="bs">→ state: CANCELLED</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">offer retry</div></div>
+            <div class="box box-teal" onclick="om('return_url_handling')"><div class="bt">Return Handler</div><div class="bs">Offer retry checkout</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 6d: Failure — Duplicate / Missing Webhook -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Phase 6d — Duplicate webhook / webhook never arrives: PSP retries on non-200 · duplicate delivers same psp_id · Pub/Sub deduplication + idempotent worker</div>
+        <div class="flow-row">
+            <div class="box box-ext-psp" onclick="om('psp_api')"><div class="bt">PSP Webhook (retry)</div><div class="bs">Same psp_id · N attempts</div></div>
+            <div class="arr arr-webhook"><div class="arr-line"></div><div class="arr-label">duplicate</div></div>
+            <div class="box box-teal" onclick="om('webhook_handler')"><div class="bt">Webhook Handler</div><div class="bs">Always 200 · always enqueue</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish dedup</div></div>
+            <div class="box box-amber" onclick="om('pubsub_webhook')"><div class="bt">Cloud Pub/Sub</div><div class="bs">msg dedup · ordering key</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">consume</div></div>
+            <div class="box box-teal" onclick="om('webhook_worker')"><div class="bt">Webhook Worker</div><div class="bs">terminal? skip (idempotent)</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">no-op if done</div></div>
+            <div class="box box-indigo" onclick="om('payment_db')"><div class="bt">AlloyDB / Cloud SQL</div><div class="bs">Idempotent upsert</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 7: Reconciliation -->
+    <div class="flow-area recon-row" data-stage="recon">
+        <div class="flow-label success">// Phase 7 — Reconciliation: events → Dataflow PII-strip → BigQuery analytics · stale scanner · PSP settlement file match · Vertex AI classify anomalies</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('pubsub_settled')"><div class="bt">Cloud Pub/Sub</div><div class="bs">All payment events</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">stream</div></div>
+            <div class="box box-teal" onclick="om('dataflow_ideal')"><div class="bt">Dataflow</div><div class="bs">PII strip · enrich · window</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">load</div></div>
+            <div class="box box-teal" onclick="om('bigquery_ideal')"><div class="bt">BigQuery</div><div class="bs">Conversion · failure rates</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">compare</div></div>
+            <div class="box box-green" onclick="om('recon_engine_ideal')"><div class="bt">Recon Engine</div><div class="bs">Ledger vs PSP settlement</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">anomalies</div></div>
+            <div class="box box-purple" onclick="om('vertex_ideal')"><div class="bt">Vertex AI (Gemini)</div><div class="bs">Classify · dispute score</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 7b: PSP Settlement File Reconciliation -->
+    <div class="flow-area recon-row" data-stage="recon">
+        <div class="flow-label success">// Phase 7b — PSP settlement file recon: daily settlement report from PSP → parse → match against internal paid payments → flag mismatches for ops</div>
+        <div class="flow-row">
+            <div class="box box-ext-psp" onclick="om('psp_api')"><div class="bt">PSP Settlement File</div><div class="bs">Daily · CSV / API</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">ingest</div></div>
+            <div class="box box-teal" onclick="om('settlement_parser')"><div class="bt">Settlement Parser</div><div class="bs">Cloud Run · normalise</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">compare</div></div>
+            <div class="box box-green" onclick="om('recon_engine_ideal')"><div class="bt">Recon Engine</div><div class="bs">Match psp_id → internal</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">mismatch?</div></div>
+            <div class="box box-red" onclick="om('manual_review_ideal')"><div class="bt">Manual Review Queue</div><div class="bs">Ops · unmatched flag</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">resolved</div></div>
+            <div class="box box-purple" onclick="om('state_machine_ideal')"><div class="bt">State Machine</div><div class="bs">Correct terminal state</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 8: Recovery Layer -->
+    <div class="flow-area recovery-row" data-stage="recovery">
+        <div class="flow-label warn">// Phase 8 — Recovery layer: DLQ · Pub/Sub retry policy · Cloud Tasks reconciliation · circuit breaker per PSP · manual review escalation</div>
+        <div class="flow-row">
+            <div class="box box-red" onclick="om('dlq_ideal')"><div class="bt">Dead Letter Queue</div><div class="bs">Pub/Sub DLQ · N retries</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">alert</div></div>
+            <div class="box box-teal" onclick="om('monitoring_ideal')"><div class="bt">Cloud Monitoring</div><div class="bs">Payment SLA · DLQ depth</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">route</div></div>
+            <div class="box box-orange" onclick="om('retry_ideal')"><div class="bt">Retry Mechanism</div><div class="bs">Exp. backoff · circuit break</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">escalate</div></div>
+            <div class="box box-red" onclick="om('manual_review_ideal')"><div class="bt">Manual Review Queue</div><div class="bs">Ops dashboard · Spanner</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">resolve</div></div>
+            <div class="box box-purple" onclick="om('state_machine_ideal')"><div class="bt">State Machine</div><div class="bs">FAILED / COMPENSATING</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 9: Audit -->
+    <div class="flow-area" data-stage="recovery">
+        <div class="flow-label purple">// Phase 9 — Audit trail: append-only immutable log for every payment state change — PSD2 compliant — regulator export — 7yr archive</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('pubsub_settled')"><div class="bt">Cloud Pub/Sub</div><div class="bs">All lifecycle events</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">stream</div></div>
+            <div class="box box-indigo" onclick="om('audit_service_ideal')"><div class="bt">Audit Service</div><div class="bs">Append-only · hash-chain</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">persist</div></div>
+            <div class="box box-teal" onclick="om('audit_store_ideal')"><div class="bt">Audit Store</div><div class="bs">BigQuery · CMEK · write-only</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">export</div></div>
+            <div class="box box-green" onclick="om('regulator_export_ideal')"><div class="bt">Regulator Export</div><div class="bs">PSD2 · DNB · PCI</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">archive</div></div>
+            <div class="box box-teal" onclick="om('audit_archive_ideal')"><div class="bt">Long-Term Archive</div><div class="bs">GCS Coldline · 7yr</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 10: GCP Security Layer -->
+    <div class="flow-area security-row" data-stage="gcp">
+        <div class="flow-label gcp">// GCP Security layer: Cloud Armor WAF on webhook URL · Secret Manager for PSP keys · VPC connector · mTLS end-to-end · CMEK storage encryption</div>
+        <div class="flow-row">
+            <div class="box box-ext-psp" onclick="om('psp_api')"><div class="bt">PSP Webhook</div><div class="bs">Inbound POST</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">filter</div></div>
+            <div class="box box-red" onclick="om('cloud_armor')"><div class="bt">Cloud Armor</div><div class="bs">WAF · IP allowlist · rate</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">pass</div></div>
+            <div class="box box-blue" onclick="om('apigee_ideal')"><div class="bt">Apigee X</div><div class="bs">mTLS · OAuth2 · auth</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">keys</div></div>
+            <div class="box box-purple" onclick="om('secret_manager')"><div class="bt">Secret Manager</div><div class="bs">PSP API keys · rotation</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">private IP</div></div>
+            <div class="box box-orange" onclick="om('vpc_connector')"><div class="bt">VPC Connector</div><div class="bs">Cloud Run → Cloud SQL</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">encrypt</div></div>
+            <div class="box box-teal" onclick="om('kms_ideal')"><div class="bt">Cloud KMS (CMEK)</div><div class="bs">Storage · DB · Pub/Sub</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 11: GCP Deployment -->
+    <div class="flow-area gcp-row" data-stage="gcp">
+        <div class="flow-label gcp">// GCP deployment topology: Cloud Run (minScale=1 critical) · regional · Pub/Sub ordering keys · Cloud SQL HA · Cloud Tasks reconciliation scheduling</div>
+        <div class="flow-row">
+            <div class="box box-blue" onclick="om('cloud_run_config')"><div class="bt">Cloud Run</div><div class="bs">minScale=1 · concurrency=80</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">private</div></div>
+            <div class="box box-orange" onclick="om('vpc_connector')"><div class="bt">VPC Connector</div><div class="bs">10.0.0.0/28 · regional</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">HA</div></div>
+            <div class="box box-indigo" onclick="om('payment_db')"><div class="bt">AlloyDB / Cloud SQL</div><div class="bs">Postgres · HA · read replica</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">ordered</div></div>
+            <div class="box box-amber" onclick="om('pubsub_webhook')"><div class="bt">Cloud Pub/Sub</div><div class="bs">Ordering key: psp_id</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">schedule</div></div>
+            <div class="box box-orange" onclick="om('cloud_tasks_ideal')"><div class="bt">Cloud Tasks</div><div class="bs">Recon every 5min</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">metrics</div></div>
+            <div class="box box-teal" onclick="om('monitoring_ideal')"><div class="bt">Cloud Monitoring</div><div class="bs">SLA · DLQ · webhook lag</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════ iDEAL vs ALTERNATIVES ══════════════════════════════════════ -->
+<div class="section" data-section="compare" style="margin-top:28px">
+    <div class="section-header sh-failure">
+        <div>
+            <h2>iDEAL vs Card Payments vs SEPA — Architecture Comparison</h2>
+            <p>PUSH vs PULL · REDIRECT vs IFRAME · REAL-TIME vs D+5 · SCA AT BANK vs 3DS · CHARGEBACK vs IRREVOCABLE</p>
+        </div>
+    </div>
+
+    <div class="flow-area" data-stage="compare" style="border-left-color:#EA580C">
+        <div class="banner banner-cyan">💡 Key architectural insight: iDEAL is a <strong>push payment with a redirect</strong>. Unlike card payments where your backend calls an API and gets a synchronous result, iDEAL requires coordinating state across browser redirects, async webhooks, and potential race conditions. Design accordingly.</div>
+
+        <div class="compare-grid" style="margin-bottom:10px">
+            <div class="compare-card cc-ideal">
+                <h4>iDEAL</h4>
+                <ul>
+                    <li>Push payment — customer sends funds</li>
+                    <li>Redirect-based — customer leaves merchant site</li>
+                    <li>SCA at issuing bank — PSD2 compliant natively</li>
+                    <li>No chargebacks — irrevocable once authorised</li>
+                    <li>Near-real-time settlement (SCT Inst, iDEAL 2.0)</li>
+                    <li>Race condition: webhook vs redirect (design for it)</li>
+                    <li>Netherlands only (expanding via iDEAL 2.0)</li>
+                </ul>
+            </div>
+            <div class="compare-card cc-card">
+                <h4>Card Payments</h4>
+                <ul>
+                    <li>Pull payment — merchant pulls from card</li>
+                    <li>Iframe / API — customer stays on merchant site</li>
+                    <li>3DS2 SCA — merchant-side challenge flow</li>
+                    <li>Chargebacks possible — up to 120 days</li>
+                    <li>Near-real-time auth, T+2 settlement</li>
+                    <li>Synchronous auth response (simpler state machine)</li>
+                    <li>Global acceptance</li>
+                </ul>
+            </div>
+        </div>
+        <div class="compare-grid">
+            <div class="compare-card cc-sepa">
+                <h4>SEPA Direct Debit</h4>
+                <ul>
+                    <li>Pull payment — creditor pulls from debtor</li>
+                    <li>No redirect — background batch processing</li>
+                    <li>No per-transaction SCA — mandate-based auth</li>
+                    <li>Core: 8-week consumer refund right</li>
+                    <li>D+1 to D+5 settlement</li>
+                    <li>Complex: mandate lifecycle, R-transactions, batch XML</li>
+                    <li>Pan-European SEPA zone</li>
+                </ul>
+            </div>
+            <div class="compare-card cc-ideal">
+                <h4>When to Use iDEAL</h4>
+                <ul>
+                    <li>Customers are primarily in the Netherlands</li>
+                    <li>One-off purchases (not recurring billing)</li>
+                    <li>Guaranteed funds required (no chargeback risk)</li>
+                    <li>High-trust checkout experience for NL market</li>
+                    <li>iDEAL 2.0: recurring mandates now possible</li>
+                    <li>Avoid for: subscriptions (use SEPA DD), international (use card)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+    <div class="legend-inner">
+        <div class="li"><div class="ld ld-s"></div>Synchronous API call</div>
+        <div class="li"><div class="ld ld-r"></div>Browser redirect (HTTP 302)</div>
+        <div class="li"><div class="ld ld-a"></div>Asynchronous / Pub/Sub</div>
+        <div class="li"><div class="ld ld-w"></div>Webhook (PSP async push)</div>
+        <div class="li"><div class="ld ld-ret"></div>Status return / response</div>
+        <div class="li"><div class="ld ld-d"></div>Failure / error path</div>
+        <div class="li"><div class="lb" style="background:#1E40AF;border:1.5px solid #2563EB"></div>GCP compute (Cloud Run)</div>
+        <div class="li"><div class="lb" style="background:#065F46;border:1.5px solid #047857"></div>Storage / analytics</div>
+        <div class="li"><div class="lb" style="background:#92400E;border:1.5px solid #B45309"></div>Messaging (Pub/Sub)</div>
+        <div class="li"><div class="lb" style="background:#4C1D95;border:1.5px solid #6D28D9"></div>State machine / orchestration</div>
+        <div class="li"><div class="lb" style="background:#713F12;border:1.5px solid #CA8A04"></div>Recovery / warning path</div>
+        <div class="li"><div class="lb" style="background:#14532D;border:1.5px solid #16A34A"></div>Reconciliation</div>
+        <div class="li"><div class="lb" style="background:#991B1B;border:1.5px solid #DC2626"></div>Failure / DLQ</div>
+        <div class="li"><div class="lb" style="background:#1E3A8A;border:1.5px dashed #2563EB"></div>Customer Browser (external)</div>
+        <div class="li"><div class="lb" style="background:#881337;border:1.5px dashed #BE123C"></div>Issuing Bank (external)</div>
+        <div class="li"><div class="lb" style="background:#78350F;border:1.5px dashed #B45309"></div>PSP (Mollie/Adyen/Stripe)</div>
+        <div class="li"><div class="lb" style="background:#1E1B4B;border:1.5px dashed #4338CA"></div>iDEAL Hub (scheme routing)</div>
+        <div class="li"><div class="lb" style="background:#374151;border:1.5px dashed #6B7280"></div>NL Banking Rails / CSM</div>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="mbg" onclick="cbg(event)">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-hl">
+                <div class="modal-tag" id="mtag"></div>
+                <div class="modal-title" id="mtitle"></div>
+            </div>
+            <button class="modal-x" onclick="cm()">✕</button>
+        </div>
+        <div class="modal-body" id="mbody"></div>
+    </div>
+</div>
+
+<div class="footer">
+    Interactive architecture diagram · <a href="https://fintechoncloud.substack.com">Fintech on Cloud</a> · Post #3: iDEAL — Production-Grade GCP Architecture · European Payment Series
+</div>
+
+<script>
+    const D = {
+        'customer_browser': {tag:'Entry Point · iDEAL', title:'Customer Browser', body:`<p>The customer initiates payment by clicking "Pay with iDEAL" in the merchant checkout. At this point the customer may optionally select their issuing bank (BIC). Some PSPs show bank selection at the merchant level; others defer it to the PSP checkout page.</p><p>The browser is not just a UI surface — in iDEAL, <strong>the browser is the payment channel</strong>. The authorisation happens inside the customer's internet banking environment, not in the merchant's system. This means the merchant must design for a user who may take 3 minutes, close the tab, or use a mobile banking app, and may never return to the return URL.</p><p><strong>Design constraint:</strong> Never block a server thread waiting for the browser to return. Use async patterns throughout.</p>`, chips:[{t:'Browser = payment channel',c:'chip-red'},{t:'May take 3+ minutes',c:'chip-amber'},{t:'May never return',c:'chip-orange'},{t:'Mobile banking app',c:'chip-gray'}]},
+
+        'apigee_ideal': {tag:'GCP · API Gateway', title:'Apigee X', body:`<p>Single entry point for all merchant traffic. Handles <strong>mTLS + OAuth 2.0</strong> authentication, per-merchant rate limiting (critical near checkout spikes — flash sales can generate thousands of concurrent payment initiation requests), schema pre-validation, PII-masked audit logging, and load balancing across regional Cloud Run backends.</p><p>For the webhook path: Apigee must be configured to <strong>not apply strict request body schema validation</strong> on <code>/webhooks/ideal</code> — PSPs send <code>application/x-www-form-urlencoded</code> (Mollie) or varying JSON structures (Adyen), not your standard JSON API schema. A mismatched content-type check at the gateway will cause Apigee to reject valid webhooks, PSP retries a storm, and you lose webhook delivery guarantees.</p>`, chips:[{t:'mTLS + OAuth2',c:'chip-blue'},{t:'Per-merchant quota',c:'chip-amber'},{t:'Webhook path: skip schema check',c:'chip-red'},{t:'Flash sale protection',c:'chip-orange'}]},
+
+        'payment_api': {tag:'GCP · Cloud Run', title:'Payment API — Cloud Run', body:`<p>Core payment orchestration service. Handles payment creation, the return URL endpoint, and webhook receipt. <strong>Critical deployment requirement: <code>minScale=1</code>.</strong> A cold start on the webhook path means Apigee times out, PSP gets a non-200, and starts its retry cycle. Cold starts of 2–5 seconds on Python/Java Cloud Run are enough to trigger webhook retry storms from PSPs with tight timeout windows.</p><p>Concurrency settings: for async Python/Go use concurrency=80; for synchronous Node.js use concurrency=1. Use a VPC connector for private Cloud SQL access — never expose the database on a public IP.</p><p>Two distinct responsibilities that should logically (though not necessarily physically) be separated: <strong>Payment creation path</strong> (synchronous, customer-facing, must be fast) and <strong>Return URL path</strong> (reads DB status, renders polling UI or confirmation page).</p>`, chips:[{t:'minScale=1 CRITICAL',c:'chip-red'},{t:'maxScale=50',c:'chip-amber'},{t:'VPC connector',c:'chip-blue'},{t:'concurrency=80 async',c:'chip-gray'},{t:'Cold start = missed webhook',c:'chip-red'}]},
+
+        'idempotency_ideal': {tag:'iDEAL · Safety', title:'Idempotency Service', body:`<p>Prevents double-payment on retries or double-clicks. <strong>Idempotency key</strong> = deterministic UUID keyed on <code>order_id</code> (hash or UUID v5). Generated <em>before</em> the PSP API call. Checked before any state machine transition.</p><p><strong>Pattern:</strong> MATCH → return existing payment's <code>checkoutUrl</code> (safe to redirect again if not yet paid). NO MATCH → proceed, write key atomically with <code>PENDING</code> state in a Cloud SQL transaction before calling the PSP.</p><p>TTL: 24 hours — sufficient to cover any checkout session plus PSP retry window. Critically: the idempotency check must also guard order fulfilment downstream — a duplicate <code>payment.paid</code> event must not fulfil the order twice.</p>`, chips:[{t:'UUID keyed on order_id',c:'chip-purple'},{t:'24h TTL',c:'chip-gray'},{t:'Check BEFORE PSP call',c:'chip-red'},{t:'Atomic write with state',c:'chip-teal'},{t:'Guard fulfilment too',c:'chip-orange'}]},
+
+        'payment_db': {tag:'GCP · Storage', title:'AlloyDB / Cloud SQL — Payment Store', body:`<p>Persists payment state, the PSP payment ID (<code>psp_payment_id</code>), checkout URL, and all status transitions. <strong>The PSP payment ID is sacred — store it before returning the redirect to the customer.</strong> If you lose it, PSP support cannot help you find the payment without it.</p><p><strong>AlloyDB vs Cloud SQL:</strong> For high-throughput iDEAL processing (>1,000 TPS), AlloyDB for PostgreSQL is the recommended choice — it offers significantly higher read throughput via read pool instances and lower write latency than Cloud SQL. For most merchant volumes, Cloud SQL for PostgreSQL is sufficient and simpler to operate. Both support <code>SELECT FOR UPDATE</code> and all PostgreSQL features required here.</p><p><strong>Schema essentials:</strong> <code>payment_id</code> (your UUID), <code>psp_payment_id</code> (PSP's ID, unique index), <code>order_id</code>, <code>amount_minor</code> (cents), <code>currency</code>, <code>status</code>, <code>issuer_bic</code>, <code>checkout_url</code>, <code>created_at</code>, <code>paid_at</code>, <code>expires_at</code>, <code>metadata JSONB</code>.</p><p><strong>Partial index for reconciliation:</strong> <code>WHERE status IN ('open', 'pending')</code> — the stale payment scanner only needs to query non-terminal payments, and this index keeps that query fast even at millions of rows. Use <code>SELECT FOR UPDATE</code> in the webhook worker to prevent race conditions on concurrent Pub/Sub deliveries.</p>`, chips:[{t:'psp_payment_id UNIQUE index',c:'chip-red'},{t:'Partial index: open/pending',c:'chip-teal'},{t:'SELECT FOR UPDATE',c:'chip-blue'},{t:'AlloyDB: high-throughput',c:'chip-indigo'},{t:'Cloud SQL: standard volume',c:'chip-green'},{t:'Store psp_id FIRST',c:'chip-red'}]},
+
+        'state_machine_ideal': {tag:'iDEAL · Orchestration', title:'State Machine', body:`<p>Tracks each payment through its full lifecycle. All transitions must persist to the database before ACK — no lost state on crash. Transitions are idempotent: applying the same transition twice has no effect.</p><p><strong>States:</strong> <code>PENDING</code> → <code>OPEN</code> (after PSP create) → <code>PAID</code> / <code>FAILED</code> / <code>CANCELLED</code> / <code>EXPIRED</code></p><p><strong>Terminal states:</strong> PAID, FAILED, CANCELLED, EXPIRED. Any incoming webhook for a payment in a terminal state must be silently acknowledged (200) and discarded — never reprocessed.</p><p><strong>iDEAL 2.0 addition:</strong> an <code>AUTHORIZED</code> state appears between OPEN and PAID in flows where the payment is authorised but not yet settled (e.g. recurring mandate flows). Map this correctly — do not fulfil on AUTHORIZED alone.</p>`, chips:[{t:'PENDING',c:'chip-gray'},{t:'OPEN',c:'chip-cyan'},{t:'PAID',c:'chip-teal'},{t:'FAILED',c:'chip-red'},{t:'CANCELLED',c:'chip-orange'},{t:'EXPIRED',c:'chip-amber'},{t:'AUTHORIZED (iDEAL 2.0)',c:'chip-purple'}]},
+
+        'psp_api': {tag:'External · PSP', title:'PSP API (Mollie / Adyen / Stripe)', body:`<p>The PSP intermediates between your backend and the iDEAL scheme. Key responsibilities: format the iDEAL payment request, route to the correct issuing bank, normalise status responses, and deliver webhooks.</p><p><strong>PSP-specific webhook mechanisms:</strong></p><p><strong>Mollie:</strong> Sends only the payment ID in the body (<code>id=tr_xxx</code>, form-encoded). Fetch status separately. Retries up to 5× over ~24h on non-200.</p><p><strong>Adyen:</strong> Sends a rich JSON notification with HMAC-SHA256 signature in the header. Validate signature before processing. Retries for 24h.</p><p><strong>Stripe:</strong> Sends JSON with <code>Stripe-Signature</code> HMAC header. Webhook endpoint secret used for validation.</p><p><strong>Idempotency on PSP creation calls:</strong> Always pass an idempotency key header on POST /payments — if a network timeout causes you to retry, the PSP will return the existing payment rather than creating a duplicate.</p>`, chips:[{t:'Mollie: form-encoded id only',c:'chip-amber'},{t:'Adyen: HMAC-SHA256 sig',c:'chip-blue'},{t:'Stripe: Stripe-Signature',c:'chip-purple'},{t:'24h retry window',c:'chip-gray'},{t:'Pass idempotency header',c:'chip-red'}]},
+
+        'psp_checkout': {tag:'External · PSP', title:'PSP Checkout Page', body:`<p>After your backend redirects the customer to the <code>checkoutUrl</code>, the PSP's checkout page validates the payment token and optionally presents bank selection (if not done on the merchant side). The PSP then constructs a signed redirect to the issuing bank.</p><p><strong>Security:</strong> The checkout URL contains a signed token with a short TTL (typically 15–30 minutes). Never modify, log in plaintext, or cache this URL beyond the current checkout session. Never construct this URL from user input — it must come from the PSP API response.</p><p>From this point, the merchant has zero visibility until either the return URL is hit or a webhook arrives. Design for this black box period.</p>`, chips:[{t:'Signed token TTL 15-30min',c:'chip-red'},{t:'Never modify or cache',c:'chip-orange'},{t:'Zero merchant visibility here',c:'chip-gray'},{t:'Bank selection optional',c:'chip-teal'}]},
+
+        'issuing_bank': {tag:'External · Bank', title:'Issuing Bank (ING / ABN AMRO / Rabobank / etc.)', body:`<p>The customer's own bank handles SCA and payment authorisation. This entire step is a black box from the merchant's perspective — you have no API access and no visibility into what happens here.</p><p><strong>SCA mechanisms vary by bank:</strong> ING uses iD check (biometric/PIN); ABN AMRO uses ABN AMRO app; Rabobank uses Random Reader or app. All satisfy PSD2 SCA requirements inherently — you do not need to implement or validate SCA yourself.</p><p><strong>Upon successful authorisation:</strong> Bank records the authorisation, initiates a SCT Instant credit transfer to the PSP's collection account, and notifies the PSP. This transfer is irrevocable — unlike a card authorisation, there is no merchant-side reversal capability. Once the bank confirms, funds move.</p><p><strong>iDEAL 2.0 (Open Banking):</strong> The bank acts as an OAuth 2.0 / OpenID Connect identity provider. The PSP handles the code exchange — you do not implement OAuth with the bank directly unless you are building a direct bank integration.</p>`, chips:[{t:'SCA handled by bank',c:'chip-teal'},{t:'SCT Inst on success',c:'chip-green'},{t:'Irrevocable once authorised',c:'chip-red'},{t:'Zero merchant visibility',c:'chip-gray'},{t:'iDEAL 2.0: OAuth OIDC',c:'chip-purple'}]},
+
+        'ideal_hub': {tag:'External · iDEAL Scheme', title:'iDEAL Hub — Scheme Routing Layer', body:`<p>The iDEAL Hub is the central switching infrastructure operated by <strong>Currence</strong>, the Dutch payment scheme operator. It acts as the bridge between PSPs and the issuing banks — neither side connects to each other directly.</p><p><strong>What the Hub does:</strong> Receives the payment initiation request from the PSP, validates the payment message against iDEAL scheme rules, routes the transaction to the correct issuing bank based on the BIC, and relays the bank's authorisation response back to the PSP. It also routes the payment status notification back through the chain after the bank confirms authorisation.</p><p><strong>iDEAL 1.x:</strong> The Hub uses an XML-based messaging protocol (iDx). PSPs connect to the Hub using scheme certificates. You never connect to the Hub directly — your PSP handles this on your behalf.</p><p><strong>iDEAL 2.0:</strong> The Hub evolves to support Open Banking / OAuth 2.0 flows, acting as a central OIDC authority that federates identity across all participating banks. This simplifies bank onboarding but introduces new token management complexity at the Hub layer.</p><p><strong>Why it matters for your architecture:</strong> The Hub is a single point of routing for all Dutch iDEAL transactions. Hub outages are rare but when they occur, affect all PSPs and all banks simultaneously. Monitor PSP status pages rather than individual bank pages for Hub-level incidents.</p>`, chips:[{t:'Operated by Currence',c:'chip-indigo'},{t:'Bridges PSP ↔ All banks',c:'chip-blue'},{t:'iDx protocol (1.x)',c:'chip-gray'},{t:'OIDC federation (2.0)',c:'chip-purple'},{t:'You never connect directly',c:'chip-teal'},{t:'Hub outage = all banks affected',c:'chip-red'}]},
+
+        'banking_rails': {tag:'External · Scheme', title:'NL Banking Rails / iDEAL Scheme', body:`<p>iDEAL sits on top of the Dutch inter-bank payment infrastructure. <strong>iDEAL 1.x:</strong> Uses the underlying SEPA Credit Transfer (SCT) rails — settlement is same-day or next-day. <strong>iDEAL 2.0 (post-2025):</strong> Uses SCT Instant (SCT Inst) — settlement in seconds, 24/7/365.</p><p>The iDEAL scheme is operated by Currence (a Dutch industry cooperative). Participating banks must implement the iDEAL protocol specifications. PSPs connect to the scheme on your behalf — you do not connect to the scheme directly unless you hold a banking licence.</p><p>All major Dutch banks participate: ING, ABN AMRO, Rabobank, SNS Bank, ASN Bank, RegioBank, Bunq, Triodos, and others. Combined, these cover ~99% of Dutch retail banking customers.</p>`, chips:[{t:'iDEAL 1.x: SCT (hours)',c:'chip-amber'},{t:'iDEAL 2.0: SCT Inst (seconds)',c:'chip-teal'},{t:'Operated by Currence',c:'chip-gray'},{t:'99% NL bank coverage',c:'chip-green'},{t:'PSP connects on your behalf',c:'chip-blue'}]},
+
+        'psp_collection_acct': {tag:'External · PSP', title:'PSP Collection Account', body:`<p>The PSP holds a collection account (or uses a banking partner's account) that receives the funds from the issuing bank via SCT/SCT Inst. The PSP then settles net funds to your merchant account on a configurable schedule (daily, weekly, rolling reserve).</p><p><strong>Important for reconciliation:</strong> The PSP settlement file (daily CSV or API) shows funds credited to your merchant account — this is different from individual payment confirmations. Your reconciliation engine must match individual payment <code>psp_payment_id</code>s against the settlement file to confirm funds actually arrived. A payment showing <code>paid</code> in the PSP API does not guarantee the funds have been settled to your bank account yet — they may be in the PSP's rolling reserve.</p>`, chips:[{t:'Holds funds in transit',c:'chip-amber'},{t:'Settles net to merchant',c:'chip-teal'},{t:'Rolling reserve possible',c:'chip-orange'},{t:'Separate from API status',c:'chip-red'},{t:'Reconcile settlement file',c:'chip-green'}]},
+
+        'return_url_handling': {tag:'iDEAL · UX Critical', title:'Return URL Handler — NOT Authoritative', body:`<p><strong>The single most important rule in iDEAL engineering:</strong> The return URL is NOT authoritative for payment status. Never fulfil an order based on the return URL alone. An attacker can fabricate <code>https://shop.example.com/complete?order_id=ORD-8821&status=paid</code> and hit your endpoint.</p><p><strong>What to do at the return URL:</strong> (1) Look up payment status in your DB. (2) If terminal (PAID/FAILED/EXPIRED/CANCELLED): render the appropriate page immediately. (3) If PENDING or OPEN: render a "payment processing" page with a polling UI — the webhook likely hasn't arrived yet, but will within 1–5 seconds.</p><p><strong>Return URL construction:</strong> Never build return URLs from user-supplied input. Always use server-side mapping from order_id. Never accept a return_url as a query parameter that redirects elsewhere — that's an open redirect vulnerability.</p>`, chips:[{t:'NOT authoritative',c:'chip-red'},{t:'Never fulfil from redirect',c:'chip-red'},{t:'Render polling UI if pending',c:'chip-amber'},{t:'Open redirect: server-side map',c:'chip-orange'},{t:'Webhook arrives 1-5s later',c:'chip-teal'}]},
+
+        'polling_gate': {tag:'iDEAL · Race Condition', title:'Client-Side Polling Gate', body:`<p>When the customer returns to the merchant site and the payment is still PENDING (webhook hasn't arrived yet), show a "payment processing" page and poll your status endpoint. This bridges the race condition between the redirect and the webhook.</p><p><strong>Pattern:</strong> Poll <code>GET /api/orders/:id/payment-status</code> every 2 seconds, maximum 15 attempts (30 seconds total). If terminal status received: render final page. If still pending after 30s: show "check your email" message — the webhook will arrive eventually and your system will fulfil asynchronously.</p><p><strong>Your status endpoint reads from your DB</strong> — the webhook worker will have updated it by the time the customer finishes polling. This endpoint must be fast (indexed DB read only, no PSP API call).</p>`, chips:[{t:'2s interval × 15 = 30s max',c:'chip-amber'},{t:'Read from DB only',c:'chip-teal'},{t:'No PSP call in poll loop',c:'chip-red'},{t:'Fallback: check your email',c:'chip-gray'}]},
+
+        'pubsub_initiated': {tag:'Messaging · iDEAL', title:'Cloud Pub/Sub — payment.initiated', body:`<p>Published after the payment is persisted to DB and the PSP ID is stored. Multiple subscribers fan out independently: the audit log (append every state), analytics pipeline (funnel tracking), ledger service (pending entry), and the monitoring system (track initiated-to-paid conversion funnel).</p><p>Enable <strong>exactly-once delivery</strong> on this topic. All subscribers must be idempotent regardless — exactly-once is best-effort and requires careful message ID tracking.</p>`, chips:[{t:'payment.initiated',c:'chip-cyan'},{t:'Fan-out pattern',c:'chip-blue'},{t:'Exactly-once delivery',c:'chip-teal'},{t:'Audit subscriber',c:'chip-gray'}]},
+
+        'webhook_handler': {tag:'iDEAL · Critical Path', title:'Webhook Handler — Return 200 Fast', body:`<p>The webhook handler has exactly two jobs: <strong>validate</strong> and <strong>enqueue</strong>. Nothing else. Return 200 within 200ms.</p><p><strong>Validation:</strong> For Mollie — IP allowlist check (Mollie publishes their IP ranges). For Adyen — HMAC-SHA256 signature verification on the raw request body. For Stripe — <code>Stripe-Signature</code> header HMAC verification. If validation fails: return 200 anyway (do not give attackers signal about your security checks) and log the failure.</p><p><strong>Do NOT:</strong> Call the PSP API to fetch payment status. Write to the database. Send emails. Call downstream services. These operations can take seconds and will cause the PSP to consider the webhook delivery failed.</p><p><strong>Pub/Sub publish:</strong> The publish itself should be fast (&lt;50ms in the same region). Use a try/catch — if Pub/Sub publish fails, return 500 so the PSP retries. This is the one legitimate reason to return non-200.</p>`, chips:[{t:'Return 200 in <200ms',c:'chip-red'},{t:'Validate then enqueue only',c:'chip-red'},{t:'No PSP call inline',c:'chip-red'},{t:'No DB write inline',c:'chip-red'},{t:'500 only if enqueue fails',c:'chip-orange'}]},
+
+        'pubsub_webhook': {tag:'Messaging · Webhook', title:'Cloud Pub/Sub — payment.webhook', body:`<p>The webhook event queue. Pub/Sub provides at-least-once delivery — the webhook worker must be idempotent. Use <strong>ordering keys set to <code>psp_payment_id</code></strong> to ensure multiple webhooks for the same payment are processed in order (though idempotency handles out-of-order too).</p><p><strong>Dead letter topic:</strong> Configure a DLQ after N ack failures (recommend 5). DLQ messages trigger PagerDuty alerts and manual review. A payment stuck in the DLQ means the webhook worker is consistently failing on that payment — likely a bug triggered by an edge-case payment structure.</p><p><strong>Message deduplication:</strong> Pub/Sub exactly-once delivery mode deduplicates within a 10-minute window. Combined with idempotency in the worker, this prevents double-processing from both Pub/Sub redelivery and PSP webhook retries.</p>`, chips:[{t:'Ordering key: psp_payment_id',c:'chip-blue'},{t:'DLQ after 5 failures',c:'chip-red'},{t:'Exactly-once mode',c:'chip-teal'},{t:'10min dedup window',c:'chip-amber'}]},
+
+        'webhook_worker': {tag:'GCP · Cloud Run', title:'Webhook Worker — Async Processor', body:`<p>Separate Cloud Run service (or the same service with a different route, using pull subscription). Consumes from the Pub/Sub subscription, fetches authoritative status from the PSP, and updates the state machine.</p><p><strong>Critical pattern — idempotent processing:</strong></p><p>1. Lock payment row: <code>SELECT * FROM payments WHERE psp_id = ? FOR UPDATE</code></p><p>2. Check terminal state: if PAID/FAILED/CANCELLED/EXPIRED → <code>message.ack()</code> and return</p><p>3. Fetch live status from PSP: <code>GET /v2/payments/:id</code></p><p>4. Update DB in same transaction as state check</p><p>5. If PAID → publish to <code>payment.paid</code> topic for order fulfilment</p><p>6. <code>message.ack()</code></p><p><strong>Never nack a message</strong> unless you want Pub/Sub to immediately redeliver it (backoff pressure). If processing fails, let the message expire and go to DLQ naturally.</p>`, chips:[{t:'SELECT FOR UPDATE',c:'chip-red'},{t:'Check terminal FIRST',c:'chip-red'},{t:'Fetch PSP status S2S',c:'chip-blue'},{t:'Idempotent all the way',c:'chip-teal'},{t:'Never nack casually',c:'chip-orange'}]},
+
+        'pubsub_settled': {tag:'Messaging · iDEAL', title:'Cloud Pub/Sub — payment.paid / payment events', body:`<p>Central event bus for all payment lifecycle transitions. Published after DB write confirms the new terminal state. Multiple independent subscribers: order fulfilment service, ledger service (pending → confirmed), notification service (confirmation email), fraud/risk service (post-auth scoring), analytics pipeline.</p><p>Each subscriber operates independently — a failure in the notification service does not block order fulfilment. Fan-out pattern ensures services are decoupled.</p><p><strong>Event types:</strong> <code>payment.paid</code>, <code>payment.failed</code>, <code>payment.cancelled</code>, <code>payment.expired</code>. Consumers filter by type.</p>`, chips:[{t:'payment.paid',c:'chip-teal'},{t:'payment.failed',c:'chip-red'},{t:'payment.cancelled',c:'chip-orange'},{t:'payment.expired',c:'chip-amber'},{t:'Fan-out pattern',c:'chip-blue'}]},
+
+        'order_service': {tag:'Merchant · Fulfilment', title:'Order Service — Double-Fulfil Guard', body:`<p>Fulfils the order after receiving a <code>payment.paid</code> event. <strong>Must guard against double-fulfilment</strong> — Pub/Sub at-least-once delivery can deliver the same event twice, or two concurrent workers can pick it up simultaneously.</p><p><strong>Guard pattern:</strong> Use an atomic compare-and-swap: <code>UPDATE orders SET status='processing', paid_at=NOW() WHERE order_id=? AND status='awaiting_payment'</code>. If 0 rows updated, the order is already being processed — skip and ack. This is safer than a SELECT then UPDATE (race condition between the two).</p>`, chips:[{t:'Compare-and-swap guard',c:'chip-red'},{t:'0 rows = already processed',c:'chip-teal'},{t:'Atomic UPDATE check',c:'chip-blue'},{t:'Never SELECT then UPDATE',c:'chip-orange'}]},
+
+        'order_db': {tag:'Storage · Orders', title:'Order DB', body:`<p>Stores order state separately from payment state. The payment service and order service are logically decoupled — a payment can exist without an order (e.g. for top-ups), and an order can exist without a completed payment. The link is <code>order_id</code> on the payment record.</p><p>Order status progression: <code>CART</code> → <code>AWAITING_PAYMENT</code> → <code>PROCESSING</code> → <code>FULFILLED</code>. The compare-and-swap on <code>AWAITING_PAYMENT</code> is the double-fulfil guard.</p>`, chips:[{t:'Decoupled from payment DB',c:'chip-teal'},{t:'AWAITING_PAYMENT guard state',c:'chip-red'},{t:'Linked via order_id',c:'chip-gray'}]},
+
+        'notification_service': {tag:'Merchant · Notifications', title:'Notification Service', body:`<p>Sends transactional emails and push notifications. Subscribed to <code>payment.paid</code> (confirmation), <code>payment.failed</code> (failed payment notice), and <code>payment.expired</code> (session expired prompt). Must be idempotent — a duplicate <code>payment.paid</code> event must not send two confirmation emails. Use the payment ID as the idempotency key in your email provider's API.</p>`, chips:[{t:'Idempotent sends',c:'chip-red'},{t:'payment.paid → confirmation',c:'chip-teal'},{t:'payment.expired → retry prompt',c:'chip-amber'}]},
+
+        'ledger_service': {tag:'Merchant · Accounting', title:'Ledger Service', body:`<p>Two-stage ledger lifecycle: <strong>Pending entry</strong> written at payment initiation (expected incoming credit); <strong>Confirmed entry</strong> written on <code>payment.paid</code> to finalise. On <code>payment.expired</code> or <code>payment.cancelled</code>: void the pending entry. All entries append-only and immutable. Double-entry accounting — every credit has a matching debit.</p>`, chips:[{t:'Pending on initiation',c:'chip-amber'},{t:'Confirmed on paid',c:'chip-teal'},{t:'Void on expired/cancelled',c:'chip-orange'},{t:'Append-only',c:'chip-red'}]},
+
+        'fraud_service': {tag:'Risk · Post-Auth', title:'Fraud / Risk Service', body:`<p>Post-authorisation risk scoring (iDEAL is lower risk than card due to bank SCA, but merchants still run post-auth checks for account takeover, promo abuse, and velocity patterns). Subscribed to <code>payment.paid</code>. Flags suspicious patterns for manual review. Does NOT block the order fulfilment path — async scoring only, to avoid holding up legitimate customers.</p>`, chips:[{t:'Post-auth async only',c:'chip-amber'},{t:'Account takeover',c:'chip-red'},{t:'Promo abuse velocity',c:'chip-orange'},{t:'Does not block fulfilment',c:'chip-teal'}]},
+
+        'stale_payment_scanner': {tag:'GCP · Reconciliation', title:'Stale Payment Scanner — Cloud Tasks', body:`<p>Scheduled Cloud Tasks job (every 5 minutes) that queries non-terminal payments older than a configurable threshold (recommend: 35 minutes — covers the typical bank session timeout plus buffer). For each stale payment, fetches live status from the PSP API.</p><p><strong>Why this is not optional:</strong> Without this job, payments where the customer abandoned the browser will sit in OPEN/PENDING state forever. More critically: if the webhook failed to deliver (your endpoint was down during a deploy), the stale scanner is your safety net. A payment can show <code>paid</code> at the PSP while showing <code>open</code> in your DB — the stale scanner catches this and triggers order fulfilment.</p><p><strong>Partial index on the payments table:</strong> <code>CREATE INDEX idx_payments_stale ON payments (status, created_at) WHERE status IN ('open', 'pending')</code>. At scale, this keeps the stale scanner query sub-millisecond.</p>`, chips:[{t:'Every 5 minutes',c:'chip-amber'},{t:'35min threshold',c:'chip-gray'},{t:'Partial index required',c:'chip-teal'},{t:'Safety net for missed webhooks',c:'chip-red'},{t:'Cloud Tasks scheduled',c:'chip-blue'}]},
+
+        'fallback_handler': {tag:'iDEAL · Resilience', title:'Fallback Handler + Circuit Breaker', body:`<p>When a PSP returns <code>method_unavailable</code> or an issuing bank's redirect URL 503s consistently, the circuit breaker opens for that bank/issuer. Dutch banks do have outages — ING, ABN AMRO, and Rabobank all had notable payment outages at various points.</p><p><strong>Circuit breaker pattern (per issuer):</strong> Track success rate per BIC over a 60-second window. If below threshold (e.g. &lt;90%), open the circuit — stop routing to that BIC and show the customer alternative options: a different iDEAL issuer, SEPA bank transfer, or card payment.</p><p><strong>Never silently defer:</strong> If a bank is unavailable, tell the customer immediately. Silently submitting and waiting for an expiry creates a terrible UX and delays revenue recognition.</p>`, chips:[{t:'Per-BIC circuit breaker',c:'chip-red'},{t:'60s success rate window',c:'chip-amber'},{t:'Offer alternative issuers',c:'chip-teal'},{t:'Never silently defer',c:'chip-orange'},{t:'NL bank outages happen',c:'chip-gray'}]},
+
+        'pubsub_failed': {tag:'Messaging · Failure', title:'Cloud Pub/Sub — Failure Events', body:`<p>Published when payments reach terminal failure states (EXPIRED, CANCELLED, FAILED). Consumers: notification service (send appropriate customer messaging), analytics (conversion funnel — track where customers drop off), order service (release reserved inventory if applicable), ledger service (void pending entry).</p><p>Analytics on failure events is valuable: which issuers have highest cancellation rates? What time of day do expirations cluster? This informs UX decisions (e.g. reducing bank session timeout warnings).</p>`, chips:[{t:'payment.expired',c:'chip-amber'},{t:'payment.cancelled',c:'chip-orange'},{t:'payment.failed',c:'chip-red'},{t:'Inventory release',c:'chip-teal'},{t:'Funnel analytics',c:'chip-blue'}]},
+
+        'dataflow_ideal': {tag:'GCP · Data Processing', title:'Dataflow — PII Removal + Enrichment', body:`<p>Streaming pipeline between Pub/Sub and BigQuery. Strips PII before analytics storage (replaces customer bank account references with tokenised IDs, removes names). Enriches events with derived fields: bank BIC → bank name, issuer country, payment duration (initiation to paid), redirect chain timing.</p><p>Computes windowed aggregates: conversion rate per issuer (BIC), conversion rate by time of day, average time-to-pay, expiry rate by device type (mobile vs desktop — bank app vs browser SCA). GDPR-required before BigQuery ingestion.</p>`, chips:[{t:'PII tokenisation',c:'chip-red'},{t:'GDPR before BigQuery',c:'chip-red'},{t:'Conversion by issuer',c:'chip-amber'},{t:'Time-to-pay p50/p95',c:'chip-teal'},{t:'Windowed aggregates',c:'chip-blue'}]},
+
+        'bigquery_ideal': {tag:'GCP · Analytics', title:'BigQuery', body:`<p>Stores PII-stripped, enriched payment history. Key iDEAL analytics: <strong>conversion rate per issuer BIC</strong> (are ING customers converting better than Rabobank customers?), <strong>expiry rate by time window</strong> (are customers timing out more on mobile?), <strong>webhook-to-paid latency</strong> (p50/p95 — is your processing pipeline fast enough?), <strong>redirect chain timing</strong> (PSP redirect lag per bank). Powers Looker / Grafana dashboards. Retention policy: 90 days hot, then archive to GCS.</p>`, chips:[{t:'Conversion by BIC',c:'chip-amber'},{t:'Webhook latency p95',c:'chip-teal'},{t:'Expiry rate by device',c:'chip-orange'},{t:'Looker / Grafana',c:'chip-blue'},{t:'90d hot → GCS archive',c:'chip-gray'}]},
+
+        'recon_engine_ideal': {tag:'iDEAL · Reconciliation', title:'Reconciliation Engine', body:`<p>Two roles: <strong>(1) Event reconciliation</strong> — matches internal payment DB status against PSP API status for all non-terminal payments. Flags payments where statuses diverge (paid at PSP, open in DB — missed webhook scenario). <strong>(2) Settlement reconciliation</strong> — matches internal PAID payments against the PSP daily settlement file. Flags payments that are paid in the DB but not in the settlement file (PSP processing error) or vice versa.</p><p>Ambiguous mismatches escalate to Vertex AI for classification and then Manual Review Queue. Standard mismatches (e.g. timing window differences) are auto-resolved with a configurable grace period.</p>`, chips:[{t:'Event vs DB status',c:'chip-teal'},{t:'DB vs settlement file',c:'chip-green'},{t:'Missed webhook detection',c:'chip-red'},{t:'Grace period auto-resolve',c:'chip-amber'},{t:'Escalate ambiguous',c:'chip-purple'}]},
+
+        'settlement_parser': {tag:'iDEAL · Reconciliation', title:'Settlement Parser', body:`<p>Parses the PSP's daily settlement file (Mollie: CSV export via API; Adyen: settlement detail report; Stripe: Balance transactions API). Normalises PSP-specific formats into a common internal schema. Matches each line item against internal payment records by <code>psp_payment_id</code>. Feeds matched/unmatched results to the Reconciliation Engine.</p><p>Settlement files typically arrive 1–2 business days after the payment date. Your reconciliation must account for this lag — a payment paid today may not appear in the settlement file until T+2.</p>`, chips:[{t:'Mollie: CSV API',c:'chip-amber'},{t:'Adyen: settlement report',c:'chip-blue'},{t:'Stripe: Balance transactions',c:'chip-purple'},{t:'T+2 settlement lag',c:'chip-gray'},{t:'Match by psp_payment_id',c:'chip-red'}]},
+
+        'vertex_ideal': {tag:'AI · Decision Assist', title:'Vertex AI (Gemini) — Decision Assist', body:`<p>Assists with anomalous reconciliation cases — always as <strong>decision-assist, never autonomous action</strong>. Use cases: classifying whether a PSP-vs-DB mismatch is a timing issue (auto-resolvable) or a genuine data integrity problem (needs ops). Scoring disputed payments where a customer claims they paid but the PSP shows cancelled. Plain-language explanation of discrepancies for ops teams. Human approval required for all actions resulting from AI classification.</p>`, chips:[{t:'Decision-assist only',c:'chip-red'},{t:'Mismatch classification',c:'chip-amber'},{t:'Dispute scoring',c:'chip-purple'},{t:'Human approves',c:'chip-orange'}]},
+
+        'cloud_armor': {tag:'GCP · Security', title:'Cloud Armor — WAF + DDoS Protection', body:`<p>Applied to the external-facing endpoints: the webhook URL and the return URL. For the webhook specifically: <strong>rate limit per source IP</strong> (PSPs send from known IPs at predictable rates — anomalous burst from an unknown IP is an attack signal). <strong>IP allowlist</strong>: Mollie, Adyen, and Stripe publish their webhook delivery IP ranges — allowlist only those.</p><p>For the payment initiation endpoint: rate limit per merchant (prevent credential-stuffing attacks where attackers try to initiate many small payments to test stolen card data — less relevant for iDEAL but still applicable).</p>`, chips:[{t:'IP allowlist per PSP',c:'chip-red'},{t:'Webhook rate limit',c:'chip-amber'},{t:'DDoS protection',c:'chip-blue'},{t:'Initiation rate limit',c:'chip-orange'}]},
+
+        'secret_manager': {tag:'GCP · Security', title:'Secret Manager — PSP Key Management', body:`<p>Stores all PSP API keys, webhook signing secrets, and HMAC keys. Never embed these in environment variables or container images. Cloud Run services reference secrets via Secret Manager references in the service YAML — secrets are injected as environment variables at runtime and never appear in logs or container state.</p><p><strong>Rotation:</strong> PSP API keys should be rotated quarterly. Use Secret Manager's versioning — new version is created, Cloud Run is deployed referencing <code>latest</code>, old version is disabled. Rotation is zero-downtime.</p>`, chips:[{t:'Never in env vars / images',c:'chip-red'},{t:'Injected at runtime',c:'chip-blue'},{t:'Quarterly rotation',c:'chip-amber'},{t:'Version-based rotation',c:'chip-teal'}]},
+
+        'vpc_connector': {tag:'GCP · Networking', title:'VPC Connector — Private Cloud Run → Cloud SQL', body:`<p>Cloud Run services connect to Cloud SQL over a private IP via the VPC Connector — no public database exposure. The connector is a small VM cluster (<code>10.0.0.0/28</code> — 14 usable IPs, sufficient for most deployments). Throughput scales with connector machine type (recommend <code>e2-micro</code> for low volume, <code>e2-standard-4</code> for high volume).</p><p>IAM: the Cloud Run service account is granted <code>Cloud SQL Client</code> role only. No broader network access. The VPC Connector subnet must be in the same region as the Cloud Run service.</p>`, chips:[{t:'Private IP only',c:'chip-red'},{t:'10.0.0.0/28 subnet',c:'chip-gray'},{t:'Cloud SQL Client IAM only',c:'chip-blue'},{t:'Same region as Cloud Run',c:'chip-teal'}]},
+
+        'kms_ideal': {tag:'GCP · Security', title:'Cloud KMS — CMEK Encryption', body:`<p>Customer-Managed Encryption Keys applied to all data stores: Cloud SQL (encrypted at rest via CMEK), Pub/Sub messages (envelope encryption), Cloud Storage (settlement files, audit archives). CMEK gives you key rotation control and the ability to effectively delete data by destroying the key.</p><p>Key rotation: 90 days for Pub/Sub, annually for storage. Audit key access via Cloud Audit Logs — every encryption/decryption operation is logged. Required for PCI DSS compliance if processing cardholder data alongside iDEAL (common for hybrid merchants).</p>`, chips:[{t:'Cloud SQL: CMEK',c:'chip-red'},{t:'Pub/Sub: envelope encrypt',c:'chip-blue'},{t:'90d key rotation',c:'chip-amber'},{t:'PCI DSS support',c:'chip-purple'},{t:'Destroy key = delete data',c:'chip-gray'}]},
+
+        'cloud_run_config': {tag:'GCP · Compute', title:'Cloud Run — Deployment Configuration', body:`<p>Both the Payment API and Webhook Worker run on Cloud Run. Critical settings:</p><p><strong>minScale=1:</strong> Non-negotiable for the webhook handler path. A cold start of 2–5s on Python means the PSP webhook times out, PSP retries, and you get duplicate deliveries. For the payment creation path, minScale=0 is acceptable (customers expect a brief load time) but minScale=1 is recommended for production.</p><p><strong>maxScale=50:</strong> Protects downstream systems (AlloyDB/Cloud SQL connection pool, PSP rate limits) from being overwhelmed during traffic spikes. Calculate based on AlloyDB/Cloud SQL max connections ÷ concurrency per instance.</p><p><strong>Concurrency:</strong> 80 for async Python/Go; 1 for synchronous Node.js. Affects how many simultaneous requests a single Cloud Run instance handles before scaling.</p><p><strong>CPU always-on:</strong> Enable for the webhook handler if using CPU-intensive HMAC signature verification — otherwise CPU is throttled between requests and signature verification can add 100ms+ latency.</p>`, chips:[{t:'minScale=1 CRITICAL',c:'chip-red'},{t:'maxScale=50',c:'chip-amber'},{t:'concurrency=80 async',c:'chip-gray'},{t:'CPU always-on: webhook',c:'chip-orange'},{t:'Protect DB connection pool',c:'chip-blue'}]},
+
+        'cloud_tasks_ideal': {tag:'GCP · Scheduling', title:'Cloud Tasks — Reconciliation Scheduler', body:`<p>Manages two types of scheduled work: <strong>(1) Stale payment scanning</strong> — creates a task every 5 minutes targeting the <code>/internal/scan-stale</code> endpoint on the Payment API. Staggered start times prevent thundering herd. <strong>(2) Settlement file fetch</strong> — daily task at 06:00 UTC to fetch the previous day's settlement file from the PSP API or SFTP.</p><p>Cloud Tasks provides durable scheduling — if the target Cloud Run service is temporarily unavailable, tasks are retried with exponential backoff. DLQ for tasks that exhaust retries. Separate queues for stale scanning (high-frequency, low-latency) and settlement fetching (low-frequency, can tolerate delay).</p>`, chips:[{t:'Stale scan: every 5min',c:'chip-amber'},{t:'Settlement: daily 06:00 UTC',c:'chip-teal'},{t:'Durable retry on failure',c:'chip-blue'},{t:'Separate queues per type',c:'chip-gray'}]},
+
+        'monitoring_ideal': {tag:'GCP · Observability', title:'Cloud Monitoring — iDEAL Signals', body:`<p>Key iDEAL-specific signals to alert on:</p><p><strong>Payment SLA:</strong> Alert if >5% of payments in the last hour have been in OPEN/PENDING state for >10 minutes (indicates webhook delivery problems).</p><p><strong>Webhook delivery lag:</strong> Track time from payment.initiated to payment.paid — p95 should be &lt;30s. Alert if p95 &gt;2 minutes.</p><p><strong>DLQ depth:</strong> Alert on any non-zero DLQ depth — every DLQ message is a payment that failed processing.</p><p><strong>Conversion rate drop:</strong> Alert if hourly conversion rate drops &gt;15% from the 7-day average (may indicate a bank outage or PSP issue).</p><p><strong>Cloud Run cold start rate:</strong> Alert if minScale=0 instances are cold-starting on the webhook path (misconfiguration indicator).</p>`, chips:[{t:'Webhook lag p95 < 30s',c:'chip-red'},{t:'DLQ depth: any non-zero',c:'chip-red'},{t:'Conversion drop > 15%',c:'chip-amber'},{t:'Cold start rate on webhook',c:'chip-orange'},{t:'OPEN/PENDING > 10min',c:'chip-teal'}]},
+
+        'dlq_ideal': {tag:'Recovery · iDEAL', title:'Dead Letter Queue (DLQ)', body:`<p>Two DLQ surfaces: <strong>Pub/Sub DLQ</strong> — webhook messages failing after N nacks or ack deadline exhaustion. <strong>Cloud Tasks DLQ</strong> — stale scanner tasks that failed. All DLQ entries trigger PagerDuty alerts.</p><p><strong>Common DLQ causes:</strong> PSP API rate limit hit during status fetch (worker can't fetch status — message retries until rate limit window resets). Cloud SQL connection pool exhausted (webhook processing blocked — scale Cloud Run maxScale or increase connection pool). Edge-case payment data causing a parsing error in the worker (most critical — indicates a code bug).</p>`, chips:[{t:'Pub/Sub DLQ: N nack fails',c:'chip-red'},{t:'Tasks DLQ: stale scanner',c:'chip-amber'},{t:'PagerDuty on any DLQ',c:'chip-orange'},{t:'PSP rate limit: top cause',c:'chip-gray'},{t:'Pool exhausted: scale out',c:'chip-teal'}]},
+
+        'retry_ideal': {tag:'Recovery · Pattern', title:'Retry Mechanism + Circuit Breaker', body:`<p>Pub/Sub handles webhook message retries automatically (with configurable backoff). The webhook worker implements a <strong>circuit breaker per PSP endpoint</strong> — if the PSP API returns 5xx consistently, the circuit opens and the worker stops fetching for a cooldown period, allowing Pub/Sub messages to accumulate rather than hammering a degraded PSP.</p><p>For the payment creation path: a circuit breaker per issuing bank (BIC) stops routing to unavailable banks. The fallback handler presents alternative payment options instead.</p>`, chips:[{t:'Pub/Sub auto-retry',c:'chip-amber'},{t:'Circuit breaker per PSP',c:'chip-red'},{t:'Circuit breaker per BIC',c:'chip-orange'},{t:'Accumulate vs hammer',c:'chip-teal'}]},
+
+        'manual_review_ideal': {tag:'Recovery · Ops', title:'Manual Review Queue', body:`<p>Payments exhausting automated recovery or requiring human judgement route here: unresolved reconciliation mismatches (&gt;24h), DLQ-escalated payments with unknown status, disputed payments where customer claims paid but system shows cancelled, and bank outage-related payments requiring manual status verification with the PSP.</p><p>Ops dashboard: AlloyDB/Cloud SQL query on terminal failure states and recon mismatches. Resolution actions: re-fetch PSP status, manually mark as paid (with audit trail), trigger order fulfilment manually, or initiate refund via PSP API.</p>`, chips:[{t:'Recon mismatch > 24h',c:'chip-red'},{t:'DLQ escalation',c:'chip-amber'},{t:'Disputed payments',c:'chip-orange'},{t:'Manual PSP status check',c:'chip-gray'},{t:'Audit trail on manual actions',c:'chip-purple'}]},
+
+        'audit_service_ideal': {tag:'Compliance · Audit', title:'Audit Service', body:`<p>Central append-only, immutable audit trail for every payment state change, API call, webhook received, and manual action. Every entry includes: timestamp (Cloud-sourced, tamper-resistant), actor (service identity or operator email), action, payment ID, before/after state, and a hash chaining to the previous entry for tamper evidence.</p><p>Designed for regulatory examination (DNB, PSD2 audit requirements) and internal dispute resolution. Strict write-only access — no service can update or delete audit entries. Separate from operational logs — different storage, access controls, and retention.</p>`, chips:[{t:'Append-only',c:'chip-red'},{t:'Hash-chained',c:'chip-purple'},{t:'Write-only access',c:'chip-red'},{t:'PSD2 compliant',c:'chip-blue'},{t:'DNB examination ready',c:'chip-teal'}]},
+
+        'audit_store_ideal': {tag:'Storage · Audit', title:'Audit Store — BigQuery + CMEK', body:`<p>BigQuery as the primary audit store: streaming inserts from the Audit Service, column-level CMEK encryption, and powerful SQL queries for regulatory requests. Append-only table policy prevents deletion. Access restricted to Audit Service (write) and compliance team (read-only via IAM).</p><p>Periodic background job computes and verifies hash chains — alerts on any discontinuity (potential tampering indicator). Point-in-time query support for "show me the complete history of payment X".</p>`, chips:[{t:'BigQuery append-only',c:'chip-teal'},{t:'CMEK encryption',c:'chip-red'},{t:'Compliance read-only',c:'chip-gray'},{t:'Hash chain verification',c:'chip-purple'},{t:'Streaming inserts',c:'chip-blue'}]},
+
+        'regulator_export_ideal': {tag:'Compliance · Reporting', title:'Regulator Export', body:`<p>Automated and on-demand exports for: <strong>DNB (De Nederlandsche Bank)</strong> — payment statistics and volume data for NL payment oversight. <strong>PSD2 audit trail</strong> — complete payment lifecycle exports for PSD2 compliance verification. <strong>PCI DSS</strong> — if processing alongside card payments, iDEAL payment audit data may be included in PCI scope. All exports in regulator-specified formats (XML, CSV). Data minimisation applied per report type.</p>`, chips:[{t:'DNB reporting',c:'chip-cyan'},{t:'PSD2 audit',c:'chip-blue'},{t:'PCI DSS scope',c:'chip-red'},{t:'Data minimisation',c:'chip-teal'},{t:'Scheduled + ad-hoc',c:'chip-amber'}]},
+
+        'audit_archive_ideal': {tag:'Storage · Archive', title:'Long-Term Archive — GCS Coldline', body:`<p>Audit entries older than 2 years archived to GCS Coldline for cost-efficient long-term storage. <strong>7-year minimum retention</strong> per PSD2 and Dutch financial regulations. Object Lock (WORM) prevents deletion. Monthly integrity checks verify archive completeness. 24h retrieval SLA for regulatory requests. CMEK encrypted — same key management as active audit store.</p>`, chips:[{t:'GCS Coldline',c:'chip-teal'},{t:'7yr minimum retention',c:'chip-gray'},{t:'Object Lock WORM',c:'chip-red'},{t:'Monthly integrity check',c:'chip-amber'},{t:'24h retrieval SLA',c:'chip-blue'}]}
+    };
+
+    function om(id){
+        const d=D[id];if(!d)return;
+        document.getElementById('mtag').textContent=d.tag;
+        document.getElementById('mtitle').textContent=d.title;
+        let h=d.body;
+        if(d.chips&&d.chips.length){h+='<div class="chips">';d.chips.forEach(c=>{h+=`<span class="chip ${c.c}">${c.t}</span>`;});h+='</div>';}
+        document.getElementById('mbody').innerHTML=h;
+        document.getElementById('mbg').classList.add('open');
+        document.body.style.overflow='hidden';
+    }
+    function cm(){document.getElementById('mbg').classList.remove('open');document.body.style.overflow='';}
+    function cbg(e){if(e.target===document.getElementById('mbg'))cm();}
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')cm();});
+
+    /* ── Stage Filter ── */
+    function filterStage(stage){
+        document.querySelectorAll('.stage-btn').forEach(b=>{
+            b.classList.toggle('active',b.getAttribute('data-filter')===stage);
+        });
+        document.querySelectorAll('.stage-title').forEach(t=>t.classList.remove('active'));
+        const stEl=document.getElementById('st-'+stage);
+        if(stEl)stEl.classList.add('active');
+
+        const allSections=document.querySelectorAll('[data-section]');
+        if(stage==='all'){
+            allSections.forEach(s=>{
+                s.classList.remove('filtering');
+                s.querySelectorAll('.flow-area[data-stage]').forEach(f=>f.classList.remove('stage-visible'));
+                s.querySelectorAll('[data-stage-header]').forEach(h=>h.classList.remove('stage-visible'));
+            });
+            return;
+        }
+        allSections.forEach(s=>{
+            s.classList.add('filtering');
+            let hasVisible=false;
+            s.querySelectorAll('.flow-area[data-stage]').forEach(f=>{
+                const match=f.getAttribute('data-stage')===stage;
+                f.classList.toggle('stage-visible',match);
+                if(match)hasVisible=true;
+            });
+            // Handle dynamic section headers per stage
+            const stageHeaders=s.querySelectorAll('[data-stage-header]');
+            if(stageHeaders.length>0){
+                stageHeaders.forEach(h=>{
+                    const hStage=h.getAttribute('data-stage-header');
+                    h.classList.toggle('stage-visible', hStage===stage && hasVisible);
+                });
+            } else {
+                // Fallback for sections without stage headers (e.g. compare section)
+                const hdr=s.querySelector('.section-header');
+                if(hdr)hdr.classList.toggle('stage-visible',hasVisible);
+            }
+        });
+        window.scrollTo({top:document.querySelector('.stage-bar').offsetTop-10,behavior:'smooth'});
+    }
+</script>
+</body>
+</html>
