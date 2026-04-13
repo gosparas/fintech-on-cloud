@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>iDEAL — Issuer-Side Production Architecture | Fintech on Cloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet"/>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#FFFFFF;font-family:'Outfit',sans-serif;color:#18181B;min-height:100vh;padding:0 0 60px;min-width:320px}
+        .header{background:#18181B;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+        .brand{font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#F8FAFC}
+        .brand span{color:#34D399}
+        .back{font-family:'JetBrains Mono',monospace;font-size:11px;color:#52525B;text-decoration:none;letter-spacing:0.1em}
+        .back:hover{color:#94A3B8}
+        .hero{text-align:center;padding:32px 24px 20px;max-width:900px;margin:0 auto}
+        .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#D97706;text-transform:uppercase;margin-bottom:8px}
+        .hero h1{font-family:'Fraunces',serif;font-size:clamp(20px,3.5vw,32px);font-weight:700;color:#18181B;line-height:1.15;margin-bottom:8px}
+        .hero p{font-size:13px;color:#64748B;margin-bottom:16px}
+        .tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+        .tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:3px;letter-spacing:0.1em;text-transform:uppercase}
+        .tag-blue{background:#DBEAFE;color:#1D4ED8}
+        .tag-green{background:#D1FAE5;color:#065F46}
+        .tag-gray{background:#F1F5F9;color:#475569}
+        .tag-red{background:#FEE2E2;color:#B91C1C}
+        .tag-purple{background:#EDE9FE;color:#4C1D95}
+        .tag-cyan{background:#CFFAFE;color:#0E7490}
+        .tag-amber{background:#FEF3C7;color:#78350F}
+        .tag-orange{background:#FFEDD5;color:#C2410C}
+        .hint{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#94A3B8;padding:9px;background:#F8FAFC;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;letter-spacing:0.05em}
+        /* ── SECTION ── */
+        .section{max-width:100%;margin:0 auto;padding:20px 12px 0}
+        .section-header{display:flex;align-items:flex-start;margin-bottom:12px;padding:12px 18px;border-radius:8px;border-left:4px solid}
+        .section-header h2{font-family:'Fraunces',serif;font-size:16px;font-weight:700;margin-bottom:3px}
+        .section-header p{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em}
+        .sh-issuer{background:#FFFBEB;border-color:#D97706}.sh-issuer h2{color:#78350F}.sh-issuer p{color:#B45309}
+        .sh-failure{background:#FFF7ED;border-color:#EA580C}.sh-failure h2{color:#7C2D12}.sh-failure p{color:#EA580C}
+        .sh-recon{background:#F0FDF4;border-color:#16A34A}.sh-recon h2{color:#14532D}.sh-recon p{color:#15803D}
+        /* ── FLOW AREAS ── */
+        .flow-area{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin-bottom:6px;border-left:4px solid #E2E8F0}
+        .flow-area.failure-row{border-left-color:#FB923C}
+        .flow-area.recon-row{border-left-color:#34D399}
+        .flow-area.recovery-row{border-left-color:#FACC15}
+        .flow-area.security-row{border-left-color:#A78BFA}
+        .flow-area.async-row{border-left-color:#22D3EE}
+        .flow-area.gcp-row{border-left-color:#4ADE80}
+        .flow-area.issuer-row{border-left-color:#D97706}
+        .flow-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#94A3B8;margin-bottom:10px}
+        .flow-label.warn{color:#D97706}
+        .flow-label.success{color:#059669}
+        .flow-label.danger{color:#DC2626}
+        .flow-label.cyan{color:#0891B2}
+        .flow-label.amber{color:#B45309}
+        .flow-label.purple{color:#7C3AED}
+        .flow-label.security{color:#7C3AED}
+        .flow-label.gcp{color:#16A34A}
+        .flow-row{display:flex;align-items:center;flex-wrap:wrap;row-gap:10px;column-gap:0px;padding-bottom:4px}
+        /* ── BOXES ── */
+        .box{flex-shrink:2;flex-grow:0;border-radius:7px;padding:8px 10px;cursor:pointer;border:2px solid;transition:transform 0.1s,box-shadow 0.1s;min-width:90px;max-width:152px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.10)}
+        .box:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,0.15)}
+        .bt{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;margin-bottom:3px;line-height:1.25}
+        .bs{font-family:'JetBrains Mono',monospace;font-size:8px;line-height:1.4}
+        /* Solid boxes */
+        .box-blue{background:#1E40AF;border-color:#1D4ED8}.box-blue .bt{color:#FFFFFF}.box-blue .bs{color:#BFDBFE}
+        .box-teal{background:#065F46;border-color:#047857}.box-teal .bt{color:#FFFFFF}.box-teal .bs{color:#A7F3D0}
+        .box-purple{background:#4C1D95;border-color:#6D28D9}.box-purple .bt{color:#FFFFFF}.box-purple .bs{color:#DDD6FE}
+        .box-amber{background:#92400E;border-color:#B45309}.box-amber .bt{color:#FFFFFF}.box-amber .bs{color:#FDE68A}
+        .box-gray{background:#334155;border-color:#475569}.box-gray .bt{color:#FFFFFF}.box-gray .bs{color:#CBD5E1}
+        /* External / dashed */
+        .box-ext{background:#374151;border-color:#6B7280;border-style:dashed}.box-ext .bt{color:#F9FAFB}.box-ext .bs{color:#D1D5DB}
+        .box-ext-hub{background:#1E1B4B;border-color:#4338CA;border-style:dashed}.box-ext-hub .bt{color:#FFFFFF}.box-ext-hub .bs{color:#C7D2FE}
+        .box-ext-psp{background:#78350F;border-color:#B45309;border-style:dashed}.box-ext-psp .bt{color:#FFFFFF}.box-ext-psp .bs{color:#FDE68A}
+        .box-ext-csm{background:#134E4A;border-color:#0F766E;border-style:dashed}.box-ext-csm .bt{color:#FFFFFF}.box-ext-csm .bs{color:#99F6E4}
+        .box-ext-merchant{background:#064E3B;border-color:#047857;border-style:dashed}.box-ext-merchant .bt{color:#FFFFFF}.box-ext-merchant .bs{color:#A7F3D0}
+        .box-ext-mobile{background:#1E3A8A;border-color:#2563EB;border-style:dashed}.box-ext-mobile .bt{color:#FFFFFF}.box-ext-mobile .bs{color:#BFDBFE}
+        .box-red{background:#991B1B;border-color:#DC2626}.box-red .bt{color:#FFFFFF}.box-red .bs{color:#FECACA}
+        .box-orange{background:#9A3412;border-color:#EA580C}.box-orange .bt{color:#FFFFFF}.box-orange .bs{color:#FED7AA}
+        .box-green{background:#14532D;border-color:#16A34A}.box-green .bt{color:#FFFFFF}.box-green .bs{color:#BBF7D0}
+        .box-yellow{background:#713F12;border-color:#CA8A04}.box-yellow .bt{color:#FFFFFF}.box-yellow .bs{color:#FEF08A}
+        .box-cyan{background:#0E4F6B;border-color:#0891B2}.box-cyan .bt{color:#FFFFFF}.box-cyan .bs{color:#A5F3FC}
+        .box-indigo{background:#312E81;border-color:#4F46E5}.box-indigo .bt{color:#FFFFFF}.box-indigo .bs{color:#C7D2FE}
+        .box-cloudsql{background:#155E75;border-color:#0E7490}.box-cloudsql .bt{color:#FFFFFF}.box-cloudsql .bs{color:#A5F3FC}
+        .box-issuer-gold{background:#78350F;border-color:#D97706}.box-issuer-gold .bt{color:#FFFFFF}.box-issuer-gold .bs{color:#FDE68A}
+        /* ── DOMAIN OWNERSHIP BARS ── */
+        .domain-bar{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;padding-bottom:6px;border-bottom:1px dashed #E2E8F0}
+        .domain-badge{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 8px;border-radius:3px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+        .db-ideal{background:#EDE9FE;color:#4C1D95;border:1px solid #C4B5FD}
+        .db-issuer{background:#FFFBEB;color:#78350F;border:1px solid #FCD34D}
+        .db-external{background:#F1F5F9;color:#475569;border:1px solid #CBD5E1}
+        .db-sep{font-family:'JetBrains Mono',monospace;font-size:9px;color:#CBD5E1}
+        /* ── ENTRY GROUP ── */
+        .entry-group{display:flex;flex-direction:column;gap:5px;flex-shrink:0;margin-right:4px}
+        .entry-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#94A3B8;text-align:center;margin-bottom:2px}
+        .entry-box{border-radius:6px;padding:6px 8px;cursor:pointer;border:2px solid;transition:transform 0.1s,box-shadow 0.1s;text-align:center;min-width:84px;max-width:110px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+        .entry-box:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,0.12)}
+        .entry-box .et{font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;margin-bottom:1px}
+        .entry-box .es{font-family:'JetBrains Mono',monospace;font-size:8px}
+        .eb-hub{background:#1E1B4B;border-color:#4338CA}.eb-hub .et{color:#FFFFFF}.eb-hub .es{color:#C7D2FE}
+        .eb-mobile{background:#1E3A8A;border-color:#2563EB}.eb-mobile .et{color:#FFFFFF}.eb-mobile .es{color:#BFDBFE}
+        /* ── ARROWS ── */
+        .arr{flex-shrink:1;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 6px;min-width:64px;max-width:96px;position:relative;overflow:visible}
+        .arr-line{height:2px;width:100%;position:relative;flex-shrink:0}
+        .arr-line::after{content:'▶';position:absolute;right:-7px;top:50%;transform:translateY(-50%);font-size:9px}
+        .arr-sync .arr-line{background:#D97706}.arr-sync .arr-line::after{color:#D97706}
+        .arr-hub .arr-line{background:#4338CA}.arr-hub .arr-line::after{color:#4338CA}
+        .arr-async .arr-line{background:transparent;border-top:2px dashed #D97706}.arr-async .arr-line::after{color:#D97706}
+        .arr-sct .arr-line{background:transparent;border-top:2px dashed #0F766E}.arr-sct .arr-line::after{color:#0F766E}
+        .arr-return .arr-line{background:transparent;border-top:2px dashed #059669}.arr-return .arr-line::after{color:#059669}
+        .arr-warn .arr-line{background:transparent;border-top:2px dashed #EA580C}.arr-warn .arr-line::after{color:#EA580C}
+        .arr-danger .arr-line{background:transparent;border-top:2px dashed #DC2626}.arr-danger .arr-line::after{color:#DC2626}
+        .arr-purple .arr-line{background:#7C3AED}.arr-purple .arr-line::after{color:#7C3AED}
+        .arr-label{font-family:'JetBrains Mono',monospace;font-size:8px;margin-top:4px;white-space:normal;text-align:center;width:100%;line-height:1.3;word-break:break-word}
+        .arr-sync .arr-label{color:#92400E}
+        .arr-hub .arr-label{color:#312E81}
+        .arr-async .arr-label{color:#92400E}
+        .arr-sct .arr-label{color:#134E4A}
+        .arr-return .arr-label{color:#047857}
+        .arr-warn .arr-label{color:#C2410C}
+        .arr-danger .arr-label{color:#B91C1C}
+        .arr-purple .arr-label{color:#5B21B6}
+        /* ── BANNERS ── */
+        .banner{border-radius:5px;padding:7px 12px;margin-bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;text-align:left;letter-spacing:0.04em}
+        .banner-amber{background:#FFFBEB;border:1px solid #FCD34D;color:#78350F}
+        .banner-red{background:#FFF1F2;border:1px solid #FDA4AF;color:#9F1239}
+        .banner-cyan{background:#ECFEFF;border:1px solid #A5F3FC;color:#0E4F6B}
+        .banner-green{background:#F0FDF4;border:1px solid #86EFAC;color:#14532D}
+        /* ── COMPARE GRID ── */
+        .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+        .compare-card{border-radius:8px;padding:12px 14px;border:1px solid}
+        .compare-card h4{font-family:'Fraunces',serif;font-size:13px;font-weight:700;margin-bottom:8px}
+        .compare-card ul{padding-left:14px}
+        .compare-card li{font-size:11px;color:#475569;margin-bottom:4px;line-height:1.5}
+        .cc-issuer{background:#FFFBEB;border-color:#FCD34D}.cc-issuer h4{color:#78350F}
+        .cc-psp{background:#ECFEFF;border-color:#A5F3FC}.cc-psp h4{color:#0E4F6B}
+        /* ── LEGEND ── */
+        .legend{max-width:1300px;margin:16px auto 0;padding:0 14px}
+        .legend-inner{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center}
+        .li{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#64748B}
+        .ld{width:24px;height:2px}
+        .ld-s{background:#D97706}
+        .ld-h{background:#4338CA}
+        .ld-a{background:transparent;border-top:2px dashed #D97706}
+        .ld-sct{background:transparent;border-top:2px dashed #0F766E}
+        .ld-d{background:transparent;border-top:2px dashed #DC2626}
+        .ld-ret{background:transparent;border-top:2px dashed #059669}
+        .lb{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+        /* ── MODAL ── */
+        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+        .modal-bg.open{display:flex}
+        .modal{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;width:100%;max-width:540px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.12)}
+        .modal-head{padding:18px 22px 14px;border-bottom:1px solid #F1F5F9;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:#fff;z-index:1}
+        .modal-hl{flex:1}
+        .modal-tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#D97706;margin-bottom:4px}
+        .modal-title{font-family:'Fraunces',serif;font-size:19px;font-weight:700;color:#18181B;line-height:1.2}
+        .modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:#94A3B8;flex-shrink:0;line-height:1}
+        .modal-x:hover{color:#18181B}
+        .modal-body{padding:18px 22px 22px}
+        .modal-body p{font-family:'Outfit',sans-serif;font-size:13px;color:#475569;line-height:1.75;margin-bottom:12px}
+        .modal-body p:last-child{margin-bottom:0}
+        .modal-body strong{color:#18181B;font-weight:600}
+        .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+        .chip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:4px}
+        .chip-blue{background:#DBEAFE;color:#1E3A8A}
+        .chip-teal{background:#D1FAE5;color:#064E3B}
+        .chip-amber{background:#FEF3C7;color:#78350F}
+        .chip-gray{background:#F1F5F9;color:#475569}
+        .chip-red{background:#FEE2E2;color:#B91C1C}
+        .chip-purple{background:#EDE9FE;color:#4C1D95}
+        .chip-orange{background:#FFEDD5;color:#C2410C}
+        .chip-cyan{background:#CFFAFE;color:#0E7490}
+        .chip-green{background:#D1FAE5;color:#065F46}
+        .chip-indigo{background:#E0E7FF;color:#3730A3}
+        /* ── FOOTER ── */
+        .footer{text-align:center;margin-top:36px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#CBD5E1;padding:16px;background:#18181B}
+        .footer a{color:#34D399;text-decoration:none}
+        /* ── STAGE FILTER ── */
+        .stage-bar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:12px 14px 6px;max-width:1300px;margin:0 auto}
+        .stage-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:6px 14px;border-radius:6px;border:1.5px solid #E2E8F0;background:#FFFFFF;color:#64748B;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;text-transform:uppercase}
+        .stage-btn:hover{border-color:#94A3B8;color:#18181B}
+        .stage-btn.active{background:#18181B;color:#F8FAFC;border-color:#18181B}
+        .stage-btn.active:hover{background:#334155;border-color:#334155}
+        .stage-divider{width:1px;height:24px;background:#E2E8F0;align-self:center}
+        .section[data-section].filtering .flow-area[data-stage]{display:none}
+        .section[data-section].filtering .flow-area[data-stage].stage-visible{display:block}
+        .section.filtering .section-header,.section.filtering > .banner,.section.filtering > .compare-grid{display:none}
+        .section.filtering .section-header.stage-visible{display:flex}
+        .section-header.stage-header{display:none}
+        .section.filtering .section-header.default-header{display:none}
+        .stage-title{text-align:center;padding:8px 14px 0;max-width:1300px;margin:0 auto}
+        .stage-title h3{font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:#18181B;margin-bottom:2px}
+        .stage-title p{font-family:'JetBrains Mono',monospace;font-size:10px;color:#94A3B8;letter-spacing:0.08em}
+        .stage-title{display:none}
+        .stage-title.active{display:block}
+        @media print{.modal-bg,.stage-bar{display:none!important}body{padding:0!important}.section{padding:8px 6px 0!important}.flow-area{break-inside:avoid;margin-bottom:4px!important}.box{max-width:140px!important;min-width:80px!important}.arr{min-width:24px!important}}
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="brand">Fintech <span>on</span> Cloud</div>
+    <a class="back" href="https://fintechoncloud.substack.com">← Back to blog</a>
+</div>
+
+<div class="hero">
+    <div class="eyebrow">// Production Architecture · Post #4 · European Payment Series · Issuing Bank Perspective</div>
+    <h1>iDEAL — Production-Grade GCP Architecture<br/>Issuer-Side Payment Flow</h1>
+    <p>Architecture from the <strong>issuing bank / neo-bank</strong> viewpoint — what <em>you</em> build and operate to participate as an iDEAL issuer. External parties (iDEAL Hub, PSP, CSM, customer mobile app) shown as dashed-border components. Click any component for a full explanation.</p>
+    <div class="tags">
+        <span class="tag tag-amber">iDEAL 1.x / 2.0</span>
+        <span class="tag tag-blue">GCP</span>
+        <span class="tag tag-purple">SCA / PSD2</span>
+        <span class="tag tag-red">Hub Connectivity</span>
+        <span class="tag tag-green">Core Banking</span>
+        <span class="tag tag-cyan">SCT Instant</span>
+        <span class="tag tag-gray">State Machine</span>
+        <span class="tag tag-orange">Failure Handling</span>
+    </div>
+</div>
+
+<div style="max-width:1300px;margin:12px auto 0;padding:0 14px">
+    <div class="banner banner-amber" style="display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:16px;line-height:1">🏦</span>
+        <div>
+            <strong style="color:#78350F">Perspective: Issuing Bank / Neo-Bank</strong><br/>
+            This diagram shows what <em>you</em> build and operate as an iDEAL scheme participant on the issuer side. The flow is <em>inbound</em>: the Hub calls you, not the reverse.<br/><br/>
+            <span style="display:inline-flex;align-items:center;gap:6px;margin-bottom:4px">
+                <span style="background:#EDE9FE;color:#4C1D95;border:1px solid #C4B5FD;font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 8px;border-radius:3px;font-weight:600;text-transform:uppercase">⬡ iDEAL Hub (Currence)</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#94A3B8">Dashed-border boxes — external, you do not control these</span>
+            </span><br/>
+            <span style="display:inline-flex;align-items:center;gap:6px">
+                <span style="background:#FFFBEB;color:#78350F;border:1px solid #FCD34D;font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 8px;border-radius:3px;font-weight:600;text-transform:uppercase">🏦 Issuer Bank (Your Systems)</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#94A3B8">Solid-border boxes — Apigee X, Hub Adapter, SCA Engine, Cloud SQL, Core Banking Interface, etc.</span>
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- STAGE FILTER BAR -->
+<div class="stage-bar" id="stageBar">
+    <button class="stage-btn active" data-filter="all" onclick="filterStage('all')">Show All</button>
+    <div class="stage-divider"></div>
+    <button class="stage-btn" data-filter="happy" onclick="filterStage('happy')">☀ Nominal Flow</button>
+    <button class="stage-btn" data-filter="sca" onclick="filterStage('sca')">🔐 SCA / Auth</button>
+    <button class="stage-btn" data-filter="settlement" onclick="filterStage('settlement')">💸 Settlement</button>
+    <button class="stage-btn" data-filter="failure" onclick="filterStage('failure')">✕ Failure Modes</button>
+    <button class="stage-btn" data-filter="recon" onclick="filterStage('recon')">✓ Reconciliation</button>
+    <button class="stage-btn" data-filter="recovery" onclick="filterStage('recovery')">🛡 Recovery &amp; Audit</button>
+    <div class="stage-divider"></div>
+    <button class="stage-btn" data-filter="gcp" onclick="filterStage('gcp')">☁ GCP Architecture</button>
+    <button class="stage-btn" data-filter="compare" onclick="filterStage('compare')">⚖ Issuer vs PSP View</button>
+</div>
+
+<!-- STAGE TITLES -->
+<div class="stage-title" id="st-happy">
+    <h3>☀ Stage 1 — Nominal Flow</h3>
+    <p>HUB REQUEST → APIGEE MTLS → HUB ADAPTER → IDEMPOTENCY → CLOUD SQL STATE → FRAUD CHECK → SCA INITIATION</p>
+</div>
+<div class="stage-title" id="st-sca">
+    <h3>🔐 Stage 2 — SCA &amp; Authorisation</h3>
+    <p>PUSH NOTIFICATION → CUSTOMER AUTH → BIOMETRIC → AUTHORISED STATE → BALANCE CHECK → CORE BANKING DEBIT</p>
+</div>
+<div class="stage-title" id="st-settlement">
+    <h3>💸 Stage 3 — Settlement (SCT Instant)</h3>
+    <p>DEBIT CONFIRMED → SCT INST INSTRUCTION → CSM → PSP COLLECTION ACCOUNT → HUB AUTHORISATION RESPONSE</p>
+</div>
+<div class="stage-title" id="st-failure">
+    <h3>✕ Stage 4 — Failure Modes</h3>
+    <p>DUPLICATE REQUEST · SCA PUSH FAILURE · LEDGER TIMEOUT · SCT INST REJECTION · SESSION EXPIRY RACE · CERT EXPIRY</p>
+</div>
+<div class="stage-title" id="st-recon">
+    <h3>✓ Stage 5 — Reconciliation &amp; Analytics</h3>
+    <p>EVENTS → DATAFLOW → BIGQUERY → RECON ENGINE · AUTHORISED vs DEBITED · SETTLEMENT vs LEDGER · DNB REPORTING</p>
+</div>
+<div class="stage-title" id="st-recovery">
+    <h3>🛡 Stage 6 — Recovery &amp; Audit</h3>
+    <p>DLQ · RETRY POLICY · CIRCUIT BREAKER · CERT ROTATION · MANUAL REVIEW · APPEND-ONLY AUDIT · 7YR ARCHIVE</p>
+</div>
+<div class="stage-title" id="st-gcp">
+    <h3>☁ GCP Architecture</h3>
+    <p>CLOUD SQL (MULTI-REGION) · APIGEE X (MTLS) · CLOUD RUN / GKE (IF EXISTING K8S) · PUB/SUB OUTBOX · SECRET MANAGER · VERTEX AI</p>
+</div>
+<div class="stage-title" id="st-compare">
+    <h3>⚖ Issuer vs PSP-Merchant Architecture</h3>
+    <p>INBOUND HUB vs OUTBOUND PSP · CLOUD SQL MR vs ALLOYDB · SCA ENGINE vs REDIRECT · LEDGER vs SETTLEMENT FILE</p>
+</div>
+
+<!-- ══════════════════════════════════════ MAIN FLOW ══════════════════════════════════════ -->
+<div class="section" data-section="issuer">
+
+    <div class="section-header sh-issuer default-header" data-stage-header="all">
+        <div>
+            <h2>iDEAL — Issuer-Side Payment Architecture</h2>
+            <p>YOUR SYSTEMS (ISSUER BANK): APIGEE X · HUB ADAPTER · SCA ENGINE · FRAUD SCORE · CLOUD SQL STATE · CORE BANKING INTERFACE · SCT INST PRODUCER | EXTERNAL (iDEAL / SCHEME): iDEAL HUB · CUSTOMER MOBILE · CSM · PSP COLLECTION</p>
+        </div>
+    </div>
+    <div class="section-header sh-issuer stage-header" data-stage-header="happy">
+        <div>
+            <h2>☀ Issuer — Nominal Flow</h2>
+            <p>HUB INBOUND REQUEST → MTLS VERIFY → IDEMPOTENCY → CLOUD SQL → FRAUD PRE-CHECK → SCA INITIATION</p>
+        </div>
+    </div>
+    <div class="section-header sh-issuer stage-header" data-stage-header="sca">
+        <div>
+            <h2>🔐 Issuer — SCA &amp; Authorisation</h2>
+            <p>PUSH NOTIFY → CUSTOMER BIOMETRIC → AUTHORISED → BALANCE → OUTBOX → LEDGER DEBIT</p>
+        </div>
+    </div>
+    <div class="section-header sh-issuer stage-header" data-stage-header="settlement" style="border-color:#0F766E">
+        <div>
+            <h2>💸 Issuer — Settlement</h2>
+            <p>DEBIT POSTED → SCT INSTANT INSTRUCTION → CSM ROUTING → PSP COLLECTION ACCOUNT → HUB AUTHORISATION ACK</p>
+        </div>
+    </div>
+    <div class="section-header sh-failure stage-header" data-stage-header="failure">
+        <div>
+            <h2>✕ Issuer — Failure Modes</h2>
+            <p>DUPLICATE HUB REQUEST · PUSH FAIL · LEDGER TIMEOUT · SCT REJECTION · SESSION RACE · CERT EXPIRY</p>
+        </div>
+    </div>
+    <div class="section-header sh-recon stage-header" data-stage-header="recon">
+        <div>
+            <h2>✓ Issuer — Reconciliation</h2>
+            <p>AUTHORISED vs DEBITED · LEDGER vs SCT INST · CLOUD SQL vs BIGQUERY · DNB REPORTING</p>
+        </div>
+    </div>
+    <div class="section-header sh-issuer stage-header" data-stage-header="recovery" style="border-color:#FACC15">
+        <div>
+            <h2>🛡 Issuer — Recovery &amp; Audit</h2>
+            <p>DLQ · CERT ROTATION ALERT · MANUAL REVIEW · APPEND-ONLY AUDIT · PSD2 · 7YR ARCHIVE</p>
+        </div>
+    </div>
+    <div class="section-header sh-issuer stage-header" data-stage-header="gcp" style="border-color:#4ADE80">
+        <div>
+            <h2>☁ Issuer — GCP Architecture</h2>
+            <p>CLOUD SQL MULTI-REGION · APIGEE X MTLS · CLOUD RUN / GKE (IF EXISTING K8S) · PUB/SUB OUTBOX · SECRET MANAGER · VERTEX AI FRAUD</p>
+        </div>
+    </div>
+
+    <!-- PHASE 0: Hub Request Inbound -->
+    <div class="flow-area issuer-row" data-stage="happy">
+        <div class="flow-label amber">// Phase 0 — Hub inbound request: iDEAL Hub sends payment initiation message to your endpoint over mTLS — Apigee validates scheme certificate and Hub IP allowlist before any business logic</div>
+        <div class="domain-bar">
+            <span class="domain-badge db-ideal">⬡ iDEAL Hub (Currence)</span>
+            <span class="db-sep">→ enters your boundary →</span>
+            <span class="domain-badge db-issuer">🏦 Issuer Bank (Your Systems)</span>
+        </div>
+        <div class="flow-row">
+            <div class="entry-group">
+                <div class="entry-label">iDEAL Hub</div>
+                <div class="entry-box eb-hub" onclick="om('ideal_hub')"><div class="et">iDEAL Hub</div><div class="es">Currence · iDx/OAuth 2.0</div></div>
+            </div>
+            <div class="arr arr-hub"><div class="arr-line"></div><div class="arr-label">mTLS POST payment-initiation</div></div>
+            <div class="box box-blue" onclick="om('apigee_issuer')"><div class="bt">Apigee X</div><div class="bs">mTLS · IP allowlist · sig verify</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">route</div></div>
+            <div class="box box-amber" onclick="om('hub_adapter')"><div class="bt">Hub Adapter</div><div class="bs">Cloud Run · iDx parse · normalise</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">dedup</div></div>
+            <div class="box box-orange" onclick="om('idempotency_issuer')"><div class="bt">Idempotency Check</div><div class="bs">Currence txn ref · Cloud SQL</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">new</div></div>
+            <div class="box box-cloudsql" onclick="om('spanner_issuer')"><div class="bt">Cloud SQL (MR)</div><div class="bs">Write: INITIATED state</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 1: Fraud Pre-Check -->
+    <div class="flow-area issuer-row" data-stage="happy">
+        <div class="flow-label amber">// Phase 1 — Fraud pre-check: async parallel scoring before SCA initiation — does NOT block the SCA flow — score returned before final AUTHORISED state transition</div>
+        <div class="domain-bar">
+            <span class="domain-badge db-issuer">🏦 Issuer Bank (Your Systems) — all boxes below</span>
+        </div>
+        <div class="flow-row">
+            <div class="box box-cloudsql" onclick="om('spanner_issuer')"><div class="bt">Cloud SQL (MR)</div><div class="bs">Payment: INITIATED</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-issuer-gold" onclick="om('pubsub_issuer')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.initiated event</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async score</div></div>
+            <div class="box box-purple" onclick="om('vertex_fraud')"><div class="bt">Vertex AI</div><div class="bs">Fraud score · account takeover</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">score back</div></div>
+            <div class="box box-cloudsql" onclick="om('spanner_issuer')"><div class="bt">Cloud SQL (MR)</div><div class="bs">Store fraud score</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">initiate SCA</div></div>
+            <div class="box box-teal" onclick="om('sca_engine')"><div class="bt">SCA Engine</div><div class="bs">Cloud Run · PSD2 Art.97</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 2: SCA - Push Notification -->
+    <div class="flow-area security-row" data-stage="sca">
+        <div class="flow-label purple">// Phase 2 — SCA initiation: SCA Engine sends push notification to customer mobile banking app — customer sees payment details — initiates biometric / PIN authentication</div>
+        <div class="domain-bar">
+            <span class="domain-badge db-issuer">🏦 Issuer Bank</span>
+            <span class="db-sep">→ push notification →</span>
+            <span class="domain-badge db-external">📱 Customer Mobile (External Device)</span>
+            <span class="db-sep">→ auth response →</span>
+            <span class="domain-badge db-issuer">🏦 Issuer Bank</span>
+        </div>
+        <div class="flow-row">
+            <div class="box box-teal" onclick="om('sca_engine')"><div class="bt">SCA Engine</div><div class="bs">PSD2 Art.97 · 2-factor</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">FCM / APNS push</div></div>
+            <div class="box box-ext-mobile" onclick="om('customer_mobile')"><div class="bt">Customer Mobile App</div><div class="bs">Banking app · push delivery</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">biometric / PIN</div></div>
+            <div class="box box-teal" onclick="om('sca_engine')"><div class="bt">SCA Engine</div><div class="bs">Verify · token</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">AUTHENTICATED</div></div>
+            <div class="box box-cloudsql" onclick="om('spanner_issuer')"><div class="bt">Cloud SQL (MR)</div><div class="bs">State: AUTHENTICATED</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">event</div></div>
+            <div class="box box-issuer-gold" onclick="om('pubsub_issuer')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.authenticated</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 3: Balance Check + Debit -->
+    <div class="flow-area issuer-row" data-stage="sca">
+        <div class="flow-label amber">// Phase 3 — Authorisation gate: fraud score + balance check gate the AUTHORISED transition — only then trigger core banking debit via Outbox pattern — never on AUTHENTICATED alone</div>
+        <div class="domain-bar">
+            <span class="domain-badge db-issuer">🏦 Issuer Bank (Your Systems) — all boxes below</span>
+        </div>
+        <div class="flow-row">
+            <div class="box box-issuer-gold" onclick="om('pubsub_issuer')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.authenticated</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">consume</div></div>
+            <div class="box box-teal" onclick="om('auth_engine')"><div class="bt">Authorisation Engine</div><div class="bs">Cloud Run · fraud gate</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">balance check</div></div>
+            <div class="box box-green" onclick="om('core_banking_interface')"><div class="bt">Core Banking Interface</div><div class="bs">Balance query · adapter</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">← sufficient</div></div>
+            <div class="box box-cloudsql" onclick="om('spanner_issuer')"><div class="bt">Cloud SQL (MR)</div><div class="bs">State: AUTHORISED</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">outbox publish</div></div>
+            <div class="box box-issuer-gold" onclick="om('pubsub_issuer')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.authorised</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 4: Ledger Debit -->
+    <div class="flow-area issuer-row" data-stage="sca">
+        <div class="flow-label amber">// Phase 4 — Core banking debit: idempotent ledger debit via adapter — Currence transaction reference as idempotency key — DEBITED state only after ledger confirms</div>
+        <div class="domain-bar">
+            <span class="domain-badge db-issuer">🏦 Issuer Bank (Your Systems) — all boxes below</span>
+        </div>
+        <div class="flow-row">
+            <div class="box box-issuer-gold" onclick="om('pubsub_issuer')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.authorised</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">consume</div></div>
+            <div class="box box-green" onclick="om('core_banking_interface')"><div class="bt">Core Banking Interface</div><div class="bs">Debit adapter · idempotent</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">POST debit</div></div>
+            <div class="box box-teal" onclick="om('ledger_system')"><div class="bt">Ledger System</div><div class="bs">Temenos / Mambu / custom</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">← confirmed</div></div>
+            <div class="box box-cloudsql" onclick="om('spanner_issuer')"><div class="bt">Cloud SQL (MR)</div><div class="bs">State: DEBITED</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">event</div></div>
+            <div class="box box-issuer-gold" onclick="om('pubsub_issuer')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.debited</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 5: SCT Instant Settlement -->
+    <div class="flow-area" data-stage="settlement" style="border-left-color:#0F766E">
+        <div class="flow-label success">// Phase 5 — SCT Instant instruction: debit confirmed → SCT Inst instruction to CSM → funds route to PSP collection account — settlement in seconds (iDEAL 2.0) or D+1 SCT (iDEAL 1.x)</div>
+        <div class="domain-bar">
+            <span class="domain-badge db-issuer">🏦 Issuer Bank</span>
+            <span class="db-sep">→ funds out via SCT Inst →</span>
+            <span class="domain-badge db-external">🏛 CSM (External)</span>
+            <span class="db-sep">→ credited to →</span>
+            <span class="domain-badge db-ideal">⬡ PSP Collection (iDEAL scheme)</span>
+        </div>
+        <div class="flow-row">
+            <div class="box box-issuer-gold" onclick="om('pubsub_issuer')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.debited</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">consume</div></div>
+            <div class="box box-teal" onclick="om('sct_producer')"><div class="bt">SCT Inst Producer</div><div class="bs">Cloud Run · ISO 20022</div></div>
+            <div class="arr arr-sct"><div class="arr-line"></div><div class="arr-label">SCT Inst pacs.008</div></div>
+            <div class="box box-ext-csm" onclick="om('csm_node')"><div class="bt">CSM</div><div class="bs">STET / Equens / TIPS</div></div>
+            <div class="arr arr-sct"><div class="arr-line"></div><div class="arr-label">route funds</div></div>
+            <div class="box box-ext-psp" onclick="om('psp_collection')"><div class="bt">PSP Collection IBAN</div><div class="bs">Mollie / Adyen / Stripe</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">← pacs.002 confirm</div></div>
+            <div class="box box-cloudsql" onclick="om('spanner_issuer')"><div class="bt">Cloud SQL (MR)</div><div class="bs">State: SETTLED</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 5b: Hub Authorisation Response -->
+    <div class="flow-area" data-stage="settlement" style="border-left-color:#0F766E">
+        <div class="flow-label success">// Phase 5b — Hub authorisation response: issuer returns AUTHORISED confirmation to Hub — Hub notifies PSP — PSP webhook fires to merchant — the irrevocable guarantee chain is complete</div>
+        <div class="domain-bar">
+            <span class="domain-badge db-issuer">🏦 Issuer Bank</span>
+            <span class="db-sep">→ auth response →</span>
+            <span class="domain-badge db-ideal">⬡ iDEAL Hub (Currence)</span>
+            <span class="db-sep">→ notifies →</span>
+            <span class="domain-badge db-external">🏪 PSP → Merchant</span>
+        </div>
+        <div class="flow-row">
+            <div class="box box-cloudsql" onclick="om('spanner_issuer')"><div class="bt">Cloud SQL (MR)</div><div class="bs">State: SETTLED</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">compose response</div></div>
+            <div class="box box-amber" onclick="om('hub_adapter')"><div class="bt">Hub Adapter</div><div class="bs">Format iDx / OAuth response</div></div>
+            <div class="arr arr-hub"><div class="arr-line"></div><div class="arr-label">AUTHORISED → Hub</div></div>
+            <div class="box box-ext-hub" onclick="om('ideal_hub')"><div class="bt">iDEAL Hub</div><div class="bs">Routes to PSP</div></div>
+            <div class="arr arr-hub"><div class="arr-line"></div><div class="arr-label">→ PSP notified</div></div>
+            <div class="box box-ext-psp" onclick="om('psp_collection')"><div class="bt">PSP</div><div class="bs">Webhook to merchant</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 6: Failure — Duplicate Hub Request -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Failure 1 — Duplicate Hub request: Hub retries if no timely response — idempotency check on Currence transaction reference at Apigee layer returns cached response — prevents double processing</div>
+        <div class="domain-bar">
+            <span class="domain-badge db-ideal">⬡ iDEAL Hub (Currence)</span>
+            <span class="db-sep">→ duplicate retry →</span>
+            <span class="domain-badge db-issuer">🏦 Issuer Bank</span>
+            <span class="db-sep">→ cached idempotent reply →</span>
+            <span class="domain-badge db-ideal">⬡ iDEAL Hub</span>
+        </div>
+        <div class="flow-row">
+            <div class="box box-ext-hub" onclick="om('ideal_hub')"><div class="bt">iDEAL Hub</div><div class="bs">Retry (no response)</div></div>
+            <div class="arr arr-hub"><div class="arr-line"></div><div class="arr-label">duplicate initiation</div></div>
+            <div class="box box-blue" onclick="om('apigee_issuer')"><div class="bt">Apigee X</div><div class="bs">Check Currence txn ref</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">← cached 200 response</div></div>
+            <div class="box box-ext-hub" onclick="om('ideal_hub')"><div class="bt">iDEAL Hub</div><div class="bs">Receives idempotent reply</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">alert: duplicate rate</div></div>
+            <div class="box box-teal" onclick="om('monitoring_issuer')"><div class="bt">Cloud Monitoring</div><div class="bs">Duplicate rate alert</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 6b: Failure — SCA Push Failure -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Failure 2 — SCA push notification failure: FCM/APNS rejects push (stale token, device offline) — SCA engine detects delivery failure — fallback to internet banking redirect flow</div>
+        <div class="domain-bar">
+            <span class="domain-badge db-issuer">🏦 Issuer Bank</span>
+            <span class="db-sep">→ push fails →</span>
+            <span class="domain-badge db-external">📱 Customer Mobile (External)</span>
+            <span class="db-sep">→ failure path →</span>
+            <span class="domain-badge db-issuer">🏦 Issuer Bank fallback</span>
+        </div>
+        <div class="flow-row">
+            <div class="box box-teal" onclick="om('sca_engine')"><div class="bt">SCA Engine</div><div class="bs">Push attempt</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">FCM/APNS reject</div></div>
+            <div class="box box-ext-mobile" onclick="om('customer_mobile')"><div class="bt">Customer Mobile</div><div class="bs">Device offline / stale token</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">delivery failure</div></div>
+            <div class="box box-teal" onclick="om('sca_fallback')"><div class="bt">SCA Fallback Handler</div><div class="bs">Internet banking redirect</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">alert &gt; 0.5%</div></div>
+            <div class="box box-teal" onclick="om('monitoring_issuer')"><div class="bt">Cloud Monitoring</div><div class="bs">Push delivery rate alert</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 6c: Failure — Session Expiry Race -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Failure 3 — Session expiry race (non-obvious): customer authenticates successfully but SCA response arrives AFTER Hub session timeout — AUTHENTICATED state must never trigger debit — only Hub AUTHORISED confirmation should</div>
+        <div class="domain-bar">
+            <span class="domain-badge db-ideal">⬡ iDEAL Hub</span>
+            <span class="db-sep">marks EXPIRED →</span>
+            <span class="domain-badge db-issuer">🏦 Issuer Bank</span>
+            <span class="db-sep">no debit triggered — state guard</span>
+        </div>
+        <div class="flow-row">
+            <div class="box box-ext-hub" onclick="om('ideal_hub')"><div class="bt">iDEAL Hub</div><div class="bs">Session expired (30min)</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">Hub marks EXPIRED</div></div>
+            <div class="box box-teal" onclick="om('sca_engine')"><div class="bt">SCA Engine</div><div class="bs">Receives late auth result</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">check Hub status</div></div>
+            <div class="box box-cloudsql" onclick="om('spanner_issuer')"><div class="bt">Cloud SQL (MR)</div><div class="bs">State: EXPIRED (not DEBITED)</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">no debit triggered</div></div>
+            <div class="box box-red" onclick="om('dlq_issuer')"><div class="bt">Audit + Alert</div><div class="bs">Log race · no customer impact</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 6d: Failure — Ledger Timeout -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Failure 4 — Core banking ledger timeout: debit call times out — unknown if debit posted — query by Currence txn ref before any retry — never retry without confirming prior attempt failed</div>
+        <div class="domain-bar">
+            <span class="domain-badge db-issuer">🏦 Issuer Bank (Your Systems) — all boxes below</span>
+        </div>
+        <div class="flow-row">
+            <div class="box box-green" onclick="om('core_banking_interface')"><div class="bt">Core Banking Interface</div><div class="bs">POST debit → timeout</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">timeout / unknown</div></div>
+            <div class="box box-teal" onclick="om('ledger_system')"><div class="bt">Ledger System</div><div class="bs">Debit status unknown</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">query by txn ref</div></div>
+            <div class="box box-green" onclick="om('core_banking_interface')"><div class="bt">Core Banking Interface</div><div class="bs">GET by Currence ref</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">← not found: retry</div></div>
+            <div class="box box-issuer-gold" onclick="om('pubsub_issuer')"><div class="bt">Cloud Pub/Sub</div><div class="bs">Retry via DLQ / backoff</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 6e: Failure — Cert Expiry -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Failure 5 — Scheme certificate expiry: mTLS cert expires → Apigee rejects Hub connections → all iDEAL traffic drops for your bank — 30-day pre-expiry alert is non-negotiable</div>
+        <div class="domain-bar">
+            <span class="domain-badge db-ideal">⬡ iDEAL Hub</span>
+            <span class="db-sep">→ mTLS fails →</span>
+            <span class="domain-badge db-issuer">🏦 Issuer Bank</span>
+            <span class="db-sep">cert expired — auto-rotate via Secret Manager</span>
+        </div>
+        <div class="flow-row">
+            <div class="box box-ext-hub" onclick="om('ideal_hub')"><div class="bt">iDEAL Hub</div><div class="bs">mTLS handshake fails</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">CERT_EXPIRED reject</div></div>
+            <div class="box box-blue" onclick="om('apigee_issuer')"><div class="bt">Apigee X</div><div class="bs">Scheme cert expired</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">30-day pre-alert</div></div>
+            <div class="box box-purple" onclick="om('secret_manager_issuer')"><div class="bt">Secret Manager</div><div class="bs">Cert expiry monitoring</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">auto-rotate</div></div>
+            <div class="box box-teal" onclick="om('cert_rotation')"><div class="bt">Cloud Functions</div><div class="bs">Cert rotation + Apigee reload</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 7: Reconciliation -->
+    <div class="flow-area recon-row" data-stage="recon">
+        <div class="flow-label success">// Phase 7 — Core reconciliation: AUTHORISED vs DEBITED gap detection · DEBITED vs SETTLED gap detection · Cloud SQL state vs Ledger transaction log · daily BigQuery report</div>
+        <div class="flow-row">
+            <div class="box box-issuer-gold" onclick="om('pubsub_issuer')"><div class="bt">Cloud Pub/Sub</div><div class="bs">All payment lifecycle events</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">stream</div></div>
+            <div class="box box-cyan" onclick="om('dataflow_issuer')"><div class="bt">Dataflow</div><div class="bs">PII strip · enrich · window</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">load</div></div>
+            <div class="box box-teal" onclick="om('bigquery_issuer')"><div class="bt">BigQuery</div><div class="bs">Auth rates · SCA latency</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">compare</div></div>
+            <div class="box box-green" onclick="om('recon_engine_issuer')"><div class="bt">Recon Engine</div><div class="bs">Auth vs Debit vs Settled</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">anomalies</div></div>
+            <div class="box box-red" onclick="om('manual_review_issuer')"><div class="bt">Manual Review Queue</div><div class="bs">Ops · unmatched positions</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 7b: DNB Reporting -->
+    <div class="flow-area recon-row" data-stage="recon">
+        <div class="flow-label success">// Phase 7b — Regulatory reporting: DNB statistics submission · PSD2 audit trail export · iDEAL scheme volume reporting to Currence · automated scheduled + ad-hoc export</div>
+        <div class="flow-row">
+            <div class="box box-teal" onclick="om('bigquery_issuer')"><div class="bt">BigQuery</div><div class="bs">Anonymised analytics</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">aggregate</div></div>
+            <div class="box box-green" onclick="om('dnb_reporter')"><div class="bt">DNB Reporter</div><div class="bs">Cloud Run · scheduled</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">submit</div></div>
+            <div class="box box-ext" onclick="om('dnb_portal')"><div class="bt">DNB Portal</div><div class="bs">De Nederlandsche Bank</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">scheme report</div></div>
+            <div class="box box-ext-hub" onclick="om('currence_reporting')"><div class="bt">Currence Reporting</div><div class="bs">Volume · success rates</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 8: Recovery -->
+    <div class="flow-area recovery-row" data-stage="recovery">
+        <div class="flow-label warn">// Phase 8 — Recovery layer: Pub/Sub DLQ for failed debit events · Cloud Tasks for ledger status polling · circuit breaker on core banking API · manual review for unresolved positions</div>
+        <div class="flow-row">
+            <div class="box box-red" onclick="om('dlq_issuer')"><div class="bt">Dead Letter Queue</div><div class="bs">Pub/Sub DLQ · N retries</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">alert</div></div>
+            <div class="box box-teal" onclick="om('monitoring_issuer')"><div class="bt">Cloud Monitoring</div><div class="bs">DLQ depth · auth SLA</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">route</div></div>
+            <div class="box box-orange" onclick="om('circuit_breaker_issuer')"><div class="bt">Circuit Breaker</div><div class="bs">Core banking API guard</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">escalate</div></div>
+            <div class="box box-red" onclick="om('manual_review_issuer')"><div class="bt">Manual Review Queue</div><div class="bs">Ops · unresolved debit</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">resolve</div></div>
+            <div class="box box-cloudsql" onclick="om('spanner_issuer')"><div class="bt">Cloud SQL (MR)</div><div class="bs">Corrective state update</div></div>
+        </div>
+    </div>
+
+    <!-- PHASE 9: Audit -->
+    <div class="flow-area" data-stage="recovery">
+        <div class="flow-label purple">// Phase 9 — Audit trail: append-only immutable log for every state change, SCA event, manual action — PSD2 + DNB compliant — 7yr archive on GCS Coldline</div>
+        <div class="flow-row">
+            <div class="box box-issuer-gold" onclick="om('pubsub_issuer')"><div class="bt">Cloud Pub/Sub</div><div class="bs">All lifecycle events</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">stream</div></div>
+            <div class="box box-indigo" onclick="om('audit_service_issuer')"><div class="bt">Audit Service</div><div class="bs">Append-only · hash-chain</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">persist</div></div>
+            <div class="box box-teal" onclick="om('audit_store_issuer')"><div class="bt">Audit Store</div><div class="bs">BigQuery · CMEK · write-only</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">export</div></div>
+            <div class="box box-green" onclick="om('regulator_export_issuer')"><div class="bt">Regulator Export</div><div class="bs">PSD2 · DNB · iDEAL scheme</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">archive</div></div>
+            <div class="box box-gray" onclick="om('audit_archive_issuer')"><div class="bt">GCS Coldline</div><div class="bs">7yr WORM · CMEK</div></div>
+        </div>
+    </div>
+
+    <!-- GCP: Security Layer -->
+    <div class="flow-area security-row" data-stage="gcp">
+        <div class="flow-label gcp">// GCP security layer: Apigee X mTLS for Hub connectivity · Secret Manager for scheme certificates · Cloud Armor on health endpoints · CMEK everywhere · VPC for Core Banking</div>
+        <div class="domain-bar">
+            <span class="domain-badge db-ideal">⬡ iDEAL Hub (Currence)</span>
+            <span class="db-sep">→ mTLS boundary →</span>
+            <span class="domain-badge db-issuer">🏦 Issuer Bank (Your Security Stack)</span>
+        </div>
+        <div class="flow-row">
+            <div class="box box-ext-hub" onclick="om('ideal_hub')"><div class="bt">iDEAL Hub</div><div class="bs">Inbound mTLS</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">IP allowlist</div></div>
+            <div class="box box-red" onclick="om('cloud_armor_issuer')"><div class="bt">Cloud Armor</div><div class="bs">IP allowlist · rate limit</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">mTLS term</div></div>
+            <div class="box box-blue" onclick="om('apigee_issuer')"><div class="bt">Apigee X</div><div class="bs">Scheme cert validation</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">fetch cert</div></div>
+            <div class="box box-purple" onclick="om('secret_manager_issuer')"><div class="bt">Secret Manager</div><div class="bs">Scheme certs · 30d alert</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">private IP</div></div>
+            <div class="box box-orange" onclick="om('vpc_issuer')"><div class="bt">VPC / Private Link</div><div class="bs">Cloud Run → Core Banking</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">CMEK</div></div>
+            <div class="box box-teal" onclick="om('kms_issuer')"><div class="bt">Cloud KMS</div><div class="bs">Cloud SQL · Pub/Sub · GCS</div></div>
+        </div>
+    </div>
+
+    <!-- GCP: Deployment Topology -->
+    <div class="flow-area gcp-row" data-stage="gcp">
+        <div class="flow-label gcp">// GCP deployment: Cloud SQL multi-region (europe-west1/4) · Cloud Run minScale=1 (or GKE if you already have Kubernetes infra) · Pub/Sub ordering key = Currence txn ref · Vertex AI async scoring · Cloud Tasks for ledger polling</div>
+        <div class="domain-bar">
+            <span class="domain-badge db-issuer">🏦 Issuer Bank (Your GCP Infrastructure) — all boxes below</span>
+        </div>
+        <div class="flow-row">
+            <div class="box box-cloudsql" onclick="om('spanner_issuer')"><div class="bt">Cloud SQL (MR)</div><div class="bs">Multi-region EW1/EW4</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">strong consistency</div></div>
+            <div class="box box-blue" onclick="om('cloud_run_issuer')"><div class="bt">Cloud Run / GKE</div><div class="bs">minScale=1 · Hub Adapter</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">ordered</div></div>
+            <div class="box box-issuer-gold" onclick="om('pubsub_issuer')"><div class="bt">Cloud Pub/Sub</div><div class="bs">Ordering: Currence txn ref</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">async score</div></div>
+            <div class="box box-purple" onclick="om('vertex_fraud')"><div class="bt">Vertex AI</div><div class="bs">Fraud · async only</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">schedule</div></div>
+            <div class="box box-orange" onclick="om('cloud_tasks_issuer')"><div class="bt">Cloud Tasks</div><div class="bs">Ledger status polling</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">metrics</div></div>
+            <div class="box box-teal" onclick="om('monitoring_issuer')"><div class="bt">Cloud Monitoring</div><div class="bs">SCA latency · auth SLA</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════ COMPARISON SECTION ══════════════════════════════════════ -->
+<div class="section" data-section="compare" style="margin-top:28px">
+    <div class="section-header sh-failure">
+        <div>
+            <h2>Issuer vs PSP-Merchant Architecture</h2>
+            <p>INBOUND HUB vs OUTBOUND PSP · CLOUD SQL MR vs ALLOYDB · SCA ENGINE vs REDIRECT · SCHEME CERT vs PSP API KEY</p>
+        </div>
+    </div>
+
+    <div class="flow-area" data-stage="compare" style="border-left-color:#EA580C">
+        <div class="banner banner-amber">💡 Key architectural insight: The issuer receives <strong>inbound requests from the Hub</strong> — not from a customer browser. There is no redirect chain. The SCA happens inside your systems. The debit is your responsibility. You are on the other side of the irrevocable guarantee that the merchant receives.</div>
+
+        <div class="compare-grid" style="margin-bottom:10px">
+            <div class="compare-card cc-issuer">
+                <h4>Issuer Architecture</h4>
+                <ul>
+                    <li>Inbound: Hub sends payment initiation over mTLS</li>
+                    <li>State store: Cloud SQL Multi-Region (strong consistency across regions)</li>
+                    <li>SCA: your engine, your push notification, your biometric</li>
+                    <li>Debit: your ledger, your responsibility, your idempotency key</li>
+                    <li>Settlement: you send SCT Instant to PSP collection IBAN</li>
+                    <li>Cert management: scheme certificates must never expire</li>
+                    <li>Failure impact: your outage = your customers cannot pay anywhere</li>
+                    <li>Regulation: licensed bank / EMI, DNB oversight, PSD2 Art.97</li>
+                </ul>
+            </div>
+            <div class="compare-card cc-psp">
+                <h4>PSP-Merchant Architecture</h4>
+                <ul>
+                    <li>Outbound: you call PSP API, Hub routes to bank</li>
+                    <li>State store: AlloyDB / Cloud SQL (sufficient for merchant volumes)</li>
+                    <li>SCA: happens inside the issuing bank — you have zero visibility</li>
+                    <li>Debit: PSP handles — you receive a webhook after the fact</li>
+                    <li>Settlement: PSP sends settlement file (T+2 typical)</li>
+                    <li>Key management: PSP API key and webhook secret</li>
+                    <li>Failure impact: bank outage → redirect 503 → implement circuit breaker</li>
+                    <li>Regulation: PCI DSS scope, GDPR, no banking licence required</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+    <div class="legend-inner" style="flex-direction:column;align-items:stretch;gap:10px">
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:0.08em">Arrows</span>
+            <div class="li"><div class="ld ld-h"></div>Hub mTLS (iDEAL scheme)</div>
+            <div class="li"><div class="ld ld-s"></div>Synchronous API call</div>
+            <div class="li"><div class="ld ld-a"></div>Asynchronous / Pub/Sub</div>
+            <div class="li"><div class="ld ld-sct"></div>SCT Instant (funds)</div>
+            <div class="li"><div class="ld ld-ret"></div>Response / confirmation</div>
+            <div class="li"><div class="ld ld-d"></div>Failure / error path</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;border-top:1px solid #E2E8F0;padding-top:10px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:0.08em">Your Systems — solid border</span>
+            <div class="li"><div class="lb" style="background:#1E40AF;border:2px solid #1D4ED8"></div>Apigee X</div>
+            <div class="li"><div class="lb" style="background:#92400E;border:2px solid #B45309"></div>Cloud Pub/Sub / Hub Adapter</div>
+            <div class="li"><div class="lb" style="background:#155E75;border:2px solid #0E7490"></div>Cloud SQL MR (state)</div>
+            <div class="li"><div class="lb" style="background:#065F46;border:2px solid #047857"></div>SCA / Auth / Core Banking</div>
+            <div class="li"><div class="lb" style="background:#4C1D95;border:2px solid #6D28D9"></div>Vertex AI / Secret Manager</div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:#881337;text-transform:uppercase;letter-spacing:0.08em">External Parties — dashed border</span>
+            <div class="li"><div class="lb" style="background:#1E1B4B;border:1.5px dashed #4338CA"></div>iDEAL Hub (Currence)</div>
+            <div class="li"><div class="lb" style="background:#1E3A8A;border:1.5px dashed #2563EB"></div>Customer Mobile App</div>
+            <div class="li"><div class="lb" style="background:#134E4A;border:1.5px dashed #0F766E"></div>CSM (STET / Equens)</div>
+            <div class="li"><div class="lb" style="background:#78350F;border:1.5px dashed #B45309"></div>PSP Collection Account</div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="mbg" onclick="cbg(event)">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-hl">
+                <div class="modal-tag" id="mtag"></div>
+                <div class="modal-title" id="mtitle"></div>
+            </div>
+            <button class="modal-x" onclick="cm()">✕</button>
+        </div>
+        <div class="modal-body" id="mbody"></div>
+    </div>
+</div>
+
+<div class="footer">
+    Interactive architecture diagram · <a href="https://fintechoncloud.substack.com">Fintech on Cloud</a> · Post #4: iDEAL — Issuer-Side GCP Architecture · European Payment Series
+</div>
+
+<script>
+const D = {
+    'ideal_hub': {tag:'External · iDEAL Scheme', title:'iDEAL Hub (Currence)', body:`<p>The iDEAL Hub is operated by Currence, the Dutch payment scheme operator. Unlike the merchant-side view where the Hub is a silent routing layer, <strong>from the issuer side the Hub is your primary counterparty</strong> — it sends you payment initiation messages, expects an authorisation response, and routes the result back to the PSP.</p><p><strong>iDEAL 1.x:</strong> Hub communicates over a proprietary XML protocol (iDx) using mutual TLS. Your bank registers an endpoint URL with Currence. The Hub sends POST requests signed with a scheme certificate. You validate the certificate, parse the iDx XML, and return a signed response.</p><p><strong>iDEAL 2.0:</strong> Hub evolves to OpenID Connect. Your bank acts as the OIDC identity provider. The Hub federates identity across all participating banks, acting as the OIDC relying party. Token management becomes more complex, but the XML parsing burden drops significantly.</p><p><strong>Hub availability:</strong> Hub outages affect all issuers simultaneously. You monitor Currence's status page, not individual PSP pages. When the Hub is down, no iDEAL payments can be initiated by any Dutch customer at any merchant.</p>`, chips:[{t:'Operated by Currence',c:'chip-amber'},{t:'iDx protocol (1.x)',c:'chip-gray'},{t:'OIDC IdP (2.0)',c:'chip-purple'},{t:'mTLS required',c:'chip-red'},{t:'Hub outage = all issuers affected',c:'chip-orange'}]},
+
+    'apigee_issuer': {tag:'GCP · API Gateway', title:'Apigee X — Hub Connectivity Layer', body:`<p>Apigee X sits at the boundary between the public internet and your payment infrastructure. For issuer connectivity, it has three critical responsibilities: <strong>mTLS termination</strong> using the Currence scheme certificate, <strong>IP allowlist enforcement</strong> on the Hub's published egress IP ranges, and <strong>idempotency pre-check</strong> on the Currence transaction reference before the request reaches any business logic.</p><p><strong>Why Apigee over Cloud API Gateway or a plain Load Balancer:</strong> Apigee supports native mutual TLS with certificate-based client authentication, policy-based IP allowlisting, and can be configured to check and return cached responses for duplicate requests — all without touching application code. For scheme connectivity, this matters enormously.</p><p><strong>Scheme certificate management:</strong> Currence issues scheme certificates with fixed validity periods. These are stored in Secret Manager and loaded into Apigee's truststore. A certificate expiry that reaches Apigee means the Hub can no longer connect — complete iDEAL outage for your bank. Automate rotation with 30-day pre-expiry alerts minimum.</p><p><strong>IP allowlist:</strong> The Hub publishes its egress IP ranges. Enforce these at Apigee — not in application code. Requests from unlisted IPs should be rejected with a 403 before they touch your authorisation engine.</p>`, chips:[{t:'mTLS termination',c:'chip-red'},{t:'IP allowlist enforced here',c:'chip-orange'},{t:'Idempotency pre-check',c:'chip-amber'},{t:'Cert in Secret Manager',c:'chip-purple'},{t:'30-day expiry alert',c:'chip-teal'}]},
+
+    'hub_adapter': {tag:'GCP · Integration', title:'Hub Adapter — Cloud Run', body:`<p>The Hub Adapter is a Cloud Run service that normalises Hub protocol messages into your internal domain model. In iDEAL 1.x it parses iDx XML; in iDEAL 2.0 it handles OIDC token flows. Its output is a clean internal <code>PaymentInitiationRequest</code> struct that the rest of your system consumes — insulating the downstream services from Hub protocol changes.</p><p><strong>Design principle:</strong> The Hub Adapter is the only service that knows about iDx XML or iDEAL Hub-specific message formats. A protocol version change (1.x → 2.0) should require changes only to this service. Everything downstream is protocol-agnostic.</p><p><strong>Response formatting:</strong> The Hub Adapter also constructs the outbound responses — authorised, refused, expired. These responses must be signed with your scheme certificate. The signing key is fetched from Secret Manager at startup and cached in memory with a rotation-aware invalidation.</p><p><strong>minScale=1:</strong> This service must always be warm. Hub requests have tight response timeouts. A cold start during a Hub request window will cause the Hub to retry, creating duplicate request pressure.</p>`, chips:[{t:'iDx XML parse (1.x)',c:'chip-gray'},{t:'OIDC token flow (2.0)',c:'chip-purple'},{t:'Protocol isolation pattern',c:'chip-amber'},{t:'minScale=1',c:'chip-red'},{t:'Signs outbound response',c:'chip-teal'}]},
+
+    'idempotency_issuer': {tag:'GCP · Reliability', title:'Idempotency Check — Currence Transaction Reference', body:`<p>The Currence transaction reference is a globally unique, scheme-assigned identifier for each payment. It is the canonical idempotency key for all issuer-side processing — not your internal payment ID, not the PSP's payment ID.</p><p><strong>Implementation:</strong> The idempotency check is performed at two layers. First at Apigee, using a lookup against a Cloud SQL unique index on the Currence reference — if a response was already sent, return the cached response immediately without entering application code. Second within the Hub Adapter, as a defence-in-depth check before writing to Cloud SQL.</p><p><strong>Hub retry behaviour:</strong> If the Hub sends a payment initiation and doesn't receive a timely response (your processing was slow, a deploy caused a brief interruption), it will retry the same request with the same Currence transaction reference. Without idempotency enforcement, this produces duplicate payment processing — potentially a double debit if the first attempt partially completed.</p><p><strong>Alert on duplicates:</strong> A duplicate rate above 0.1% indicates your response latency is exceeding the Hub's timeout window. This is a leading indicator of infrastructure problems before they cause customer-visible failures.</p>`, chips:[{t:'Currence txn ref = idempotency key',c:'chip-red'},{t:'Apigee layer first',c:'chip-amber'},{t:'Hub Adapter layer second',c:'chip-orange'},{t:'Alert on > 0.1% duplicate rate',c:'chip-teal'},{t:'Hub retries are expected',c:'chip-gray'}]},
+
+    'spanner_issuer': {tag:'GCP · State Store', title:'Cloud SQL (Multi-Region) — Payment State', body:`<p>Cloud SQL for PostgreSQL configured in a <strong>multi-region cross-region replica setup</strong> serves as the payment state store. The authorisation flow requires a read-modify-write on the payment record that is safe from concurrent duplicates. Use <code>SELECT FOR UPDATE</code> row-level locking within transactions — two concurrent Hub retries for the same payment will queue at the DB lock, and only the first will proceed; the second finds a terminal/already-processed state and aborts safely.</p><p><strong>Multi-Region setup:</strong> Cloud SQL supports cross-region read replicas with <a href="https://cloud.google.com/sql/docs/postgres/replication/cross-region-replicas">cross-region replication</a>. Deploy a primary in <code>europe-west4</code> (Netherlands) with a replica in <code>europe-west1</code> (Belgium). In a primary failure event, promote the replica. For issuer-side availability SLAs, this HA configuration is required — a single-region primary with no replica will not meet iDEAL scheme availability requirements.</p><p><strong>State machine transitions:</strong> <code>INITIATED → AUTHENTICATED → AUTHORISED → DEBITED → SETTLED</code>. Terminal states: <code>EXPIRED</code>, <code>REFUSED</code>, <code>FAILED</code>. The critical constraint: <strong>AUTHENTICATED must never directly trigger a ledger debit</strong>. Only AUTHORISED (after Hub confirmation is received) should initiate the debit path.</p><p><strong>Indexes:</strong> Composite index on <code>(status, created_at)</code> for reconciliation queries. Unique index on <code>currence_txn_ref</code> for idempotency enforcement at the database layer. Partial index on <code>WHERE status IN ('INITIATED','AUTHENTICATED','AUTHORISED')</code> for the stale-payment scanner.</p><p><strong>Connection pooling:</strong> Use PgBouncer or Cloud SQL's built-in connection pooling — Cloud Run services scaling to many instances will exhaust Postgres max_connections without it.</p>`, chips:[{t:'SELECT FOR UPDATE locking',c:'chip-red'},{t:'AUTHENTICATED ≠ AUTHORISED',c:'chip-orange'},{t:'Multi-region EW4 primary + EW1 replica',c:'chip-amber'},{t:'Promote replica on primary failure',c:'chip-teal'},{t:'Unique idx on currence_txn_ref',c:'chip-blue'},{t:'PgBouncer for connection pooling',c:'chip-gray'}]},
+
+    'sca_engine': {tag:'GCP · Authentication', title:'SCA Engine — Cloud Run (PSD2 Art.97)', body:`<p>The SCA Engine orchestrates the customer authentication flow. For a mobile bank, this means: send a push notification to the customer's registered device, wait for biometric confirmation (Face ID, fingerprint) or PIN entry, validate the authentication token, and return the result to the authorisation flow.</p><p><strong>PSD2 Article 97 requirements:</strong> Two of three factors — knowledge (PIN/password), possession (registered device), inherence (biometric). The SCA Engine must enforce this. For iDEAL 2.0, the bank acts as an OIDC identity provider; the SCA Engine is the authentication component of that IdP.</p><p><strong>Push notification fallback:</strong> FCM (Android) and APNS (iOS) delivery is not guaranteed. Your SCA Engine must monitor push delivery receipts. If delivery fails (stale token, device offline, push provider outage), the fallback is a redirect to internet banking — a browser-based authentication flow. This fallback must be tested and maintained; a system where push failure equals payment failure will generate complaints and scheme violations.</p><p><strong>Session timeout:</strong> The Hub's payment initiation session has a 30-minute timeout. Your SCA flow must complete within this window. In practice, customers who take longer have already abandoned — design for sub-5 second authentication for the happy path.</p>`, chips:[{t:'PSD2 Art.97 enforcement',c:'chip-red'},{t:'Push: FCM + APNS',c:'chip-blue'},{t:'Fallback: internet banking',c:'chip-amber'},{t:'30min Hub session timeout',c:'chip-gray'},{t:'Target: <5s auth round-trip',c:'chip-teal'}]},
+
+    'sca_fallback': {tag:'GCP · Resilience', title:'SCA Fallback Handler', body:`<p>When push notification delivery fails — stale device token, customer's phone is off, FCM/APNS provider partial outage — the SCA Fallback Handler triggers an internet banking redirect flow. The customer is redirected to a browser-based authentication URL, where they log in using their credentials and approve the payment.</p><p><strong>Alert threshold:</strong> Push delivery failure rate above 0.5% in any 5-minute window should trigger an alert. This rate indicates either a systematic token staleness problem (tokens not being refreshed when customers update their banking app) or a push provider issue. Either requires immediate attention.</p><p><strong>Token refresh strategy:</strong> On every successful app open, refresh the FCM/APNS push token and store it. Do not wait for a payment initiation to discover a stale token. Most push delivery failures in production are stale tokens from customers who reinstalled the app or changed devices.</p>`, chips:[{t:'Fallback to internet banking',c:'chip-amber'},{t:'Alert > 0.5% failure rate',c:'chip-red'},{t:'Refresh tokens on app open',c:'chip-teal'},{t:'FCM + APNS both required',c:'chip-blue'}]},
+
+    'vertex_fraud': {tag:'GCP · AI', title:'Vertex AI — Fraud Scoring (Async)', body:`<p>Fraud scoring on the issuer side is architecturally different from the merchant side: you have significantly more signal. You know the customer's full transaction history, their device fingerprint, their typical authentication behaviour, their geographic patterns, and their account age. A merchant sees only the payment amount and the fact that the customer bank-authenticated.</p><p><strong>Async pattern is mandatory:</strong> Fraud scoring must not block the SCA initiation. The pattern: fire fraud scoring at the same time as SCA initiation. The fraud score result is available before the customer completes biometric authentication (typically 15–30 seconds). Gate the AUTHORISED state transition on the fraud score — if the score exceeds your threshold and the customer completed SCA, you can still refuse at the authorisation step.</p><p><strong>Fail-open on model timeout:</strong> If the Vertex AI endpoint returns a timeout, fail open — allow the payment with an elevated monitoring flag. A false positive on a legitimate iDEAL payment (declining a genuine transaction) destroys customer trust faster than a false negative on a fraudulent one. Your model accuracy should drive this decision, not a blanket refusal.</p><p><strong>Key signals for iDEAL fraud:</strong> Account takeover indicators (unusual device, unusual SCA behaviour, recently changed contact details), velocity (multiple initiations in short window), amount anomaly vs customer baseline, merchant category vs customer profile.</p>`, chips:[{t:'Async — never blocks SCA',c:'chip-amber'},{t:'Score gates AUTHORISED state',c:'chip-red'},{t:'Fail open on timeout',c:'chip-orange'},{t:'Account takeover: primary signal',c:'chip-purple'},{t:'Velocity + amount anomaly',c:'chip-teal'}]},
+
+    'auth_engine': {tag:'GCP · Authorisation', title:'Authorisation Engine — Cloud Run', body:`<p>The Authorisation Engine makes the final payment approval decision. It consumes the <code>payment.authenticated</code> Pub/Sub event and gates the AUTHORISED state transition on two conditions: the fraud score is below threshold, and the balance check confirms sufficient funds.</p><p><strong>The critical invariant:</strong> This service is the only place in the system that transitions a payment from AUTHENTICATED to AUTHORISED. Nothing else should write that state transition. The debit path only fires after this service writes AUTHORISED to Cloud SQL.</p><p><strong>Balance check pattern:</strong> Query the core banking ledger for the current available balance. This must be a real-time query — not a cached value. Available balance = actual balance minus any pending debits. A payment must not be authorised against a balance that includes funds already committed to another pending payment.</p><p><strong>Refusal path:</strong> If fraud score exceeds threshold or balance is insufficient, this service writes REFUSED to Cloud SQL, emits a <code>payment.refused</code> event, and the Hub Adapter sends a REFUSED response to the Hub. The Hub notifies the PSP; the PSP notifies the merchant; the customer sees a declined message.</p>`, chips:[{t:'Fraud score gate',c:'chip-red'},{t:'Real-time balance check',c:'chip-amber'},{t:'Only writer of AUTHORISED state',c:'chip-orange'},{t:'Refusal path to Hub',c:'chip-gray'},{t:'Available balance — not ledger balance',c:'chip-teal'}]},
+
+    'pubsub_issuer': {tag:'GCP · Messaging', title:'Cloud Pub/Sub — Outbox Pattern', body:`<p>All asynchronous steps in the issuer flow use Cloud Pub/Sub with the Outbox pattern. The Outbox pattern is critical here because "the payment is authorised" and "the debit posted to core banking" are two distinct operations that cannot share a transaction boundary — your core banking system is a separate process with its own failure modes.</p><p><strong>Outbox pattern:</strong> Write the state transition to Cloud SQL first. Then publish the Pub/Sub event. The event drives the next step (debit, SCT Instant instruction, etc.). If the Pub/Sub publish fails, a background process scans Cloud SQL for states that haven't had their corresponding event published and retries. This guarantees at-least-once delivery without relying on distributed transactions.</p><p><strong>Ordering key:</strong> Use the Currence transaction reference as the Pub/Sub ordering key. This guarantees that events for the same payment are processed in order by the same subscriber instance — critical for the state machine to see transitions in the correct sequence.</p><p><strong>Topics:</strong> <code>payment.initiated</code>, <code>payment.authenticated</code>, <code>payment.authorised</code>, <code>payment.debited</code>, <code>payment.settled</code>, <code>payment.refused</code>, <code>payment.expired</code>, <code>payment.failed</code>. Separate topics per state allow independent scaling of consumers.</p>`, chips:[{t:'Outbox pattern',c:'chip-amber'},{t:'Cloud SQL write first',c:'chip-red'},{t:'Ordering key: Currence txn ref',c:'chip-teal'},{t:'At-least-once delivery',c:'chip-gray'},{t:'Separate topic per state',c:'chip-blue'}]},
+
+    'core_banking_interface': {tag:'GCP · Integration', title:'Core Banking Interface — Adapter Layer', body:`<p>The Core Banking Interface is an adapter layer between your Cloud-native payment processing and your core banking ledger. The ledger may be Temenos T24, Thought Machine Vault, Mambu, or a custom system — the adapter normalises the interface so that your payment processing code is decoupled from the ledger's API conventions.</p><p><strong>Idempotency is your responsibility:</strong> The adapter must pass the Currence transaction reference as an idempotency key on every debit request. If the ledger exposes an idempotency header (Mambu does; many older core banking systems do not), use it. If it does not, the adapter must query-before-write: check whether a transaction with this reference already exists before posting a new debit.</p><p><strong>Dual-write problem:</strong> If a ledger API call times out, you cannot know whether the debit posted. The adapter must implement a query-by-reference path: given a Currence transaction reference, return the ledger transaction status. Only retry a debit if the query confirms the first attempt did not post. This path must be tested exhaustively — it's triggered in production more than teams expect.</p><p><strong>Circuit breaker:</strong> If the core banking API returns 5xx consistently, open the circuit. Stop sending debit requests. Alert immediately. An open core banking circuit means payments are authorised but not debited — an unresolved position that requires manual reconciliation.</p>`, chips:[{t:'Adapter pattern',c:'chip-amber'},{t:'Currence ref as idempotency key',c:'chip-red'},{t:'Query before retry',c:'chip-orange'},{t:'Circuit breaker required',c:'chip-teal'},{t:'Temenos / Mambu / custom',c:'chip-gray'}]},
+
+    'ledger_system': {tag:'External-ish · Core Banking', title:'Ledger System (Core Banking)', body:`<p>The core banking ledger is the system of record for customer account balances. It's the origin of the debit instruction and the source of truth for whether funds actually left the account. In the context of iDEAL, it receives a debit instruction from the Core Banking Interface after AUTHORISED state is confirmed.</p><p><strong>Why it's "external-ish":</strong> The ledger is your system — but it's architecturally external to your Cloud-native payment processing. It likely runs on-premise, in a co-location, or in a different cloud region. It has its own availability profile, its own API conventions, and its own failure modes. Treat it as an external dependency with an adapter interface, not as an internal service.</p><p><strong>The two errors that cause regulatory incidents:</strong> (1) Debit posts to ledger but Cloud SQL state never reaches DEBITED — the payment appears stuck; customer's money is gone but order isn't fulfilled. Reconciliation must catch this. (2) Cloud SQL reaches DEBITED but ledger debit never actually posted — authorised-without-funds scenario. The stale scanner and recon engine must catch this within hours.</p>`, chips:[{t:'System of record for balances',c:'chip-amber'},{t:'External to Cloud-native layer',c:'chip-gray'},{t:'Treat as external dependency',c:'chip-orange'},{t:'Two incident-class failure modes',c:'chip-red'}]},
+
+    'sct_producer': {tag:'GCP · Settlement', title:'SCT Instant Producer — Cloud Run', body:`<p>The SCT Instant Producer constructs and submits the ISO 20022 pacs.008 payment instruction to the CSM (Clearing and Settlement Mechanism) on behalf of the issuer. This is the actual funds movement step — the instruction that causes money to move from your customer's account at your bank to the PSP's collection IBAN.</p><p><strong>iDEAL 2.0 requirement:</strong> In iDEAL 2.0, the SCT Instant instruction must be submitted within seconds of authorisation. The scheme expects near-real-time settlement. If your SCT Instant infrastructure cannot achieve this SLA, your iDEAL 2.0 certification will not pass.</p><p><strong>iDEAL 1.x:</strong> Standard SCT is used — same-day or next-day settlement. The SCT instruction is batched and submitted via your treasury system. The real-time pressure on the authorisation path doesn't extend to the settlement path in 1.x.</p><p><strong>ISO 20022 pacs.008:</strong> The payment instruction format for interbank credit transfers. Your SCT Instant Producer must generate correctly structured pacs.008 messages. Malformed messages are rejected by the CSM synchronously — handle pacs.002 rejection responses and map them to your internal FAILED state with the appropriate rejection reason code.</p><p><strong>Connection to CSM:</strong> Via your correspondent banking partner (for smaller institutions) or a direct CSM connection (for larger banks). Either way, this is a private network connection — not a public API.</p>`, chips:[{t:'pacs.008 ISO 20022',c:'chip-amber'},{t:'iDEAL 2.0: seconds SLA',c:'chip-red'},{t:'iDEAL 1.x: D+1 batch',c:'chip-gray'},{t:'pacs.002 rejection handling',c:'chip-orange'},{t:'Private network to CSM',c:'chip-teal'}]},
+
+    'csm_node': {tag:'External · Settlement', title:'CSM — Clearing and Settlement Mechanism', body:`<p>The CSM routes and settles the SCT Instant instruction between your bank and the PSP's IBAN-holding bank. Major CSMs for Dutch banks: STET (operated by the Euro Banking Association), Equens Worldline, and TARGET Instant Payment Settlement (TIPS, operated by the ECB).</p><p><strong>Reachability problem:</strong> Not all PSP collection IBANs are reachable via SCT Instant. Some PSPs use banking partners whose banks are connected only to the standard SCT rails, not SCT Instant. If the CSM returns a reachability error for the PSP's IBAN, you must fall back to standard SCT — but you've already committed to an iDEAL 2.0 AUTHORISED response. Handle this gracefully: fall back to SCT, notify the Hub via the scheme's fallback protocol, and flag for ops review.</p><p><strong>pacs.002 response:</strong> The CSM returns a pacs.002 acceptance or rejection. Acceptance = funds are in transit. Rejection reasons include: IBAN not reachable, amount exceeds scheme limit, scheme participant not active. Map all rejection codes to your internal state machine.</p>`, chips:[{t:'STET / Equens / TIPS',c:'chip-amber'},{t:'PSP IBAN reachability check',c:'chip-red'},{t:'pacs.002 acceptance / rejection',c:'chip-gray'},{t:'Fall back to SCT if needed',c:'chip-orange'},{t:'ECB TIPS for instant',c:'chip-teal'}]},
+
+    'psp_collection': {tag:'External · PSP', title:'PSP Collection IBAN', body:`<p>The PSP holds a collection IBAN (or uses their banking partner's IBAN) that receives the SCT Instant credit from your CSM. This is the destination of the funds movement. Once credited, the PSP settles net funds to the merchant on their settlement schedule.</p><p><strong>From the issuer's perspective:</strong> You don't interact with the PSP directly in the payment flow. Your SCT Instant instruction goes to the CSM, which routes to the PSP's IBAN. The Hub handles the authorisation notification path separately. These are two parallel flows — funds movement and scheme messaging — that must both succeed for the payment to be complete.</p>`, chips:[{t:'Receives SCT Instant credit',c:'chip-teal'},{t:'PSP settles to merchant',c:'chip-gray'},{t:'No direct API interaction',c:'chip-amber'}]},
+
+    'customer_mobile': {tag:'External · Customer', title:'Customer Mobile Banking App', body:`<p>The customer's mobile banking app is the primary SCA surface. It receives the push notification, presents the payment details (amount, merchant name, reference), and collects the biometric or PIN confirmation. The confirmation is returned to your SCA Engine via your app's API.</p><p><strong>Why it's "external":</strong> The mobile app is your app, but it runs on the customer's device — hardware and OS you don't control. Push delivery is not guaranteed. Device tokens go stale. Background execution is restricted. Design your SCA Engine with these constraints in mind — the app is an unreliable communication channel, not a reliable one.</p><p><strong>Deep link from internet banking:</strong> For iDEAL flows initiated via a browser (desktop checkout), the push notification should include a deep link that opens the banking app directly to the approval screen. Customers who receive a push and have to navigate to the approval screen manually have a significantly higher abandonment rate.</p>`, chips:[{t:'Push via FCM / APNS',c:'chip-blue'},{t:'Device you don\'t control',c:'chip-amber'},{t:'Stale tokens: top failure cause',c:'chip-red'},{t:'Deep link from browser flows',c:'chip-teal'}]},
+
+    'secret_manager_issuer': {tag:'GCP · Security', title:'Secret Manager — Scheme Certificates', body:`<p>Stores the Currence scheme certificates used for Hub mTLS and message signing. This is the most operationally critical secret in your iDEAL infrastructure — a certificate expiry that takes Apigee offline means no iDEAL payments for any customer at your bank until the certificate is rotated.</p><p><strong>Rotation automation:</strong> Certificate expiry monitoring with a 30-day pre-expiry alert minimum. At 14 days, escalate to PagerDuty. At 7 days, on-call engineer must confirm rotation is scheduled. Automate the rotation using Cloud Functions that: (1) fetch the new certificate from Currence's partner portal, (2) store in Secret Manager, (3) reload Apigee's truststore, (4) verify connectivity with a Hub test endpoint.</p><p><strong>Access control:</strong> Only Apigee X and the Hub Adapter service account have Secret Manager access to scheme certificates. Audit Secret Manager access logs monthly — any unexpected access is a potential security incident.</p>`, chips:[{t:'Currence scheme certs',c:'chip-amber'},{t:'30-day pre-expiry alert',c:'chip-red'},{t:'14-day PagerDuty escalation',c:'chip-orange'},{t:'Automate rotation',c:'chip-teal'},{t:'Audit access logs monthly',c:'chip-purple'}]},
+
+    'cert_rotation': {tag:'GCP · Operations', title:'Certificate Rotation — Cloud Functions', body:`<p>A Cloud Functions workflow triggered by Secret Manager expiry notifications. Steps: (1) Receive pre-expiry notification, (2) Alert ops with certificate details and expiry date, (3) On confirmation, download new certificate from Currence partner portal via automated API if available, (4) Store new certificate version in Secret Manager, (5) Trigger Apigee X truststore reload via Apigee management API, (6) Verify connectivity by sending a test message to Hub test endpoint, (7) Mark rotation complete and update monitoring.</p><p><strong>Testing:</strong> Run the full rotation workflow in your test environment quarterly. Certificate rotation is a rare event — when it happens in production, it must work first time. Teams that only test rotation during an actual expiry crisis have poor outcomes.</p>`, chips:[{t:'Pre-expiry triggered',c:'chip-amber'},{t:'Apigee truststore reload',c:'chip-blue'},{t:'Hub test endpoint verify',c:'chip-teal'},{t:'Quarterly drill required',c:'chip-red'}]},
+
+    'monitoring_issuer': {tag:'GCP · Observability', title:'Cloud Monitoring — Issuer SLAs', body:`<p>Key metrics for iDEAL issuer operations: <strong>Hub request-to-response latency</strong> (p50/p95/p99 — the Hub has internal timeout thresholds), <strong>SCA completion rate</strong> (what % of initiated payments reach AUTHENTICATED), <strong>authorisation success rate</strong> (what % of AUTHENTICATED reach AUTHORISED), <strong>push delivery rate</strong> (FCM/APNS delivery confirmation %), <strong>ledger debit success rate</strong>, <strong>SCT Instant acceptance rate</strong> from CSM, <strong>certificate expiry countdown</strong>.</p><p><strong>Scheme-mandated SLAs:</strong> iDEAL scheme rules specify availability and response time requirements. Breaching these thresholds triggers scheme non-compliance reporting — in serious cases, scheme participation suspension. Know your scheme SLA thresholds and set alert thresholds below them with headroom.</p><p><strong>Duplicate request rate:</strong> Alert when duplicate Hub requests exceed 0.1%. This indicates your Hub Adapter response latency is approaching the Hub's retry threshold — a leading indicator of infrastructure problems.</p>`, chips:[{t:'Hub latency p95',c:'chip-amber'},{t:'SCA completion rate',c:'chip-teal'},{t:'Push delivery rate',c:'chip-blue'},{t:'Cert expiry countdown',c:'chip-red'},{t:'Scheme SLA thresholds',c:'chip-orange'}]},
+
+    'cloud_run_issuer': {tag:'GCP · Compute', title:'Cloud Run / GKE — Issuer Services', body:`<p>All stateless processing services run on Cloud Run: Hub Adapter, Authorisation Engine, SCA Engine, Core Banking Interface, SCT Instant Producer, DNB Reporter. All are configured with <strong>minScale=1</strong> to avoid cold starts on Hub requests.</p><p><strong>minScale=1 cost justification:</strong> At iDEAL transaction volumes, the cost of keeping instances warm is negligible compared to the risk of a cold start causing a Hub response timeout. A Hub response timeout triggers a retry, which creates duplicate request pressure, which triggers your idempotency logic, which adds latency to the retry. The cascade from a single cold start is disproportionate.</p><p><strong>Concurrency:</strong> Cloud Run's default concurrency (80 requests per instance) is appropriate for the Hub Adapter. The SCA Engine, which makes outbound push notification calls with variable latency, may benefit from lower concurrency (20-30) to prevent thread exhaustion during push delivery delays.</p><p><strong>Already running Kubernetes?</strong> If your bank already operates a Kubernetes platform, <strong>Google Kubernetes Engine (GKE)</strong> is the natural drop-in replacement for Cloud Run. Deploy each service as a GKE Deployment with a HorizontalPodAutoscaler. Set <code>minReplicas=1</code> on all payment-path services to mirror the Cloud Run minScale=1 requirement. GKE Autopilot reduces cluster management overhead while retaining full Kubernetes compatibility — ideal if you're migrating from an existing on-prem or other cloud Kubernetes cluster. Use Workload Identity to grant pods access to Secret Manager, Cloud SQL, and Pub/Sub without service account key files.</p>`, chips:[{t:'minScale=1 / minReplicas=1',c:'chip-red'},{t:'Hub Adapter: concurrency 80',c:'chip-amber'},{t:'SCA Engine: concurrency 20-30',c:'chip-teal'},{t:'Cold start = Hub retry cascade',c:'chip-orange'},{t:'GKE: if existing K8s infra',c:'chip-blue'},{t:'GKE Autopilot: lower ops overhead',c:'chip-indigo'},{t:'Workload Identity for secrets',c:'chip-purple'}]},
+
+    'cloud_tasks_issuer': {tag:'GCP · Scheduling', title:'Cloud Tasks — Ledger Status Polling', body:`<p>When a core banking debit call times out, Cloud Tasks schedules a ledger status query to determine whether the debit posted. The task is created with the Currence transaction reference and a delay (30 seconds initially, then exponential backoff). The task queries the Core Banking Interface by reference, and either confirms DEBITED state or schedules another retry.</p><p><strong>Maximum retry limit:</strong> After a configurable number of retries (recommend: 10), escalate to Manual Review Queue. At this point the payment is in an unresolvable automated state — it requires human intervention to determine the correct ledger status and update Cloud SQL accordingly.</p>`, chips:[{t:'Triggered on ledger timeout',c:'chip-amber'},{t:'Query by Currence txn ref',c:'chip-teal'},{t:'Exponential backoff',c:'chip-gray'},{t:'Escalate to Manual Review after 10x',c:'chip-red'}]},
+
+    'circuit_breaker_issuer': {tag:'GCP · Resilience', title:'Circuit Breaker — Core Banking API', body:`<p>Wraps all outbound calls to the core banking ledger. If the ledger API returns 5xx on more than a configurable threshold of requests within a sliding window (recommend: 5 failures in 60 seconds), the circuit opens. Open circuit: stop sending debit requests; accumulate Pub/Sub messages; alert immediately via PagerDuty.</p><p><strong>Why this matters:</strong> An open circuit means payments are being authorised (AUTHORISED state) but debits are not posting. Customers' accounts are being committed for funds that haven't moved. Every second the circuit is open is an unresolved position that must be reconciled. The alert must reach an on-call engineer who can either resolve the core banking issue or manually process the queued debits.</p><p><strong>Half-open state:</strong> After a cooldown period (recommend: 60 seconds), send one test request. If it succeeds, close the circuit and resume normal processing. If it fails, remain open and extend the cooldown.</p>`, chips:[{t:'5 failures / 60s threshold',c:'chip-amber'},{t:'Open = no debits posted',c:'chip-red'},{t:'Immediate PagerDuty alert',c:'chip-orange'},{t:'Half-open probe after 60s',c:'chip-teal'}]},
+
+    'dataflow_issuer': {tag:'GCP · Data Processing', title:'Dataflow — Event Processing', body:`<p>Streaming pipeline between Pub/Sub and BigQuery. Strips customer PII (replaces IBAN references with tokenised IDs) before analytics storage — GDPR-required before any customer-linked data enters BigQuery. Enriches events with derived fields: SCA completion time, authorisation decision time, ledger debit time, SCT Instant confirmation time.</p><p><strong>Key analytics for issuers:</strong> SCA abandonment rate (customers who receive push but don't complete authentication), SCA completion time distribution (p50/p95 — is your push delivery fast enough?), fraud score distribution by outcome (calibrate your model thresholds), SCT Instant acceptance rate by CSM (detect CSM-specific issues), refusal rate by reason (balance insufficient vs fraud vs other).</p>`, chips:[{t:'PII tokenisation',c:'chip-red'},{t:'GDPR before BigQuery',c:'chip-red'},{t:'SCA abandonment rate',c:'chip-amber'},{t:'Fraud score distribution',c:'chip-purple'},{t:'SCT acceptance by CSM',c:'chip-teal'}]},
+
+    'bigquery_issuer': {tag:'GCP · Analytics', title:'BigQuery — Issuer Analytics', body:`<p>Stores PII-stripped, enriched payment history. Key issuer analytics dashboards: <strong>SCA funnel</strong> (INITIATED → AUTHENTICATED → AUTHORISED — where do payments drop?), <strong>Hub latency</strong> (your response time distribution vs Hub timeout thresholds), <strong>Fraud score calibration</strong> (true positive vs false positive rates), <strong>Core banking debit latency</strong> (p95 — is your ledger integration fast enough?), <strong>SCT Instant acceptance rate</strong> by CSM and time of day.</p><p>Retention: 90 days hot, then archive to GCS Nearline. Separate dataset for DNB regulatory reporting with stricter access controls.</p>`, chips:[{t:'SCA funnel analytics',c:'chip-amber'},{t:'Hub latency distribution',c:'chip-teal'},{t:'Fraud calibration',c:'chip-purple'},{t:'Debit latency p95',c:'chip-blue'},{t:'90d hot → GCS Nearline',c:'chip-gray'}]},
+
+    'recon_engine_issuer': {tag:'GCP · Reconciliation', title:'Reconciliation Engine — Issuer', body:`<p>Three reconciliation jobs: <strong>(1) AUTHORISED vs DEBITED gap</strong> — payments that reached AUTHORISED but not DEBITED within a threshold (15 minutes). These are authorised-but-not-debited positions: customer's account is committed, funds haven't moved. Immediate ops alert. <strong>(2) DEBITED vs SETTLED gap</strong> — payments with DEBITED state but no SCT Instant confirmation within the CSM's SLA. These are debit-without-settlement positions. <strong>(3) Cloud SQL vs BigQuery consistency</strong> — daily reconciliation confirming event stream matches state machine.</p><p><strong>Ledger reconciliation:</strong> Daily export from core banking ledger matched against Cloud SQL DEBITED records. Any Cloud SQL DEBITED record without a matching ledger transaction is a critical incident — either the debit didn't post (balance wasn't actually reduced) or the ledger export is incomplete.</p>`, chips:[{t:'Auth vs Debit gap: 15min SLA',c:'chip-red'},{t:'Debit vs SCT gap',c:'chip-orange'},{t:'Cloud SQL vs ledger daily',c:'chip-amber'},{t:'Critical incident trigger',c:'chip-red'}]},
+
+    'manual_review_issuer': {tag:'GCP · Operations', title:'Manual Review Queue — Issuer', body:`<p>Payments escalated for human review: AUTHORISED-without-DEBITED positions after automated recovery exhausted, ledger timeout positions where query-by-reference is ambiguous, SCT Instant rejections requiring CSM investigation, and reconciliation mismatches between Cloud SQL and the ledger export.</p><p><strong>Ops dashboard:</strong> Cloud SQL query on non-terminal states older than threshold, DLQ depth, circuit breaker status, open recon mismatches. Ops actions: manually trigger ledger query, mark DEBITED with audit trail on confirmed ledger evidence, initiate CSM investigation for SCT rejections, escalate to scheme operations for Hub-level issues.</p><p><strong>All manual actions must produce audit trail entries:</strong> Operator identity, timestamp, action taken, evidence reference. DNB may ask for the complete history of any payment during an examination.</p>`, chips:[{t:'Auth-without-Debit positions',c:'chip-red'},{t:'SCT Instant rejections',c:'chip-orange'},{t:'Recon mismatches',c:'chip-amber'},{t:'All actions audited',c:'chip-purple'},{t:'DNB examination ready',c:'chip-teal'}]},
+
+    'dlq_issuer': {tag:'GCP · Recovery', title:'Dead Letter Queue (DLQ)', body:`<p>Pub/Sub DLQ receives messages that have exceeded the maximum delivery retry count. Primary causes in issuer flows: core banking API sustained outage causing debit worker nack-loops; SCT Instant producer unable to connect to CSM; SCA Engine unable to reach FCM/APNS for an extended period.</p><p><strong>DLQ alert threshold:</strong> Any message entering the DLQ triggers an immediate PagerDuty alert. DLQ depth above zero is never acceptable in steady state — each message represents an in-flight payment that is stuck. The DLQ is a symptom detector, not a message accumulator.</p><p><strong>DLQ processing:</strong> Manual review of each DLQ message by an on-call engineer, with the ops dashboard providing context. After the underlying cause is resolved, messages are republished to the main topic with the appropriate state context for resuming processing.</p>`, chips:[{t:'Any DLQ depth → PagerDuty',c:'chip-red'},{t:'Core banking outage: top cause',c:'chip-amber'},{t:'Manual republish after fix',c:'chip-orange'},{t:'Each message = stuck payment',c:'chip-teal'}]},
+
+    'audit_service_issuer': {tag:'Compliance · Audit', title:'Audit Service — Issuer', body:`<p>Append-only, immutable audit trail for every event in the payment lifecycle: Hub request received, idempotency check result, state transition, SCA event (push sent, push delivered, biometric confirmed), authorisation decision and reason, ledger debit attempt and result, SCT Instant instruction and CSM response, and every manual action by ops staff.</p><p><strong>Hash chaining:</strong> Each audit entry includes a hash of the previous entry. A background verifier checks chain integrity daily and alerts on any discontinuity. This provides tamper evidence suitable for regulatory examination.</p><p><strong>DNB examination:</strong> The Dutch central bank (DNB) can require a complete payment history for any transaction during a regulatory examination. Your audit store must support "show me everything that happened with payment X" queries within 24 hours of the request. BigQuery with the Currence transaction reference as the primary partition key supports this.</p>`, chips:[{t:'Append-only',c:'chip-red'},{t:'Hash-chained',c:'chip-purple'},{t:'SCA events included',c:'chip-amber'},{t:'DNB examination ready',c:'chip-teal'},{t:'24h query SLA',c:'chip-blue'}]},
+
+    'audit_store_issuer': {tag:'Storage · Audit', title:'Audit Store — BigQuery + CMEK', body:`<p>BigQuery as the primary audit store with column-level CMEK encryption and append-only table policy. Partitioned by <code>currence_txn_ref</code> prefix for fast single-payment history queries. Access restricted to Audit Service (write via streaming inserts) and compliance team (read-only IAM binding).</p><p><strong>Separation from analytics:</strong> The audit dataset is separate from the analytics dataset. Different access controls, different retention policies, different CMEK keys. The audit dataset must never be writable by the analytics pipeline — contamination would compromise its regulatory validity.</p>`, chips:[{t:'BigQuery append-only',c:'chip-teal'},{t:'CMEK column-level',c:'chip-red'},{t:'Partition by txn ref',c:'chip-amber'},{t:'Separate from analytics',c:'chip-gray'}]},
+
+    'regulator_export_issuer': {tag:'Compliance · Reporting', title:'Regulator Export — DNB / Currence', body:`<p>Automated exports: <strong>DNB payment statistics</strong> (volume, value, success rates by time window — submitted monthly or on-demand), <strong>PSD2 audit trail exports</strong> for supervisory examination, <strong>Currence scheme reporting</strong> (your volume contribution to the iDEAL scheme statistics). All exports apply data minimisation — only the fields required by each regulator are included.</p><p><strong>DNB reporting format:</strong> DNB specifies XML schemas for statistical reporting. Your DNB Reporter service must generate schema-valid XML. Malformed submissions are rejected and require resubmission — build validation against the current schema version before submission.</p>`, chips:[{t:'DNB XML format',c:'chip-amber'},{t:'Monthly + on-demand',c:'chip-gray'},{t:'Currence volume reporting',c:'chip-blue'},{t:'Data minimisation per report',c:'chip-teal'},{t:'Schema validation before submit',c:'chip-red'}]},
+
+    'audit_archive_issuer': {tag:'Storage · Archive', title:'Long-Term Archive — GCS Coldline + Object Lock', body:`<p>Audit entries older than 2 years archived to GCS Coldline. <strong>Minimum 7-year retention</strong> per PSD2 Article 25 and Dutch financial records regulations. Object Lock (WORM) prevents deletion — including by Cloud administrators. Monthly integrity checks verify that the archive volume matches expected record counts. 24-hour retrieval SLA for regulatory requests — Coldline retrieval is measured in hours, which is sufficient for regulatory examination requests.</p>`, chips:[{t:'GCS Coldline',c:'chip-teal'},{t:'7yr minimum (PSD2)',c:'chip-gray'},{t:'Object Lock WORM',c:'chip-red'},{t:'Monthly integrity check',c:'chip-amber'},{t:'24h retrieval for DNB',c:'chip-blue'}]},
+
+    'cloud_armor_issuer': {tag:'GCP · Security', title:'Cloud Armor — Hub Endpoint Protection', body:`<p>Cloud Armor sits in front of Apigee X on the Hub-facing endpoint. Primary function: IP allowlist enforcement using the Currence-published Hub egress IP ranges. Secondary function: rate limiting to detect and block anomalous request volumes (a compromised Hub certificate attempting fraudulent initiations would show unusual volume patterns).</p><p><strong>Note on health endpoints:</strong> Your Hub endpoint is private and should only be reachable from the Hub's IP ranges. Any public health check or monitoring endpoint must be on a separate path — not the Hub endpoint path. Exposing the Hub endpoint publicly (even behind Cloud Armor) unnecessarily increases attack surface.</p>`, chips:[{t:'IP allowlist: Hub egress IPs',c:'chip-red'},{t:'Rate limit on Hub path',c:'chip-amber'},{t:'Health endpoints: separate path',c:'chip-teal'}]},
+
+    'vpc_issuer': {tag:'GCP · Networking', title:'VPC / Private Link — Core Banking Connectivity', body:`<p>All traffic from Cloud Run services to the core banking ledger traverses a private network path — either a VPC connector to a GCP-hosted ledger, a Cloud VPN to on-premise infrastructure, or Cloud Interconnect for higher bandwidth requirements. The core banking ledger must never be reachable over the public internet.</p><p><strong>Latency consideration:</strong> Core banking latency directly impacts your authorisation response time to the Hub. If your ledger is on-premise in a co-location 40ms away, your balance check adds 40ms minimum. Budget this in your Hub response time SLA calculations. If latency is a concern, consider a balance cache (Cloud SQL read replica or Redis / Memorystore) with write-through invalidation — but be extremely careful about stale balance reads leading to insufficient funds authorisations.</p>`, chips:[{t:'VPC Connector / VPN / Interconnect',c:'chip-amber'},{t:'Never public internet',c:'chip-red'},{t:'Ledger latency in SLA budget',c:'chip-teal'},{t:'Balance cache: use carefully',c:'chip-orange'}]},
+
+    'kms_issuer': {tag:'GCP · Security', title:'Cloud KMS (CMEK)', body:`<p>Customer-managed encryption keys for all storage: Cloud SQL (CMEK), Cloud Pub/Sub (CMEK), GCS audit archive (CMEK). Key separation: Cloud SQL payment state, Pub/Sub messages, and audit archive each use separate key rings. Key rotation: annually for payment data, aligned with your information security policy.</p><p><strong>Regulatory requirement:</strong> DNB and PSD2 require that payment data encryption keys be under the control of the regulated entity, not solely the cloud provider. CMEK satisfies this requirement. If you use Google-managed keys, you may need to document this in your regulatory submissions as a risk acceptance.</p>`, chips:[{t:'CMEK required for DNB',c:'chip-red'},{t:'Separate keys per system',c:'chip-amber'},{t:'Annual key rotation',c:'chip-gray'},{t:'Documented regulatory position',c:'chip-teal'}]},
+
+    'dnb_reporter': {tag:'GCP · Compliance', title:'DNB Reporter — Cloud Run', body:`<p>Scheduled Cloud Run service (monthly + on-demand) that generates and submits payment statistics to De Nederlandsche Bank. Pulls aggregated data from BigQuery (anonymised, PII-free), formats into DNB-specified XML schemas, validates against the current schema version, and submits via DNB's secure portal or SFTP endpoint.</p><p><strong>Schema versioning:</strong> DNB updates its reporting schemas. Subscribe to DNB's financial sector communications to receive advance notice of schema changes. Build schema version negotiation into the reporter — if DNB changes the schema and your reporter doesn't handle the new version, your next submission will be rejected.</p>`, chips:[{t:'Monthly scheduled + on-demand',c:'chip-amber'},{t:'BigQuery aggregated source',c:'chip-teal'},{t:'Schema validation before submit',c:'chip-red'},{t:'Subscribe to DNB comms',c:'chip-gray'}]},
+
+    'dnb_portal': {tag:'External · Regulator', title:'DNB Portal — De Nederlandsche Bank', body:`<p>De Nederlandsche Bank is the Dutch central bank and the primary regulator for iDEAL-participating banks. DNB oversees scheme participation, conducts supervisory examinations, and can require detailed payment data as part of its oversight function.</p><p><strong>What DNB can ask for:</strong> Complete payment history for specific transactions, statistical summaries across time periods, evidence of PSD2 compliance controls (SCA implementation, authentication records), and audit trail records for identified incidents. Your systems must support these requests within the timeframes DNB specifies.</p>`, chips:[{t:'Primary NL banking regulator',c:'chip-amber'},{t:'Supervisory examinations',c:'chip-red'},{t:'Payment data requests',c:'chip-gray'},{t:'PSD2 compliance oversight',c:'chip-blue'}]},
+
+    'currence_reporting': {tag:'External · Scheme', title:'Currence Scheme Reporting', body:`<p>Currence collects volume and performance data from all iDEAL scheme participants. As an issuer, you report: monthly transaction volumes (by status: authorised, refused, expired), SCA completion rates, and any scheme-level incidents affecting your availability.</p><p><strong>Scheme KPIs:</strong> Your authorisation success rate and availability are visible to Currence. Persistently low success rates or availability breaches will trigger a scheme compliance review. Currence publishes aggregate scheme statistics — you can benchmark your performance against the scheme average, though individual participant data is not published.</p>`, chips:[{t:'Monthly volume reporting',c:'chip-amber'},{t:'Availability vs scheme SLA',c:'chip-red'},{t:'Compliance review triggers',c:'chip-orange'},{t:'Benchmark vs scheme average',c:'chip-teal'}]}
+};
+
+function om(id){
+    const d=D[id];if(!d)return;
+    document.getElementById('mtag').textContent=d.tag;
+    document.getElementById('mtitle').textContent=d.title;
+    let h=d.body;
+    if(d.chips&&d.chips.length){h+='<div class="chips">';d.chips.forEach(c=>{h+=`<span class="chip ${c.c}">${c.t}</span>`;});h+='</div>';}
+    document.getElementById('mbody').innerHTML=h;
+    document.getElementById('mbg').classList.add('open');
+    document.body.style.overflow='hidden';
+}
+function cm(){document.getElementById('mbg').classList.remove('open');document.body.style.overflow='';}
+function cbg(e){if(e.target===document.getElementById('mbg'))cm();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')cm();});
+
+function filterStage(stage){
+    document.querySelectorAll('.stage-btn').forEach(b=>{
+        b.classList.toggle('active',b.getAttribute('data-filter')===stage);
+    });
+    document.querySelectorAll('.stage-title').forEach(t=>t.classList.remove('active'));
+    const stEl=document.getElementById('st-'+stage);
+    if(stEl)stEl.classList.add('active');
+
+    const allSections=document.querySelectorAll('[data-section]');
+    if(stage==='all'){
+        allSections.forEach(s=>{
+            s.classList.remove('filtering');
+            s.querySelectorAll('.flow-area[data-stage]').forEach(f=>f.classList.remove('stage-visible'));
+            s.querySelectorAll('[data-stage-header]').forEach(h=>h.classList.remove('stage-visible'));
+        });
+        return;
+    }
+    allSections.forEach(s=>{
+        s.classList.add('filtering');
+        let hasVisible=false;
+        s.querySelectorAll('.flow-area[data-stage]').forEach(f=>{
+            const match=f.getAttribute('data-stage')===stage;
+            f.classList.toggle('stage-visible',match);
+            if(match)hasVisible=true;
+        });
+        const stageHeaders=s.querySelectorAll('[data-stage-header]');
+        if(stageHeaders.length>0){
+            stageHeaders.forEach(h=>{
+                const hStage=h.getAttribute('data-stage-header');
+                h.classList.toggle('stage-visible', hStage===stage && hasVisible);
+            });
+        } else {
+            const hdr=s.querySelector('.section-header');
+            if(hdr)hdr.classList.toggle('stage-visible',hasVisible);
+        }
+    });
+    window.scrollTo({top:document.querySelector('.stage-bar').offsetTop-10,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
