@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Wero Payments — Production Architecture | Fintech on Cloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet"/>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#FFFFFF;font-family:'Outfit',sans-serif;color:#18181B;min-height:100vh;padding:0 0 60px;min-width:320px}
+        .header{background:#18181B;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+        .brand{font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#F8FAFC}
+        .brand span{color:#34D399}
+        .back{font-family:'JetBrains Mono',monospace;font-size:11px;color:#52525B;text-decoration:none;letter-spacing:0.1em}
+        .back:hover{color:#94A3B8}
+        .hero{text-align:center;padding:32px 24px 20px;max-width:900px;margin:0 auto}
+        .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#7C3AED;text-transform:uppercase;margin-bottom:8px}
+        .hero h1{font-family:'Fraunces',serif;font-size:clamp(20px,3.5vw,32px);font-weight:700;color:#18181B;line-height:1.15;margin-bottom:8px}
+        .hero p{font-size:13px;color:#64748B;margin-bottom:16px}
+        .tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+        .tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:3px;letter-spacing:0.1em;text-transform:uppercase}
+        .tag-blue{background:#DBEAFE;color:#1D4ED8}
+        .tag-green{background:#D1FAE5;color:#065F46}
+        .tag-gray{background:#F1F5F9;color:#475569}
+        .tag-purple{background:#EDE9FE;color:#4C1D95}
+        .tag-cyan{background:#CFFAFE;color:#0E7490}
+        .tag-amber{background:#FEF3C7;color:#78350F}
+        .tag-orange{background:#FFEDD5;color:#C2410C}
+        .hint{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#94A3B8;padding:9px;background:#F8FAFC;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;letter-spacing:0.05em}
+        .stage-bar{background:#18181B;padding:16px 24px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid #374151}
+        .stage-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:6px 12px;border:1px solid #52525B;border-radius:4px;background:#18181B;color:#94A3B8;text-decoration:none;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:background-color 0.1s,color 0.1s}
+        .stage-btn:hover{background:#374151;color:#F8FAFC}
+        .stage-btn.active{background:#34D399;color:#18181B;border-color:#34D399}
+        .stage-title{display:none;margin:20px 0;text-align:center}
+        .stage-title.active{display:block}
+        .stage-title h3{font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:#18181B;margin-bottom:4px}
+        .stage-title p{font-family:'JetBrains Mono',monospace;font-size:10px;color:#64748B;letter-spacing:0.08em;text-transform:uppercase}
+        /* ── SECTION ── */
+        .section{max-width:100%;margin:0 auto;padding:20px 12px 0}
+        .section-header{display:flex;align-items:flex-start;margin-bottom:12px;padding:12px 18px;border-radius:8px;border-left:4px solid}
+        .section-header h2{font-family:'Fraunces',serif;font-size:16px;font-weight:700;margin-bottom:3px}
+        .section-header p{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em}
+        .sh-compare{background:#ECFEFF;border-color:#0891B2}.sh-compare h2{color:#0E4F6B}.sh-compare p{color:#0891B2}
+        .sh-flow{background:#F5F3FF;border-color:#7C3AED}.sh-flow h2{color:#4C1D95}.sh-flow p{color:#7C3AED}
+        .sh-gcp{background:#F0FDF4;border-color:#16A34A}.sh-gcp h2{color:#14532D}.sh-gcp p{color:#15803D}
+        .sh-risk{background:#FFFBEB;border-color:#D97706}.sh-risk h2{color:#78350F}.sh-risk p{color:#B45309}
+        .sh-obs{background:#FFF1F2;border-color:#E11D48}.sh-obs h2{color:#881337}.sh-obs p{color:#E11D48}
+        .sh-cloud{background:#F8FAFC;border-color:#64748B}.sh-cloud h2{color:#18181B}.sh-cloud p{color:#475569}
+        /* ── FLOW AREAS ── */
+        .flow-area{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin-bottom:6px;border-left:4px solid #E2E8F0}
+        .flow-area.epi-row{border-left-color:#7C3AED}
+        .flow-area.bank-row{border-left-color:#0891B2}
+        .flow-area.merchant-row{border-left-color:#059669}
+        .flow-area.gcp-row{border-left-color:#34D399}
+        .flow-area.rail-row{border-left-color:#D97706}
+        .flow-area.risk-row{border-left-color:#F97316}
+        .flow-area.obs-row{border-left-color:#E11D48}
+        .flow-area.failure-row{border-left-color:#DC2626}
+        .flow-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#94A3B8;margin-bottom:10px}
+        .flow-label.purple{color:#7C3AED}
+        .flow-label.cyan{color:#0891B2}
+        .flow-label.green{color:#059669}
+        .flow-label.amber{color:#B45309}
+        .flow-label.danger{color:#E11D48}
+        .flow-row{display:flex;align-items:center;flex-wrap:wrap;row-gap:10px;column-gap:0px;padding-bottom:4px}
+        /* ── BOXES ── */
+        .box{flex-shrink:2;flex-grow:0;border-radius:7px;padding:8px 10px;cursor:pointer;border:2px solid;transition:transform 0.1s,box-shadow 0.1s;min-width:90px;max-width:152px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.10)}
+        .box:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,0.15)}
+        .bt{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;margin-bottom:3px;line-height:1.25}
+        .bs{font-family:'JetBrains Mono',monospace;font-size:8px;line-height:1.4}
+        /* Dark solid boxes (matching iDEAL issuer style) */
+        .box-blue{background:#1E40AF;border-color:#1D4ED8}.box-blue .bt{color:#FFFFFF}.box-blue .bs{color:#BFDBFE}
+        .box-teal{background:#065F46;border-color:#047857}.box-teal .bt{color:#FFFFFF}.box-teal .bs{color:#A7F3D0}
+        .box-purple{background:#4C1D95;border-color:#6D28D9}.box-purple .bt{color:#FFFFFF}.box-purple .bs{color:#DDD6FE}
+        .box-amber{background:#92400E;border-color:#B45309}.box-amber .bt{color:#FFFFFF}.box-amber .bs{color:#FDE68A}
+        .box-gray{background:#334155;border-color:#475569}.box-gray .bt{color:#FFFFFF}.box-gray .bs{color:#CBD5E1}
+        .box-red{background:#991B1B;border-color:#DC2626}.box-red .bt{color:#FFFFFF}.box-red .bs{color:#FECACA}
+        .box-orange{background:#9A3412;border-color:#EA580C}.box-orange .bt{color:#FFFFFF}.box-orange .bs{color:#FED7AA}
+        .box-green{background:#14532D;border-color:#16A34A}.box-green .bt{color:#FFFFFF}.box-green .bs{color:#BBF7D0}
+        .box-yellow{background:#713F12;border-color:#CA8A04}.box-yellow .bt{color:#FFFFFF}.box-yellow .bs{color:#FEF08A}
+        .box-cyan{background:#0E4F6B;border-color:#0891B2}.box-cyan .bt{color:#FFFFFF}.box-cyan .bs{color:#A5F3FC}
+        .box-indigo{background:#312E81;border-color:#4F46E5}.box-indigo .bt{color:#FFFFFF}.box-indigo .bs{color:#C7D2FE}
+        .box-violet{background:#3B0764;border-color:#7E22CE}.box-violet .bt{color:#FFFFFF}.box-violet .bs{color:#E9D5FF}
+        .box-rose{background:#881337;border-color:#E11D48}.box-rose .bt{color:#FFFFFF}.box-rose .bs{color:#FFE4E6}
+        .box-slate{background:#1E293B;border-color:#475569}.box-slate .bt{color:#FFFFFF}.box-slate .bs{color:#94A3B8}
+        /* External / dashed */
+        .box-ext{background:#374151;border-color:#6B7280;border-style:dashed}.box-ext .bt{color:#F9FAFB}.box-ext .bs{color:#D1D5DB}
+        .box-ext-epi{background:#1E1B4B;border-color:#4338CA;border-style:dashed}.box-ext-epi .bt{color:#FFFFFF}.box-ext-epi .bs{color:#C7D2FE}
+        .box-ext-bank{background:#0C4A6E;border-color:#0369A1;border-style:dashed}.box-ext-bank .bt{color:#FFFFFF}.box-ext-bank .bs{color:#BAE6FD}
+        .box-ext-rail{background:#064E3B;border-color:#047857;border-style:dashed}.box-ext-rail .bt{color:#FFFFFF}.box-ext-rail .bs{color:#A7F3D0}
+        /* ── ARROWS ── */
+        .arr{flex-shrink:1;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 6px;min-width:48px;max-width:80px;position:relative;overflow:visible}
+        .arr-line{height:2px;width:100%;position:relative;flex-shrink:0}
+        .arr-line::after{content:'▶';position:absolute;right:-7px;top:50%;transform:translateY(-50%);font-size:9px}
+        .arr-sync .arr-line{background:#7C3AED}.arr-sync .arr-line::after{color:#7C3AED}
+        .arr-async .arr-line{background:transparent;border-top:2px dashed #7C3AED}.arr-async .arr-line::after{color:#7C3AED}
+        .arr-green .arr-line{background:#059669}.arr-green .arr-line::after{color:#059669}
+        .arr-amber .arr-line{background:#D97706}.arr-amber .arr-line::after{color:#D97706}
+        .arr-gray .arr-line{background:#94A3B8}.arr-gray .arr-line::after{color:#94A3B8}
+        .arr-dash .arr-line{background:transparent;border-top:2px dashed #94A3B8}.arr-dash .arr-line::after{color:#94A3B8}
+        .arr-danger .arr-line{background:#DC2626}.arr-danger .arr-line::after{color:#DC2626}
+        .arr-warn .arr-line{background:#D97706}.arr-warn .arr-line::after{color:#D97706}
+        .arr-return .arr-line{background:transparent;border-top:2px dashed #059669}.arr-return .arr-line::after{color:#059669}
+        .arr-label{font-family:'JetBrains Mono',monospace;font-size:8px;margin-top:4px;white-space:normal;text-align:center;width:100%;line-height:1.3;word-break:break-word;color:#64748B}
+        /* ── BANNERS ── */
+        .banner{border-radius:5px;padding:7px 12px;margin-bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;text-align:left;letter-spacing:0.04em}
+        .banner-purple{background:#F5F3FF;border:1px solid #C4B5FD;color:#4C1D95}
+        .banner-amber{background:#FFFBEB;border:1px solid #FCD34D;color:#78350F}
+        /* ── COMPARE GRID ── */
+        .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+        .compare-card{border-radius:8px;padding:12px 14px;border:1px solid}
+        .compare-card h4{font-family:'Fraunces',serif;font-size:13px;font-weight:700;margin-bottom:8px}
+        .compare-card ul{padding-left:14px}
+        .compare-card li{font-size:11px;color:#475569;margin-bottom:4px;line-height:1.5}
+        .cc-ideal{background:#DBEAFE;border-color:#93C5FD}.cc-ideal h4{color:#1E3A8A}
+        .cc-wero{background:#EDE9FE;border-color:#C4B5FD}.cc-wero h4{color:#4C1D95}
+        /* ── TIMELINE ── */
+        .timeline{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:12px 16px;margin:10px 0}
+        .tl-title{font-family:'Fraunces',serif;font-size:13px;font-weight:700;color:#18181B;margin-bottom:10px}
+        .tl-row{display:flex;gap:0;margin-bottom:2px}
+        .tl-phase{flex:1;padding:7px 8px;font-family:'JetBrains Mono',monospace;font-size:9px;line-height:1.4;border-right:2px solid #E2E8F0;text-align:center}
+        .tl-phase:last-child{border-right:none}
+        .tl-phase .tl-q{font-weight:600;margin-bottom:2px}
+        .phase-now{background:#D1FAE5}.phase-now .tl-q{color:#065F46}
+        .phase-mid{background:#FEF3C7}.phase-mid .tl-q{color:#78350F}
+        .phase-late{background:#DBEAFE}.phase-late .tl-q{color:#1D4ED8}
+        .phase-end{background:#FEE2E2}.phase-end .tl-q{color:#991B1B}
+        /* ── COMPARE TABLE ── */
+        .compare-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:10px}
+        .compare-table th{background:#18181B;color:#F8FAFC;padding:9px 10px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em}
+        .compare-table td{padding:8px 10px;border-bottom:1px solid #E2E8F0;font-family:'JetBrains Mono',monospace;font-size:10px;color:#334155;vertical-align:top}
+        .compare-table tr:nth-child(even) td{background:#F8FAFC}
+        .win{color:#059669;font-weight:600}
+        .warn{color:#D97706}
+        .lose{color:#DC2626}
+        /* ── LEGEND ── */
+        .legend{max-width:1300px;margin:16px auto 0;padding:0 14px}
+        .legend-inner{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center}
+        .li{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#64748B}
+        .lb{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+        .ld{width:24px;height:2px}
+        .ld-s{background:#7C3AED}
+        .ld-a{background:transparent;border-top:2px dashed #7C3AED}
+        .ld-g{background:#059669}
+        /* ── MODAL ── */
+        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.40);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+        .modal-bg.open{display:flex}
+        .modal{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+        .modal-head{padding:18px 22px 14px;border-bottom:1px solid #F1F5F9;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:#fff;z-index:1}
+        .modal-hl{flex:1}
+        .modal-tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#7C3AED;margin-bottom:4px}
+        .modal-title{font-family:'Fraunces',serif;font-size:19px;font-weight:700;color:#18181B;line-height:1.2}
+        .modal-x{background:none;border:none;font-size:20px;cursor:pointer;color:#94A3B8;flex-shrink:0;line-height:1;padding:0}
+        .modal-x:hover{color:#18181B}
+        .modal-body{padding:18px 22px 22px}
+        .modal-body p{font-family:'Outfit',sans-serif;font-size:13px;color:#475569;line-height:1.75;margin-bottom:12px}
+        .modal-body p:last-child{margin-bottom:0}
+        .modal-body strong{color:#18181B;font-weight:600}
+        .modal-body code{font-family:'JetBrains Mono',monospace;font-size:11px;background:#F1F5F9;padding:1px 5px;border-radius:3px;color:#7C3AED}
+        .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+        .chip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:4px}
+        .chip-blue{background:#DBEAFE;color:#1E3A8A}
+        .chip-teal{background:#D1FAE5;color:#064E3B}
+        .chip-amber{background:#FEF3C7;color:#78350F}
+        .chip-gray{background:#F1F5F9;color:#475569}
+        .chip-red{background:#FEE2E2;color:#B91C1C}
+        .chip-purple{background:#EDE9FE;color:#4C1D95}
+        .chip-orange{background:#FFEDD5;color:#C2410C}
+        .chip-cyan{background:#CFFAFE;color:#0E7490}
+        .chip-green{background:#D1FAE5;color:#065F46}
+        .chip-indigo{background:#E0E7FF;color:#3730A3}
+        /* ── FOOTER ── */
+        .footer{text-align:center;margin-top:36px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#CBD5E1;padding:16px;background:#18181B}
+        .footer a{color:#34D399;text-decoration:none}
+        @media(max-width:600px){.compare-grid{grid-template-columns:1fr}.tl-row{flex-direction:column}.tl-phase{border-right:none;border-bottom:2px solid #E2E8F0}}
+        @media print{.modal-bg{display:none!important}body{padding:0!important}.section{padding:8px 6px 0!important}.flow-area{break-inside:avoid;margin-bottom:4px!important}.box{max-width:140px!important;min-width:80px!important}.arr{min-width:24px!important}}
+        /* ── STAGE FILTER ── */
+        .section[data-section].filtering .flow-area[data-stage]{display:none}
+        .section[data-section].filtering .flow-area[data-stage].stage-visible{display:block}
+        .section.filtering .section-header,.section.filtering > .banner,.section.filtering > .compare-grid,.section.filtering > .timeline,.section.filtering > .compare-table,.section.filtering > div[style*="overflow"],.section.filtering > .legend{display:none}
+        .section.filtering .section-header.stage-visible{display:flex}
+        .section-header.stage-header{display:none}
+        .section.filtering .section-header.default-header{display:none}
+    </style>
+</head>
+<body>
+
+<!-- MODAL -->
+<div class="modal-bg" id="mbg" onclick="cbg(event)">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-hl">
+                <div class="modal-tag" id="mtag"></div>
+                <div class="modal-title" id="mtitle"></div>
+            </div>
+            <button class="modal-x" onclick="cm()">✕</button>
+        </div>
+        <div class="modal-body" id="mbody"></div>
+    </div>
+</div>
+
+<div class="header">
+    <div class="brand">Fintech <span>on</span> Cloud</div>
+    <a class="back" href="https://fintechoncloud.substack.com">← Back to blog</a>
+</div>
+
+<div class="hero">
+    <div class="eyebrow">// Production Architecture · Post #5 · European Payment Series · PSP / Bank Perspective</div>
+    <h1>Wero Payments — Production-Grade GCP Architecture<br/>Pan-European Wallet on SCT Inst</h1>
+    <p>Architecture for building the <strong>Acceptor PSP / Issuing Bank</strong> side of Wero. External parties (EPI Central Services, SCT Inst rail, consumer wallet) shown as dashed-border components. Click any component for a full explanation.</p>
+    <div class="tags">
+        <span class="tag tag-purple">Wero / EPI</span>
+        <span class="tag tag-cyan">SCT Inst</span>
+        <span class="tag tag-blue">GCP</span>
+        <span class="tag tag-green">A2A Payments</span>
+        <span class="tag tag-amber">iDEAL Migration</span>
+        <span class="tag tag-orange">Open Banking v3</span>
+        <span class="tag tag-gray">iDEAL Successor</span>
+    </div>
+</div>
+
+<div style="max-width:1300px;margin:12px auto 0;padding:0 14px">
+    <div class="banner banner-purple" style="display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:16px;line-height:1">🇪🇺</span>
+        <div>
+            <strong style="color:#4C1D95">Perspective: Acceptor PSP / Issuing Bank building on Wero</strong><br/>
+            This diagram shows what <em>you</em> build and operate when integrating with the Wero scheme. The flow is <em>outbound</em> to EPI Central Services (you initiate), and <em>inbound</em> for webhooks (EPI calls you back).<br/><br/>
+            <span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span style="background:#EDE9FE;color:#4C1D95;border:1px solid #C4B5FD;font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 8px;border-radius:3px;font-weight:600;text-transform:uppercase">⬡ EPI Central Services</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#94A3B8">Dashed-border boxes — external parties you do not control</span>
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="hint">Click any component to explore its role, GCP service mapping, failure modes and design notes</div>
+
+<div class="stage-bar">
+    <button class="stage-btn active" onclick="filterStage('compare')">iDEAL vs Wero</button>
+    <button class="stage-btn" onclick="filterStage('flow')">Payment Flow</button>
+    <button class="stage-btn" onclick="filterStage('failure')">✕ Failure Modes</button>
+    <button class="stage-btn" onclick="filterStage('risk')">Fraud & Risk</button>
+    <button class="stage-btn" onclick="filterStage('obs')">Observability</button>
+    <button class="stage-btn" onclick="filterStage('gcp')">GCP Architecture</button>
+    <button class="stage-btn" onclick="filterStage('cloud')">Cloud Compare</button>
+</div>
+
+<div class="stage-title active" id="st-compare">
+    <h3>⚖ iDEAL vs Wero — What Actually Changes for Engineers</h3>
+    <p>ARCHITECTURE COMPARISON · FROM NATIONAL TO PAN-EUROPEAN</p>
+</div>
+
+<!-- ══════════════════════════════════ iDEAL vs WERO COMPARISON ══════════════════════════════════ -->
+<div class="section" data-section="wero">
+    <div class="section-header sh-compare default-header" data-stage-header="compare">
+        <div>
+            <h2>iDEAL vs Wero — What Actually Changes for Engineers</h2>
+            <p>ARCHITECTURE COMPARISON · FROM NATIONAL TO PAN-EUROPEAN</p>
+        </div>
+    </div>
+    <div class="compare-grid">
+        <div class="compare-card cc-ideal">
+            <h4>🇳🇱 iDEAL (legacy — sunset end 2027)</h4>
+            <ul>
+                <li>Dutch-only, Currence-governed scheme</li>
+                <li>iDEAL Hub as central clearing router</li>
+                <li>Redirect flow only: bank-select → auth → redirect back</li>
+                <li>Webhook is truth signal (redirect unreliable)</li>
+                <li>Transaction ID: 16-digit numeric format</li>
+                <li>No P2P, no cross-border, no POS</li>
+                <li>No purchase protection built in</li>
+                <li>Operated by Currence — NL only governance</li>
+            </ul>
+        </div>
+        <div class="compare-card cc-wero">
+            <h4>🇪🇺 Wero (iDEAL successor from Q2 2026)</h4>
+            <ul>
+                <li>Pan-European, EPI-governed (16 banks, 1-vote-per-bank)</li>
+                <li>EPI Central Services as orchestration layer</li>
+                <li>Redirect + QR code + push notification flows</li>
+                <li>Webhook remains truth signal — same principle</li>
+                <li>Transaction ID: new format with prefix — <strong>breaking change!</strong></li>
+                <li>P2P live, e-commerce 2025, POS 2026, subscriptions 2026+</li>
+                <li>Purchase protection + structured dispute resolution</li>
+                <li>Live: DE, FR, BE · NL from Q2 2026 · 50M+ users</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Migration timeline -->
+    <div class="timeline">
+        <div class="tl-title">🗓 iDEAL → Wero Migration Timeline (Netherlands)</div>
+        <div class="tl-row">
+            <div class="tl-phase phase-now">
+                <div class="tl-q">Q1 2026 (NOW)</div>
+                Co-branded iDEAL|Wero logo replaces iDEAL everywhere. Branding update required by 31 Jan 2026.
+            </div>
+            <div class="tl-phase phase-mid">
+                <div class="tl-q">Q2–Q3 2026</div>
+                First Wero transactions live. New Transaction ID format active. PSP technical migration begins.
+            </div>
+            <div class="tl-phase phase-late">
+                <div class="tl-q">Q4 2026</div>
+                Full Wero contract replaces iDEAL contract. Advanced features: subscriptions, BNPL, QR POS.
+            </div>
+            <div class="tl-phase phase-end">
+                <div class="tl-q">End 2027</div>
+                iDEAL brand retired completely. All traffic is Wero. Full European interoperability live.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════ PAYMENT FLOW ══════════════════════════════════ -->
+<div class="stage-title" id="st-flow">
+    <h3>💳 Wero E-Commerce Payment Flow</h3>
+    <p>MERCHANT → PSP → EPI CENTRAL SERVICES → CONSUMER WALLET → SCT INST RAIL → SETTLEMENT</p>
+</div>
+<div class="section" data-section="wero">
+    <div class="section-header sh-flow stage-header" data-stage-header="flow">
+        <div>
+            <h2>Wero E-Commerce Payment Flow</h2>
+            <p>MERCHANT → PSP → EPI CENTRAL SERVICES → CONSUMER WALLET → SCT INST RAIL → SETTLEMENT</p>
+        </div>
+    </div>
+
+    <!-- Step 1: Checkout -->
+    <div class="flow-area merchant-row" data-stage="flow">
+        <div class="flow-label green">① Checkout Initiation — Merchant Side</div>
+        <div class="flow-row">
+            <div class="box box-ext" onclick="om('consumer')"><div class="bt">Consumer</div><div class="bs">selects Wero<br/>at checkout</div></div>
+            <div class="arr arr-gray"><div class="arr-line"></div><div class="arr-label">POST /pay</div></div>
+            <div class="box box-teal" onclick="om('merchant_server')"><div class="bt">Merchant Server</div><div class="bs">paymentMethod:<br/>WERO</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">REST API</div></div>
+            <div class="box box-cyan" onclick="om('acceptor_psp')"><div class="bt">Acceptor PSP</div><div class="bs">Nuvei / Worldline<br/>Axepta / PPRO</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">OB v3 API</div></div>
+            <div class="box box-ext-epi" onclick="om('epi_central')"><div class="bt">EPI Central Services</div><div class="bs">scheme orchestrator<br/>alias resolution</div></div>
+        </div>
+    </div>
+
+    <!-- Step 2: Authentication -->
+    <div class="flow-area epi-row" data-stage="flow">
+        <div class="flow-label purple">② Consumer Authentication — Wero Wallet Layer</div>
+        <div class="flow-row">
+            <div class="box box-ext-epi" onclick="om('epi_central')"><div class="bt">EPI Central Services</div><div class="bs">routes auth req<br/>to issuer wallet</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">push / redirect</div></div>
+            <div class="box box-violet" onclick="om('wero_wallet')"><div class="bt">Wero Wallet</div><div class="bs">standalone app<br/>or bank-embedded</div></div>
+            <div class="arr arr-gray"><div class="arr-line"></div><div class="arr-label">biometric SCA</div></div>
+            <div class="box box-ext" onclick="om('consumer')"><div class="bt">Consumer</div><div class="bs">swipe to approve<br/>Face ID / PIN</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">confirmed</div></div>
+            <div class="box box-amber" onclick="om('phone_registry')"><div class="bt">Phone/IBAN Registry</div><div class="bs">EPI alias resolution<br/>phone → IBAN</div></div>
+        </div>
+    </div>
+
+    <!-- Step 3: SCT Inst Settlement -->
+    <div class="flow-area rail-row" data-stage="flow">
+        <div class="flow-label amber">③ SCT Inst Settlement — &lt;10 Seconds, 24/7</div>
+        <div class="flow-row">
+            <div class="box box-ext-bank" onclick="om('issuing_bank')"><div class="bt">Issuing Bank</div><div class="bs">debit consumer<br/>fund check + SCA</div></div>
+            <div class="arr arr-amber"><div class="arr-line"></div><div class="arr-label">pacs.008</div></div>
+            <div class="box box-ext-rail" onclick="om('sct_inst')"><div class="bt">SCT Inst Rail</div><div class="bs">EBA RT1 / TIPS<br/>&lt;10s settlement</div></div>
+            <div class="arr arr-amber"><div class="arr-line"></div><div class="arr-label">credit</div></div>
+            <div class="box box-ext-bank" onclick="om('acquiring_bank')"><div class="bt">Acquiring Bank</div><div class="bs">credit merchant<br/>instant settlement</div></div>
+            <div class="arr arr-green"><div class="arr-line"></div><div class="arr-label">funds</div></div>
+            <div class="box box-teal" onclick="om('merchant_account')"><div class="bt">Merchant Account</div><div class="bs">funds available<br/>no T+1 batch</div></div>
+        </div>
+    </div>
+
+    <!-- Step 4: Webhook confirmation -->
+    <div class="flow-area bank-row" data-stage="flow">
+        <div class="flow-label cyan">④ Confirmation — Webhook is the Source of Truth</div>
+        <div class="flow-row">
+            <div class="box box-ext-epi" onclick="om('epi_central')"><div class="bt">EPI Central Services</div><div class="bs">settlement confirmed<br/>fires webhook</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">COMPLETED</div></div>
+            <div class="box box-cyan" onclick="om('acceptor_psp')"><div class="bt">Acceptor PSP</div><div class="bs">verifies sig<br/>normalises status</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">webhook</div></div>
+            <div class="box box-teal" onclick="om('merchant_server')"><div class="bt">Merchant Backend</div><div class="bs">webhook handler<br/>fulfill order</div></div>
+            <div class="arr arr-gray"><div class="arr-line"></div><div class="arr-label">confirmed</div></div>
+            <div class="box box-ext" onclick="om('consumer')"><div class="bt">Consumer</div><div class="bs">payment confirmed<br/>in wallet + shop</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════ FAILURE MODES ══════════════════════════════════ -->
+<div class="stage-title" id="st-failure">
+    <h3>✕ Failure Modes — PSP Side Resilience</h3>
+    <p>WEBHOOK TIMEOUT · IDEMPOTENCY FAILURE · FRAUD BLOCK · MERCHANT RETRY STORM · CERT EXPIRY · EPI API ERROR</p>
+</div>
+<div class="section" data-section="wero">
+    <div class="section-header sh-risk stage-header" data-stage-header="failure">
+        <div>
+            <h2>✕ Failure Modes — Wero Payment Resilience</h2>
+            <p>WEBHOOK TIMEOUT · IDEMPOTENCY FAILURE · FRAUD BLOCK · MERCHANT RETRY STORM · CERT EXPIRY · EPI API ERROR</p>
+        </div>
+    </div>
+
+    <!-- Failure 1: Webhook Timeout -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Failure 1 — Webhook timeout: EPI fires webhook but your handler times out — payment is settled at EPI but you never received confirmation — idempotency key in AlloyDB prevents double processing on retry</div>
+        <div class="flow-row">
+            <div class="box box-ext-epi" onclick="om('epi_central')"><div class="bt">EPI Central</div><div class="bs">Sends webhook</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">COMPLETED</div></div>
+            <div class="box box-cyan" onclick="om('webhook_handler')"><div class="bt">Webhook Handler</div><div class="bs">Cloud Run · timeout</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">timeout / no 200</div></div>
+            <div class="box box-indigo" onclick="om('alloydb')"><div class="bt">AlloyDB</div><div class="bs">Idempotency key exists</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">EPI retries</div></div>
+            <div class="box box-orange" onclick="om('cloud_monitoring')"><div class="bt">Cloud Monitoring</div><div class="bs">Webhook retry rate alert</div></div>
+        </div>
+    </div>
+
+    <!-- Failure 2: Duplicate Merchant Request -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Failure 2 — Merchant retry storm: merchant timeout on payment init → retries — Apigee idempotency pre-check caches response — prevents duplicate EPI API calls</div>
+        <div class="flow-row">
+            <div class="box box-ext" onclick="om('merchant_server')"><div class="bt">Merchant Server</div><div class="bs">Payment init timeout</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">retry with same key</div></div>
+            <div class="box box-blue" onclick="om('apigee')"><div class="bt">Apigee X</div><div class="bs">Idempotency check</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">← cached 200</div></div>
+            <div class="box box-ext" onclick="om('merchant_server')"><div class="bt">Merchant Server</div><div class="bs">Receives cached response</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">alert: retry rate</div></div>
+            <div class="box box-rose" onclick="om('cloud_monitoring')"><div class="bt">Cloud Monitoring</div><div class="bs">Merchant retry rate</div></div>
+        </div>
+    </div>
+
+    <!-- Failure 3: Fraud Block -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Failure 3 — Fraud block: Vertex AI fraud score exceeds threshold — payment declined BEFORE EPI call — consumer never sees payment as initiated at EPI</div>
+        <div class="flow-row">
+            <div class="box box-green" onclick="om('payment_init')"><div class="bt">Payment Init</div><div class="bs">Calls Vertex AI</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">fraud prediction</div></div>
+            <div class="box box-purple" onclick="om('vertex_ai')"><div class="bt">Vertex AI</div><div class="bs">Score &gt; 0.8</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">HIGH RISK</div></div>
+            <div class="box box-teal" onclick="om('payment_init')"><div class="bt">Payment Init</div><div class="bs">Decline before EPI</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">return 403 Forbidden</div></div>
+            <div class="box box-ext" onclick="om('merchant_server')"><div class="bt">Merchant Server</div><div class="bs">Shows decline message</div></div>
+        </div>
+    </div>
+
+    <!-- Failure 4: EPI API Error -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Failure 4 — EPI API error: Payment Init calls EPI but gets 4xx/5xx — decision point: retry with exponential backoff or surface to merchant — SCT Inst has not fired so reversal is possible</div>
+        <div class="flow-row">
+            <div class="box box-green" onclick="om('payment_init')"><div class="bt">Payment Init</div><div class="bs">POST to EPI API</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">EPI 500 error</div></div>
+            <div class="box box-ext-epi" onclick="om('epi_central')"><div class="bt">EPI Central</div><div class="bs">Service degradation</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">circuit breaker checks</div></div>
+            <div class="box box-orange" onclick="om('circuit_breaker_issuer')"><div class="bt">Circuit Breaker</div><div class="bs">Open after 3 fails</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">queue for retry</div></div>
+            <div class="box box-yellow" onclick="om('pubsub')"><div class="bt">Cloud Pub/Sub</div><div class="bs">DLQ · backoff</div></div>
+        </div>
+    </div>
+
+    <!-- Failure 5: Cert Expiry -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Failure 5 — mTLS cert expiry: Apigee cert expires → EPI rejects all mTLS connections → payment outage — 30-day pre-expiry alert is critical</div>
+        <div class="flow-row">
+            <div class="box box-ext-epi" onclick="om('epi_central')"><div class="bt">EPI Central</div><div class="bs">mTLS handshake</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">CERT_EXPIRED</div></div>
+            <div class="box box-blue" onclick="om('apigee')"><div class="bt">Apigee X</div><div class="bs">Cert expired</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">30-day pre-alert</div></div>
+            <div class="box box-red" onclick="om('secret_manager_issuer')"><div class="bt">Secret Manager</div><div class="bs">Expiry monitoring</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">auto-rotate</div></div>
+            <div class="box box-teal" onclick="om('cert_rotation')"><div class="bt">Cloud Functions</div><div class="bs">Cert + Apigee reload</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════ GCP ARCHITECTURE ══════════════════════════════════ -->
+<div class="stage-title" id="st-gcp">
+    <h3>☁ GCP Production Architecture — Acceptor PSP Side</h3>
+    <p>HOW TO BUILD YOUR WERO INTEGRATION ON GOOGLE CLOUD PLATFORM</p>
+</div>
+<div class="section" data-section="wero">
+    <div class="section-header sh-gcp stage-header" data-stage-header="gcp">
+        <div>
+            <h2>GCP Production Architecture — Acceptor PSP Side</h2>
+            <p>HOW TO BUILD YOUR WERO INTEGRATION ON GOOGLE CLOUD PLATFORM</p>
+        </div>
+    </div>
+
+    <!-- Layer 1: Ingress -->
+    <div class="flow-area gcp-row" data-stage="gcp">
+        <div class="flow-label green">GCP Layer 1 — Ingress &amp; API Gateway</div>
+        <div class="flow-row">
+            <div class="box box-ext" onclick="om('consumer')"><div class="bt">Consumer</div><div class="bs">mobile / web<br/>checkout</div></div>
+            <div class="arr arr-green"><div class="arr-line"></div><div class="arr-label">HTTPS</div></div>
+            <div class="box box-red" onclick="om('cloud_armor')"><div class="bt">Cloud Armor</div><div class="bs">WAF · DDoS<br/>EPI IP allowlist</div></div>
+            <div class="arr arr-green"><div class="arr-line"></div><div class="arr-label">filtered</div></div>
+            <div class="box box-blue" onclick="om('apigee')"><div class="bt">Apigee X</div><div class="bs">mTLS · JWT<br/>quota mgmt</div></div>
+            <div class="arr arr-green"><div class="arr-line"></div><div class="arr-label">authed</div></div>
+            <div class="box box-green" onclick="om('payment_init')"><div class="bt">Payment Init Service</div><div class="bs">Cloud Run<br/>stateless · autoscale</div></div>
+        </div>
+    </div>
+
+    <!-- Layer 2: Orchestration -->
+    <div class="flow-area gcp-row" data-stage="gcp">
+        <div class="flow-label green">GCP Layer 2 — Payment Orchestration &amp; Events</div>
+        <div class="flow-row">
+            <div class="box box-green" onclick="om('payment_init')"><div class="bt">Payment Init Service</div><div class="bs">Cloud Run<br/>EPI API adapter</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish event</div></div>
+            <div class="box box-yellow" onclick="om('pubsub')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment events<br/>webhook ingestion</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">consume</div></div>
+            <div class="box box-green" onclick="om('webhook_handler')"><div class="bt">Webhook Handler</div><div class="bs">Cloud Run<br/>idempotent consumer</div></div>
+            <div class="arr arr-green"><div class="arr-line"></div><div class="arr-label">write state</div></div>
+            <div class="box box-indigo" onclick="om('alloydb')"><div class="bt">AlloyDB</div><div class="bs">payment state<br/>idempotency keys</div></div>
+        </div>
+    </div>
+
+    <!-- Layer 3: Reconciliation -->
+    <div class="flow-area gcp-row" data-stage="gcp">
+        <div class="flow-label green">GCP Layer 3 — State Machine &amp; Reconciliation</div>
+        <div class="flow-row">
+            <div class="box box-indigo" onclick="om('alloydb')"><div class="bt">AlloyDB</div><div class="bs">CREATED · PENDING<br/>COMPLETED · FAILED</div></div>
+            <div class="arr arr-green"><div class="arr-line"></div><div class="arr-label">scheduled job</div></div>
+            <div class="box box-green" onclick="om('recon_service')"><div class="bt">Recon Service</div><div class="bs">Cloud Run Jobs<br/>EPI vs SCT Inst</div></div>
+            <div class="arr arr-green"><div class="arr-line"></div><div class="arr-label">stream</div></div>
+            <div class="box box-amber" onclick="om('bigquery')"><div class="bt">BigQuery</div><div class="bs">settlement reports<br/>analytics · audit</div></div>
+            <div class="arr arr-green"><div class="arr-line"></div><div class="arr-label">archive</div></div>
+            <div class="box box-gray" onclick="om('gcs')"><div class="bt">Cloud Storage</div><div class="bs">EPI settlement files<br/>7yr WORM retention</div></div>
+        </div>
+    </div>
+
+    <!-- Layer 4: Security -->
+    <div class="flow-area gcp-row" data-stage="gcp">
+        <div class="flow-label green">GCP Layer 4 — Security, Secrets &amp; Networking</div>
+        <div class="flow-row">
+            <div class="box box-red" onclick="om('secret_manager')"><div class="bt">Secret Manager</div><div class="bs">EPI API keys<br/>mTLS certs</div></div>
+            <div class="arr arr-gray"><div class="arr-line"></div><div class="arr-label">envelope enc</div></div>
+            <div class="box box-red" onclick="om('cloud_kms')"><div class="bt">Cloud KMS</div><div class="bs">CMEK · HSM-backed<br/>per-system keys</div></div>
+            <div class="arr arr-gray"><div class="arr-line"></div><div class="arr-label">private path</div></div>
+            <div class="box box-slate" onclick="om('vpc_psc')"><div class="bt">VPC + PSC</div><div class="bs">Private Service Connect<br/>no public EPI traffic</div></div>
+            <div class="arr arr-gray"><div class="arr-line"></div><div class="arr-label">least priv</div></div>
+            <div class="box box-orange" onclick="om('iam_wi')"><div class="bt">IAM + Workload Identity</div><div class="bs">service-to-service<br/>no static keys</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════ FRAUD & RISK ══════════════════════════════════ -->
+<div class="stage-title" id="st-risk">
+    <h3>🛡️ Fraud & Risk Layer</h3>
+    <p>REAL-TIME SCORING · VELOCITY CHECKS · PRE-EPI-CALL — SCT INST IS IRREVOCABLE</p>
+</div>
+<div class="section" data-section="wero">
+    <div class="section-header sh-risk stage-header" data-stage-header="risk">
+        <div>
+            <h2>Fraud &amp; Risk Layer</h2>
+            <p>REAL-TIME SCORING · VELOCITY CHECKS · PRE-EPI-CALL — SCT INST IS IRREVOCABLE</p>
+        </div>
+    </div>
+    <div class="flow-area risk-row" data-stage="risk">
+        <div class="flow-label amber">Risk Services — GCP AI Platform (must run BEFORE EPI API call)</div>
+        <div class="flow-row">
+            <div class="box box-yellow" onclick="om('pubsub')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment event stream<br/>real-time pipeline</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">stream</div></div>
+            <div class="box box-orange" onclick="om('dataflow')"><div class="bt">Dataflow</div><div class="bs">streaming fraud<br/>feature pipeline</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">features</div></div>
+            <div class="box box-purple" onclick="om('vertex_ai')"><div class="bt">Vertex AI</div><div class="bs">fraud model<br/>&lt;50ms prediction</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">velocity</div></div>
+            <div class="box box-cyan" onclick="om('memorystore')"><div class="bt">Memorystore Redis</div><div class="bs">velocity checks<br/>&lt;5ms lookup</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════ OBSERVABILITY ══════════════════════════════════ -->
+<div class="stage-title" id="st-obs">
+    <h3>📊 Observability Stack</h3>
+    <p>PAYMENT LATENCY SLOs · WEBHOOK HEALTH · SETTLEMENT MONITORING · RECON GAPS</p>
+</div>
+<div class="section" data-section="wero">
+    <div class="section-header sh-obs stage-header" data-stage-header="obs">
+        <div>
+            <h2>Observability Stack</h2>
+            <p>PAYMENT LATENCY SLOs · WEBHOOK HEALTH · SETTLEMENT MONITORING · RECON GAPS</p>
+        </div>
+    </div>
+    <div class="flow-area obs-row" data-stage="obs">
+        <div class="flow-label danger">Monitoring — GCP Operations Suite</div>
+        <div class="flow-row">
+            <div class="box box-rose" onclick="om('cloud_monitoring')"><div class="bt">Cloud Monitoring</div><div class="bs">payment latency<br/>SCT Inst SLO &lt;10s</div></div>
+            <div class="arr arr-gray"><div class="arr-line"></div><div class="arr-label">logs</div></div>
+            <div class="box box-rose" onclick="om('cloud_logging')"><div class="bt">Cloud Logging</div><div class="bs">structured JSON<br/>EPI tx audit trail</div></div>
+            <div class="arr arr-gray"><div class="arr-line"></div><div class="arr-label">traces</div></div>
+            <div class="box box-rose" onclick="om('cloud_trace')"><div class="bt">Cloud Trace</div><div class="bs">end-to-end tracing<br/>EPI + SCT Inst spans</div></div>
+            <div class="arr arr-gray"><div class="arr-line"></div><div class="arr-label">analytics</div></div>
+            <div class="box box-amber" onclick="om('bigquery')"><div class="bt">BigQuery</div><div class="bs">payment analytics<br/>recon dashboards</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════ CLOUD COMPARE ══════════════════════════════════ -->
+<div class="stage-title" id="st-cloud">
+    <h3>⚖ GCP vs AWS vs Azure — Honest Comparison for Wero Integration</h3>
+    <p>WHERE EACH CLOUD WINS, WHERE IT LOSES — NO MARKETING SPIN</p>
+</div>
+<div class="section" data-section="wero">
+    <div class="section-header sh-cloud stage-header" data-stage-header="cloud">
+        <div>
+            <h2>GCP vs AWS vs Azure — Honest Comparison for Wero Integration</h2>
+            <p>WHERE EACH CLOUD WINS, WHERE IT LOSES — NO MARKETING SPIN</p>
+        </div>
+    </div>
+    <div class="flow-area" data-stage="cloud" style="border:none;padding:0;margin:0">
+        <div class="banner banner-amber" style="margin-bottom:10px">
+            ⚠ GCP honest caveat: fewer pre-built bank PSP connectors than AWS in the EPI ecosystem. Most EPI-certified PSPs bias their documentation toward AWS. If you need pre-built connectors, factor in extra integration work on GCP.
+        </div>
+        <div style="overflow-x:auto">
+            <table class="compare-table">
+            <tr>
+                <th>Capability</th>
+                <th style="color:#4ADE80">GCP</th>
+                <th style="color:#FB923C">AWS</th>
+                <th style="color:#60A5FA">Azure</th>
+            </tr>
+            <tr>
+                <td>API Gateway (mTLS)</td>
+                <td class="win">Apigee X — native mTLS, quota mgmt, analytics built-in</td>
+                <td>API Gateway + WAF — requires more config for mTLS</td>
+                <td>APIM — solid OAuth, good EU coverage, verbose config</td>
+            </tr>
+            <tr>
+                <td>Event streaming</td>
+                <td class="win">Pub/Sub — managed, push + pull, ordering keys built-in</td>
+                <td>EventBridge + SQS — more moving parts, powerful integrations</td>
+                <td>Event Hubs — solid, Kafka-compatible API, good for existing Kafka shops</td>
+            </tr>
+            <tr>
+                <td>Payment state DB</td>
+                <td>AlloyDB — PostgreSQL-compat, 4x read perf, 99.99% SLA</td>
+                <td class="win">Aurora PG — battle-tested, widest ISV support, more war stories</td>
+                <td>Azure DB for PostgreSQL Flexible — solid but less ecosystem depth</td>
+            </tr>
+            <tr>
+                <td>Serverless compute</td>
+                <td class="win">Cloud Run — instant autoscale, generous free tier, simple</td>
+                <td>Lambda — 270+ native integrations, widest ecosystem</td>
+                <td>Container Apps — less mature, improving fast</td>
+            </tr>
+            <tr>
+                <td>Fraud ML</td>
+                <td class="win">Vertex AI — online prediction, feature store, &lt;50ms P99</td>
+                <td>SageMaker — broader model library, more MLOps tooling</td>
+                <td>Azure ML — strong enterprise tooling, tight AAD integration</td>
+            </tr>
+            <tr>
+                <td>Secrets management</td>
+                <td>Secret Manager — simple, versioned, Workload Identity integration</td>
+                <td class="win">Secrets Manager — automatic rotation, more HSM options</td>
+                <td>Key Vault — tight AAD integration, good for enterprise banks</td>
+            </tr>
+            <tr>
+                <td>EPI / bank connectors</td>
+                <td class="warn">⚠ Fewer native bank-specific ISV integrations</td>
+                <td class="win">AWS FinSpace, more bank-specific ISVs pre-built</td>
+                <td class="warn">Good EU bank relationships, but fewer native connectors</td>
+            </tr>
+            <tr>
+                <td>EU data residency</td>
+                <td class="win">Sovereign Controls — EU data boundary enforced contractually</td>
+                <td>GovCloud EU-equivalent — complex setup for EU-only</td>
+                <td class="win">EU Data Boundary — strong compliance posture, faster for EU banks</td>
+            </tr>
+            <tr>
+                <td>NL / EPI latency</td>
+                <td>europe-west4 (Netherlands) — optimal for EPI infra</td>
+                <td>eu-central-1 / eu-west-1 — solid, well-peered</td>
+                <td class="win">West Europe (Amsterdam) — lowest NL latency for DNB oversight</td>
+            </tr>
+        </table>
+        </div>
+    </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+    <div class="legend-inner">
+        <div class="li"><div class="lb" style="background:#4C1D95;border:1.5px solid #7E22CE"></div>EPI / Scheme Layer (external)</div>
+        <div class="li"><div class="lb" style="background:#0C4A6E;border:1.5px dashed #0369A1"></div>Bank / Rail Layer (external)</div>
+        <div class="li"><div class="lb" style="background:#065F46;border:1.5px solid #047857"></div>GCP Services (you build)</div>
+        <div class="li"><div class="lb" style="background:#92400E;border:1.5px solid #B45309"></div>Analytics / Risk</div>
+        <div class="li"><div class="lb" style="background:#881337;border:1.5px solid #E11D48"></div>Observability</div>
+        <div class="li"><div class="lb" style="background:#374151;border:1.5px dashed #6B7280"></div>External Actor</div>
+        <div class="li"><div class="ld ld-s"></div>Synchronous call</div>
+        <div class="li"><div class="ld ld-a"></div>Async / event-driven</div>
+    </div>
+</div>
+
+<div class="footer">
+    Fintech on Cloud · <a href="https://fintechoncloud.substack.com">fintechoncloud.substack.com</a> · Post #5 — Wero Payments Architecture
+</div>
+
+<script>
+const D = {
+    'consumer': {tag:'External · End User', title:'Consumer / End User', body:`<p>The payment initiator. In Wero, the consumer's phone number (or email) serves as the alias for their IBAN — they never need to type an IBAN or select a bank from a dropdown. This is a fundamental UX improvement over iDEAL, where the consumer had to pick their bank from a list.</p><p><strong>Three authentication channels:</strong> <strong>Redirect</strong> (desktop checkout — consumer redirected to Wero/bank auth page), <strong>QR Code</strong> (in-store or mobile — consumer scans with Wero app), <strong>Push Notification</strong> (returning user — Wero sends push, consumer taps and approves). All three channels ultimately invoke biometric SCA inside the Wero wallet app.</p><p><strong>The redirect trap — same as iDEAL:</strong> Never trust the redirect return URL as confirmation of payment. The consumer's browser can close, their device can lose connectivity, or they can navigate away after approving in the wallet but before the redirect fires. The webhook from EPI Central Services is the only reliable confirmation signal. Fulfill orders on webhook only.</p>`, chips:[{t:'Phone number as IBAN alias',c:'chip-purple'},{t:'3 auth channels: redirect/QR/push',c:'chip-blue'},{t:'Redirect is unreliable — use webhook',c:'chip-red'},{t:'Biometric SCA in Wero wallet',c:'chip-amber'}]},
+
+    'merchant_server': {tag:'Merchant · Backend', title:'Merchant Server — Payment Initiation', body:`<p>The merchant's backend creates a payment intent by calling the Acceptor PSP's REST API with <code>paymentMethod: "WERO"</code>, the amount, currency (EUR), and a <code>returnUrl</code> for the redirect plus a <code>notifyUrl</code> (webhook endpoint) for confirmation.</p><p><strong>Critical migration note for iDEAL merchants:</strong> The Wero transaction ID format is different from iDEAL's 16-digit numeric ID. Any system that pattern-matches on transaction ID format — reconciliation jobs, fraud systems, reporting pipelines — will silently break when Wero transactions start flowing in Q2 2026. Audit all systems that touch transaction IDs before the migration deadline. Add a <code>payment_scheme</code> column to your payments table to differentiate IDEAL vs WERO records.</p><p><strong>State machine:</strong> <code>CREATED → AUTHENTICATION_PENDING → COMPLETED | FAILED | EXPIRED</code>. Never fulfill an order on <code>AUTHENTICATION_PENDING</code>. Wait for <code>COMPLETED</code> from the webhook.</p>`, chips:[{t:'POST paymentMethod: WERO',c:'chip-purple'},{t:'notifyUrl = webhook endpoint',c:'chip-teal'},{t:'TxnID format change breaks recon!',c:'chip-red'},{t:'payment_scheme column needed',c:'chip-amber'},{t:'Never fulfill on PENDING',c:'chip-orange'}]},
+
+    'acceptor_psp': {tag:'PSP · Integration Layer', title:'Acceptor PSP — Technical Bridge to EPI', body:`<p>The Acceptor PSP (Worldline, Nuvei, Axepta BNP Paribas, PPRO) is the technical bridge between merchants and EPI Central Services. It holds EPI scheme membership, manages mTLS certificates with EPI, and translates merchant REST API calls into EPI's Wero API protocol (based on Open Banking v3).</p><p><strong>Why you need a PSP:</strong> EPI scheme membership requires regulatory approval, technical certification, and direct connectivity to EPI Central Services. For most fintechs and merchants, going through a certified PSP is faster than direct EPI membership.</p><p><strong>Integration types supported:</strong> Hosted Payment Page (simplest — PSP renders the Wero UI), Hosted Forms (PSP-hosted form embedded in merchant flow), and Direct Integration (merchant controls UI, PSP handles EPI protocol). For production at scale, Direct Integration gives you the most control over conversion.</p><p><strong>Capture modes:</strong> Single Immediate Payment (most common — auth and capture in one step, funds move instantly via SCT Inst), Manual Capture (event-dependent — auth now, capture within 10 days, used for pay-on-delivery). Only unsettled payments can be reversed — once SCT Inst fires, it is irrevocable.</p>`, chips:[{t:'EPI scheme member',c:'chip-purple'},{t:'OB v3 API at EPI boundary',c:'chip-blue'},{t:'Nuvei · Worldline · Axepta · PPRO',c:'chip-gray'},{t:'Hosted / Direct integration options',c:'chip-teal'},{t:'Manual capture: 10-day window',c:'chip-amber'},{t:'Post-settlement: irrevocable',c:'chip-red'}]},
+
+    'epi_central': {tag:'External · EPI Scheme', title:'EPI Central Services — Scheme Orchestrator', body:`<p>EPI Central Services is the technical and governance hub of the Wero scheme. It performs alias resolution (phone number → IBAN mapping), routes authentication requests to the correct issuing bank's Wero wallet, and issues the SCT Inst payment instruction after SCA is complete.</p><p><strong>What EPI controls that iDEAL Hub did not:</strong> In iDEAL, the Hub (Currence) routed bank selection but the consumer explicitly chose their bank. In Wero, EPI resolves the bank automatically from the consumer's registered phone number — EPI owns the directory, and consumers never see bank selection. This is both more convenient and gives EPI a data asset that didn't exist in iDEAL.</p><p><strong>API surface:</strong> EPI uses a proprietary Wero API internally, with Open Banking v3 API at the PSP/Acceptor boundary. Your Acceptor PSP abstracts this. If you're building a direct EPI integration, you'll interact with both the EPI rulebook and the OB v3 spec.</p><p><strong>Governance:</strong> EPI operates on a one-bank-one-vote model. Scheme rule changes require consensus across 16 member banks. This means API changes and new feature rollouts are slower than at Visa/Mastercard — plan integration timelines with this governance cadence in mind.</p>`, chips:[{t:'Phone→IBAN alias resolution',c:'chip-purple'},{t:'OB v3 API at acceptor boundary',c:'chip-blue'},{t:'Issues SCT Inst instruction',c:'chip-amber'},{t:'1-bank-1-vote governance',c:'chip-gray'},{t:'Replaced iDEAL Hub (Currence)',c:'chip-cyan'}]},
+
+    'wero_wallet': {tag:'External · Consumer Auth', title:'Wero Wallet — Consumer Authentication Interface', body:`<p>The Wero wallet is the consumer-facing app where SCA happens. It can be deployed as a <strong>standalone iOS/Android app</strong> (EPI's own "wero" app) or <strong>embedded within a participating bank's existing mobile banking app</strong>. Both modes surface the same authentication flow: consumer sees payment details (amount, merchant name), selects their bank account, and approves with biometric (Face ID / fingerprint) or PIN.</p><p><strong>Three UX flows depending on context:</strong> (1) Desktop checkout: consumer sees redirect to a Wero-hosted auth page, approves on mobile app via push notification, redirect returns to merchant. (2) Mobile checkout: deep link opens Wero app directly on same device, consumer approves, app returns control to merchant. (3) QR code: merchant displays QR, consumer scans with Wero app, approves in-app.</p><p><strong>Bank-embedded vs standalone:</strong> Banks that embed Wero into their own app (ING, ABN AMRO, Rabobank for NL) offer a faster UX because consumers don't need a separate app. However, the bank loses control over the auth screen — EPI's UX guidelines govern what the wallet displays. This is a political issue in the EPI consortium.</p>`, chips:[{t:'Standalone or bank-embedded',c:'chip-purple'},{t:'Biometric SCA: Face ID / fingerprint',c:'chip-blue'},{t:'Push notification auth for returning users',c:'chip-amber'},{t:'QR code for in-store / P2P',c:'chip-teal'},{t:'Bank loses auth screen control',c:'chip-orange'}]},
+
+    'phone_registry': {tag:'External · EPI', title:'Phone/IBAN Alias Registry', body:`<p>EPI maintains a pan-European directory that maps consumer phone numbers (and email addresses) to IBANs. When a merchant initiates a Wero payment, EPI looks up the consumer's registered phone number in this directory to determine which issuing bank to route the authentication request to — the consumer never picks a bank.</p><p><strong>Registration:</strong> Consumers register their phone number via their bank's Wero onboarding flow. A phone number can be linked to up to 3 bank accounts. The consumer chooses which account to use at payment time.</p><p><strong>Privacy:</strong> The consumer's phone number is never exposed to the merchant. EPI uses it only for routing. The merchant receives an opaque consumer reference, not the phone number or IBAN.</p><p><strong>This is the key difference from iDEAL:</strong> iDEAL required consumers to select their bank from a dropdown in the merchant's checkout. Wero eliminates this step — the registry resolves it automatically. This improves conversion but means EPI has a centralized consumer identity dataset that raises its own governance questions.</p>`, chips:[{t:'Phone / email → IBAN mapping',c:'chip-purple'},{t:'Max 3 accounts per phone',c:'chip-gray'},{t:'Consumer bank never shown to merchant',c:'chip-teal'},{t:'Eliminates bank-select dropdown',c:'chip-green'},{t:'Centralized identity — governance risk',c:'chip-amber'}]},
+
+    'issuing_bank': {tag:'External · Issuing Bank', title:'Issuing Bank — Consumer\'s Bank', body:`<p>The issuing bank holds the consumer's account. When EPI Central Services routes an authentication request, the issuing bank's systems must: validate the consumer's session, perform SCA (delegated to the Wero wallet), run real-time fraud checks, confirm fund availability, and initiate the SCT Inst instruction to the acquiring bank.</p><p><strong>Critical timing constraint:</strong> SCT Inst requires settlement in under 10 seconds end-to-end. The issuing bank's critical path (fraud check + balance check + SCT Inst instruction) must complete in under 4 seconds to leave headroom for network and CSM processing. If you are building an issuing bank integration, this latency budget governs every design decision.</p><p><strong>What changes from iDEAL:</strong> In iDEAL, the bank owned the authentication screen. In Wero, EPI/Wero wallet owns it. The bank gives up the auth UI but gains scheme interoperability. Banks that embedded Wero into their own app retain more UX control — but must still comply with EPI's wallet UX guidelines.</p>`, chips:[{t:'Delegated SCA to Wero wallet',c:'chip-purple'},{t:'&lt;4s critical path budget',c:'chip-red'},{t:'Real-time fraud check required',c:'chip-amber'},{t:'Initiates SCT Inst pacs.008',c:'chip-teal'},{t:'Loses auth screen vs iDEAL',c:'chip-orange'}]},
+
+    'sct_inst': {tag:'External · Rail', title:'SCT Inst Rail — Real-Time Settlement', body:`<p>SEPA Instant Credit Transfer is the settlement backbone of Wero. Every Wero payment settles via SCT Inst — there is no proprietary Wero settlement rail. This is deliberate: EPI built on existing regulated infrastructure rather than creating a new clearing system.</p><p><strong>Clearing houses:</strong> EBA CLEARING RT1 (the primary CSM for most European banks) and ECB TIPS (TARGET Instant Payment Settlement). Dutch banks primarily use STET and Equens Worldline. Not all PSP collection IBANs are reachable via SCT Inst — if a PSP's IBAN is only on the standard SCT rail, settlement falls back to T+1 batch.</p><p><strong>SLA:</strong> Under 10 seconds, 24/7/365, including Christmas. Amount limit: €100,000 per transaction. As of early 2026, 88% of SEPA participants in the euro area are registered for SCT Inst.</p><p><strong>GCP region for lowest latency:</strong> <code>europe-west4</code> (Netherlands, Eemshaven) gives the lowest latency to EBA RT1 and TIPS infrastructure. Run your payment processing services here.</p>`, chips:[{t:'EBA RT1 + ECB TIPS',c:'chip-amber'},{t:'&lt;10 seconds 24/7/365',c:'chip-green'},{t:'€100K per transaction limit',c:'chip-gray'},{t:'88% SEPA coverage as of 2026',c:'chip-teal'},{t:'europe-west4: lowest NL latency',c:'chip-blue'},{t:'Irrevocable once fired',c:'chip-red'}]},
+
+    'acquiring_bank': {tag:'External · Acquiring Bank', title:'Acquiring Bank — Merchant\'s Bank', body:`<p>Receives the SCT Inst credit on behalf of the merchant and credits the merchant's account instantly. There is no interchange in A2A payments — no card network fee. Merchant acquirers in Wero connect to EPI Central Services (for scheme messaging) and to the SCT Inst rail (for settlement receipt).</p><p><strong>Reconciliation note:</strong> Acquiring banks must update their systems to handle Wero transaction IDs, which differ in format from iDEAL. Existing iDEAL integrations at acquirers are affected by the same transaction ID format change that affects PSPs and merchants.</p>`, chips:[{t:'Receives SCT Inst credit',c:'chip-teal'},{t:'No interchange — A2A model',c:'chip-green'},{t:'Transaction ID format change required',c:'chip-amber'}]},
+
+    'merchant_account': {tag:'Merchant · Settlement', title:'Merchant Account — Instant Settlement', body:`<p>With Wero, merchants receive settlement in real-time — under 10 seconds from consumer approval. There is no T+1 batch, no overnight processing, no float. This is a significant improvement in merchant cash flow compared to card payments, where settlement can take 1-3 days.</p><p><strong>Cost structure:</strong> A2A payments have no interchange (the card network fee is eliminated). Wero scheme fees are typically 0.1–0.3% compared to 0.3–2% for card payments depending on card type. For high-volume merchants, this is a material cost reduction.</p><p><strong>Refund flow:</strong> Manual Capture mode allows reversal before settlement. Post-settlement, refunds are initiated as a separate SCT or SCT Inst transaction — there is no card-style chargeback mechanic in Wero for e-commerce (purchase protection is handled separately through EPI's dispute mechanism).</p>`, chips:[{t:'&lt;10s settlement — real-time',c:'chip-green'},{t:'No T+1 batch, no float',c:'chip-teal'},{t:'0.1-0.3% fees vs 0.3-2% cards',c:'chip-amber'},{t:'Refunds: separate SCT transaction',c:'chip-gray'},{t:'Purchase protection via EPI dispute',c:'chip-blue'}]},
+
+    'cloud_armor': {tag:'GCP · Security', title:'Cloud Armor — WAF + DDoS Protection', body:`<p>Cloud Armor sits in front of Apigee X, protecting both the merchant-facing payment initiation endpoint and the EPI webhook ingestion endpoint. Two distinct rule sets are needed for these two surfaces.</p><p><strong>Merchant endpoint rules:</strong> Rate limiting per merchant API key (prevent rogue merchants from flooding EPI with spurious payment requests), geo-restrictions (Wero is EU-only — block non-EU source IPs unless you have specific cross-border use cases), SQL injection and XSS protection on form inputs.</p><p><strong>Webhook endpoint rules:</strong> IP allowlist using EPI Central Services' published egress IP ranges. Only EPI should be calling your webhook endpoint. Any request from an IP not in the EPI allowlist is either a misconfiguration or an attack. This is your primary defense against webhook spoofing.</p><p><strong>Critical misconfiguration to avoid:</strong> If your Cloud Armor rules accidentally block EPI's webhook IPs (e.g., an overly aggressive geo-block or rate limit), EPI's webhook deliveries will fail. Payments will be settled on SCT Inst but your system will never receive the COMPLETED event. Set up a synthetic monitoring job that verifies webhook delivery health every 60 seconds.</p>`, chips:[{t:'IP allowlist: EPI egress IPs',c:'chip-red'},{t:'Merchant endpoint rate limiting',c:'chip-amber'},{t:'Webhook spoofing defense',c:'chip-orange'},{t:'Monitor webhook delivery health',c:'chip-teal'},{t:'Misconfigured allowlist = silent failures',c:'chip-purple'}]},
+
+    'apigee': {tag:'GCP · API Gateway', title:'Apigee X — API Gateway', body:`<p>Apigee X handles two distinct traffic directions: outbound (your Cloud Run services calling EPI's API) and inbound (EPI calling your webhook endpoint, merchants calling your payment initiation endpoint). Each direction has different security requirements.</p><p><strong>Outbound to EPI:</strong> mTLS is mandatory. EPI requires client certificate authentication on all connections — plain TLS is rejected. Apigee handles mTLS termination, loading the EPI scheme certificate from Secret Manager. Certificate expiry here = complete payment outage. Automate rotation with 30-day pre-expiry alert.</p><p><strong>Inbound from merchants:</strong> JWT validation (each merchant has a signed API key), quota enforcement per merchant (prevent one merchant from starving others' payment capacity), request transformation (normalize merchant payloads before forwarding to Cloud Run).</p><p><strong>Idempotency pre-check:</strong> Apigee can be configured to check whether a request with a given idempotency key has already been processed and return the cached response without hitting Cloud Run. This protects against merchant retry storms on your payment initiation endpoint.</p>`, chips:[{t:'mTLS for EPI connectivity',c:'chip-red'},{t:'Cert expiry = payment outage',c:'chip-orange'},{t:'30-day expiry alert minimum',c:'chip-amber'},{t:'JWT validation for merchants',c:'chip-blue'},{t:'Idempotency pre-check at gateway',c:'chip-teal'},{t:'Quota enforcement per merchant',c:'chip-purple'}]},
+
+    'payment_init': {tag:'GCP · Compute', title:'Payment Init Service — Cloud Run', body:`<p>Stateless Cloud Run service that translates merchant payment requests into EPI API calls. The most important design constraint: <strong>write the idempotency key to AlloyDB before calling EPI's API</strong>. This is not optional.</p><p><strong>Why write-before-call matters:</strong> If you call EPI's API first and then lose the response (network timeout, Cloud Run instance restart), the payment may have been created at EPI but you have no record. On merchant retry, you'd create a duplicate payment — a double charge. Writing the idempotency key to AlloyDB first means: on retry, you detect the existing key, query EPI's API for the payment status, and return the existing response.</p><p><strong>EPI API timeout handling:</strong> Set a 5-second timeout on EPI API calls. On timeout, do not surface a 500 to the merchant immediately — first check AlloyDB for the idempotency key to determine if the payment was created. If it was, query EPI's GET /payments endpoint for status. Only surface an error if the payment is genuinely absent from EPI.</p><p><strong>Autoscaling:</strong> Cloud Run scales to zero when idle and scales out instantly during peaks (Black Friday, iDEAL migration traffic surges). Set <code>min-instances=1</code> to keep one warm instance — a cold start that delays the first payment initiation request is acceptable; a cold start on a retry is not.</p>`, chips:[{t:'Write idempotency key BEFORE EPI call',c:'chip-red'},{t:'5s timeout on EPI API',c:'chip-amber'},{t:'Query-before-error on timeout',c:'chip-orange'},{t:'min-instances=1 for warmth',c:'chip-teal'},{t:'Workload Identity for secrets',c:'chip-blue'}]},
+
+    'pubsub': {tag:'GCP · Messaging', title:'Cloud Pub/Sub — Payment Event Bus', body:`<p>Pub/Sub decouples webhook ingestion from payment state processing. The pattern: EPI fires webhook → your endpoint verifies signature → publishes raw event to Pub/Sub → returns HTTP 200 to EPI immediately → a separate Pub/Sub consumer processes the event and updates AlloyDB.</p><p><strong>Why decouple:</strong> If your webhook HTTP handler does AlloyDB writes synchronously and AlloyDB is slow (or failing over), EPI's webhook delivery times out. EPI retries. You now have two in-flight deliveries for the same event. If your handler eventually processes both, you have double-processing. With Pub/Sub decoupling, your HTTP handler is always fast (just publish + 200), and EPI never retries due to your processing latency.</p><p><strong>Ordering keys:</strong> Use the EPI transaction ID as the Pub/Sub ordering key. This guarantees that events for the same payment are processed in order by the same consumer — critical for the state machine to see <code>AUTHENTICATION_PENDING → COMPLETED</code> in the right sequence, not reversed.</p><p><strong>Dead Letter Topic:</strong> Any message that fails processing after N retries goes to the DLQ. Alert immediately on any DLQ message — each one represents a payment in an unresolved state. DLQ depth of zero should be your steady-state.</p>`, chips:[{t:'Decouple webhook from state write',c:'chip-purple'},{t:'Ordering key: EPI transaction ID',c:'chip-amber'},{t:'At-least-once — handler must be idempotent',c:'chip-red'},{t:'DLQ: any depth &gt; 0 = P1 alert',c:'chip-orange'},{t:'ACK within 10s or redelivery',c:'chip-teal'}]},
+
+    'webhook_handler': {tag:'GCP · Compute', title:'Webhook Handler — Cloud Run (Idempotent)', body:`<p>Consumes Pub/Sub events and transitions the payment state machine. The most common production bug in Wero integrations: the webhook handler is not idempotent, and EPI's at-least-once delivery causes double order fulfillment.</p><p><strong>Idempotency implementation:</strong> Before writing any state transition, check the current state in AlloyDB. Use a conditional update: <code>UPDATE payments SET status='COMPLETED' WHERE id=? AND status='AUTHENTICATION_PENDING'</code>. If the update affects 0 rows (status is already COMPLETED from a previous delivery), do nothing. Log and return. This is your entire idempotency strategy — it costs one DB round-trip.</p><p><strong>Webhook signature verification:</strong> EPI signs webhook payloads. Verify the signature before publishing to Pub/Sub. A message that fails signature verification should go to a security alert queue, not the DLQ — it's potentially a spoofed webhook attempt.</p><p><strong>Order fulfillment sequencing:</strong> Publish the fulfillment event to a separate Pub/Sub topic after writing COMPLETED to AlloyDB. Never fulfill the order in the same transaction as the state write — the fulfillment service (email, inventory, logistics) may fail, and you cannot roll back SCT Inst.</p>`, chips:[{t:'UPDATE WHERE status=PENDING only',c:'chip-red'},{t:'Verify EPI webhook signature first',c:'chip-amber'},{t:'Fulfill order via separate topic',c:'chip-orange'},{t:'Invalid sig → security alert, not DLQ',c:'chip-purple'},{t:'State write and fulfill: separate concerns',c:'chip-teal'}]},
+
+    'alloydb': {tag:'GCP · State Store', title:'AlloyDB — Payment State Machine', body:`<p>AlloyDB for PostgreSQL is the payment state store. It provides ACID transactions (critical for the idempotency check pattern), PostgreSQL compatibility (your team already knows the query model), and 4x read performance over Cloud SQL with a 99.99% SLA.</p><p><strong>Critical schema note for iDEAL migration:</strong> Add a <code>payment_scheme VARCHAR(10) DEFAULT 'WERO'</code> column. iDEAL and Wero transaction IDs have different formats — any unique index or pattern-match on transaction ID format will fail silently when Wero transactions start flowing alongside legacy iDEAL records in Q2 2026.</p><p><strong>State machine transitions:</strong> <code>CREATED → AUTHENTICATION_PENDING → COMPLETED | FAILED | EXPIRED</code>. Use <code>SELECT FOR UPDATE</code> row-level locking for concurrent webhook delivery — two deliveries for the same payment queue at the lock, and only the first writer succeeds.</p><p><strong>Indexes required:</strong> Unique index on <code>idempotency_key</code>, unique index on <code>epi_transaction_id</code>, composite index on <code>(status, created_at)</code> for the stale-payment scanner, partial index on <code>WHERE status IN ('CREATED', 'AUTHENTICATION_PENDING')</code> for the reconciliation poller.</p><p><strong>AlloyDB failover:</strong> Failover takes 30–60 seconds. During failover, idempotency key writes fail. Implement a circuit breaker in Payment Init Service to queue requests in Memorystore during AlloyDB unavailability, accepting a small durability risk to prevent cascade failures.</p>`, chips:[{t:'payment_scheme column: critical for migration',c:'chip-red'},{t:'SELECT FOR UPDATE for idempotency',c:'chip-amber'},{t:'Unique idx on idempotency_key + epi_txn_id',c:'chip-orange'},{t:'Partial index for stale-payment scanner',c:'chip-teal'},{t:'Circuit breaker on failover',c:'chip-purple'},{t:'99.99% SLA + 4x read perf vs Cloud SQL',c:'chip-blue'}]},
+
+    'recon_service': {tag:'GCP · Reconciliation', title:'Reconciliation Service — Cloud Run Jobs', body:`<p>Three reconciliation jobs that run on Cloud Scheduler → Cloud Run Jobs. Each one matches a different potential gap in the payment pipeline.</p><p><strong>Job 1 — EPI vs AlloyDB gap:</strong> Payments that EPI has in COMPLETED state but AlloyDB still shows as AUTHENTICATION_PENDING. This happens when the webhook was delivered but your handler failed silently. Query EPI's GET /payments endpoint for any payment older than 5 minutes without a terminal status. Alert if any gap found — this is a missed webhook scenario.</p><p><strong>Job 2 — AlloyDB vs SCT Inst gap:</strong> Payments where AlloyDB shows COMPLETED but the SCT Inst settlement file does not contain a matching transaction. This is rare but catastrophic — it means EPI reported success but funds never moved. Requires immediate ops escalation and scheme-level investigation.</p><p><strong>Job 3 — Transaction ID format validation:</strong> During the iDEAL→Wero migration, scan for any AlloyDB record where the transaction ID format does not match the expected Wero pattern. Silent format mismatches here mean your downstream recon and reporting will break without any error.</p>`, chips:[{t:'EPI vs AlloyDB: webhook miss detection',c:'chip-amber'},{t:'AlloyDB vs SCT Inst: funds gap',c:'chip-red'},{t:'TxnID format validation: migration guard',c:'chip-orange'},{t:'Cloud Scheduler: hourly + daily',c:'chip-teal'},{t:'Gap &gt; €0 after 4hrs = P1',c:'chip-purple'}]},
+
+    'bigquery': {tag:'GCP · Analytics', title:'BigQuery — Settlement &amp; Analytics', body:`<p>BigQuery serves two distinct purposes in the Wero stack: real-time settlement reporting (matching EPI settlement files to AlloyDB records to AlloyDB records to merchant payouts) and operational analytics (payment funnel, fraud score distribution, webhook latency).</p><p><strong>Data pipeline:</strong> Cloud Run → Pub/Sub → Dataflow streaming insert → BigQuery. PII fields (consumer phone number hash, merchant IBAN) are tokenized before they reach BigQuery — GDPR requires this, and BigQuery should never hold raw consumer contact data.</p><p><strong>Key analytics tables:</strong> <code>payment_events</code> (every state transition with timestamp), <code>epi_settlement_files</code> (parsed EPI settlement CSVs), <code>webhook_deliveries</code> (EPI webhook attempts and your ACK times), <code>fraud_scores</code> (Vertex AI predictions and outcomes for model calibration).</p><p><strong>Retention:</strong> 90 days hot in BigQuery, then export to GCS Archive via scheduled Dataflow job. 7-year total retention required under PSD2 Article 25.</p>`, chips:[{t:'PII tokenization before ingest',c:'chip-red'},{t:'EPI settlement file parsing',c:'chip-amber'},{t:'Webhook delivery analytics',c:'chip-teal'},{t:'90 days hot → GCS Archive',c:'chip-gray'},{t:'7yr retention: PSD2 Art.25',c:'chip-purple'}]},
+
+    'gcs': {tag:'GCP · Storage', title:'Cloud Storage — Audit &amp; Compliance Archive', body:`<p>Cloud Storage holds EPI settlement files (the authoritative record of which Wero transactions EPI has settled), long-term payment audit logs, and signed payment confirmations. These files are the evidence layer for regulatory examinations and dispute resolution.</p><p><strong>Retention and WORM:</strong> Object Lifecycle Management to transition to Archive storage class after 90 days. Object Lock (WORM) prevents deletion — including by Cloud admins. 7-year minimum retention per PSD2. Monthly integrity checks verify archive volume matches expected record counts.</p><p><strong>CMEK required:</strong> Use Customer-Managed Encryption Keys (Cloud KMS) for all settlement files and audit logs. DNB and PSD2 require that encryption keys are under the control of the regulated entity, not solely the cloud provider.</p><p><strong>Access control:</strong> Payment-recon service account gets read access to settlement files. No human access to raw settlement files except via the ops dashboard with full audit logging enabled. Any direct GCS access triggers an alert.</p>`, chips:[{t:'EPI settlement files: source of truth',c:'chip-amber'},{t:'Object Lock WORM: 7yr',c:'chip-red'},{t:'CMEK required for PSD2/DNB',c:'chip-orange'},{t:'No human access without audit log',c:'chip-purple'},{t:'Monthly integrity verification',c:'chip-teal'}]},
+
+    'secret_manager': {tag:'GCP · Security', title:'Secret Manager — Credential Store', body:`<p>Stores EPI API client credentials, mTLS private keys for EPI connectivity, and PSP webhook signing keys. These are the most operationally sensitive secrets in your Wero infrastructure — a certificate expiry that takes Apigee offline means zero Wero payments until rotation is complete.</p><p><strong>Access pattern:</strong> Cloud Run services access secrets via Workload Identity Federation → Secret Manager. No static API keys in environment variables or config maps. Each service account gets access only to the specific secrets it needs — the webhook handler does not need the EPI API key; the payment init service does not need the signing key for validating incoming webhooks.</p><p><strong>Certificate rotation automation:</strong> Set up a Cloud Functions workflow triggered by Secret Manager pre-expiry notifications. At 30 days: alert to Slack. At 14 days: PagerDuty. At 7 days: mandatory rotation scheduled. Automate the reload of Apigee's truststore after rotation and verify connectivity against EPI's test endpoint before marking rotation complete.</p>`, chips:[{t:'EPI API key + mTLS certs',c:'chip-red'},{t:'Workload Identity — no static keys',c:'chip-amber'},{t:'30-day pre-expiry alert',c:'chip-orange'},{t:'Automate Apigee reload after rotation',c:'chip-teal'},{t:'Least-privilege per service account',c:'chip-purple'}]},
+
+    'cloud_kms': {tag:'GCP · Security', title:'Cloud KMS — Envelope Encryption', body:`<p>HSM-backed key management for envelope encryption of payment records in AlloyDB and audit files in Cloud Storage. Separate key rings per system — AlloyDB payment state, Pub/Sub messages, and GCS audit archive each use different keys. This limits blast radius if one key is compromised.</p><p><strong>Regulatory requirement:</strong> DNB and PSD2 require that payment data encryption keys are under the control of the regulated entity. CMEK with Cloud KMS satisfies this requirement. If you use Google-managed keys, document this as a risk acceptance in your regulatory submissions.</p><p><strong>Key rotation:</strong> Automatic rotation every 365 days for payment data keys. This is rotation of the key encryption key (KEK) — data encrypted with the old DEK remains readable; the KEK rotation re-encrypts DEKs going forward.</p>`, chips:[{t:'HSM-backed keys required',c:'chip-red'},{t:'Separate key rings per system',c:'chip-amber'},{t:'CMEK for DNB/PSD2 compliance',c:'chip-orange'},{t:'Annual automatic rotation',c:'chip-teal'},{t:'Envelope encryption pattern',c:'chip-gray'}]},
+
+    'vpc_psc': {tag:'GCP · Networking', title:'VPC + Private Service Connect', body:`<p>All traffic from your Cloud Run services to AlloyDB, Pub/Sub, Secret Manager, and Cloud KMS traverses Private Service Connect endpoints — no public internet path. EPI API calls egress via Cloud NAT with a static IP address, which you register with EPI for their allowlist.</p><p><strong>EPI webhook ingestion:</strong> EPI Central Services calls your webhook endpoint from a published set of egress IPs. Cloud Armor enforces the IP allowlist. Your webhook endpoint is exposed publicly (necessarily — EPI calls it from outside your VPC), but Cloud Armor restricts it to EPI's IP ranges only.</p><p><strong>Latency consideration:</strong> PSC adds minimal latency (&lt;1ms) versus public endpoints but provides a significantly better security posture. For a system where 10-second total settlement time is the SLA, every millisecond matters — but PSC is not the bottleneck.</p>`, chips:[{t:'PSC for all GCP service traffic',c:'chip-teal'},{t:'Static IP via Cloud NAT for EPI',c:'chip-amber'},{t:'Webhook endpoint: Cloud Armor gated',c:'chip-red'},{t:'&lt;1ms PSC overhead',c:'chip-gray'}]},
+
+    'iam_wi': {tag:'GCP · Identity', title:'IAM + Workload Identity Federation', body:`<p>Each Cloud Run service gets a dedicated service account with the minimum permissions needed. The webhook handler service account can publish to Pub/Sub and read from Secret Manager (signing key only). The payment init service account can call AlloyDB and write to Pub/Sub. Neither can access the other's resources.</p><p><strong>Workload Identity:</strong> Cloud Run services use Workload Identity to automatically obtain short-lived tokens for GCP API calls. No service account key files. No static credentials. Tokens expire every hour and are automatically refreshed — a compromised token has a maximum 1-hour blast radius.</p><p><strong>Audit logging:</strong> Enable Data Access audit logs for Secret Manager (log every secret version access), AlloyDB (log every schema-changing DDL statement), and Cloud Storage (log every read of settlement files). These logs are your evidence trail for regulatory examinations.</p>`, chips:[{t:'Dedicated SA per service',c:'chip-amber'},{t:'Workload Identity — no key files',c:'chip-red'},{t:'1-hour token expiry',c:'chip-teal'},{t:'Data Access audit logs: required',c:'chip-orange'},{t:'Least-privilege bindings',c:'chip-purple'}]},
+
+    'dataflow': {tag:'GCP · Data Processing', title:'Dataflow — Streaming Fraud Feature Pipeline', body:`<p>Streaming pipeline between Pub/Sub and both Memorystore (real-time velocity features) and BigQuery (batch feature store for model training). Processes every payment event to extract fraud signals: transaction velocity per consumer, amount deviation from baseline, device fingerprint changes, geographic anomalies.</p><p><strong>PII handling:</strong> Consumer phone numbers and IBANs are tokenized by Dataflow before any data reaches BigQuery or Vertex AI feature store. Raw identifiers never leave the Pub/Sub → Dataflow boundary in plaintext.</p><p><strong>Model drift alert:</strong> During the iDEAL→Wero migration in NL (Q2 2026), the transaction mix changes. Dutch e-commerce traffic that previously came through iDEAL flows through Wero. P2P transactions from existing Wero users in DE/FR/BE mix in. Your fraud model was trained on one traffic profile — monitor precision and recall weekly during migration and retrain on Wero-native data before the migration completes.</p>`, chips:[{t:'PII tokenization before BigQuery',c:'chip-red'},{t:'Real-time features → Memorystore',c:'chip-amber'},{t:'Batch features → BigQuery',c:'chip-teal'},{t:'Model drift: monitor during NL migration',c:'chip-orange'},{t:'Retrain on Wero-native data',c:'chip-purple'}]},
+
+    'vertex_ai': {tag:'GCP · AI', title:'Vertex AI — Fraud Detection', body:`<p>Online prediction endpoint for the fraud scoring model. Must be called synchronously before the EPI API call — SCT Inst is irrevocable, so fraud checks must happen before funds move, not after.</p><p><strong>Latency SLA:</strong> Online prediction must return in under 50ms P99. If Vertex AI adds more than 200ms to the critical path, you will see conversion drop as consumers wait for the redirect to appear. Monitor prediction latency as a first-class payment SLA metric.</p><p><strong>Fail-open on timeout:</strong> If Vertex AI times out, fail open — allow the payment with an elevated monitoring flag. A false positive on a legitimate Wero payment is more damaging to your NPS than a false negative on a fraudulent one (purchase protection handles consumer remediation for fraud). Your model accuracy drives this decision.</p><p><strong>Score thresholds:</strong> Typical pattern: score &gt; 0.8 → decline | 0.5–0.8 → step-up auth (request additional verification) | &lt; 0.5 → proceed. Calibrate thresholds on your actual Wero traffic — iDEAL-calibrated thresholds may produce incorrect false positive rates on Wero's different traffic mix.</p>`, chips:[{t:'Call BEFORE EPI API — irrevocable rail',c:'chip-red'},{t:'&lt;50ms P99 latency SLA',c:'chip-amber'},{t:'Fail open on timeout',c:'chip-orange'},{t:'Recalibrate for Wero traffic mix',c:'chip-purple'},{t:'Step-up auth for 0.5-0.8 range',c:'chip-teal'}]},
+
+    'memorystore': {tag:'GCP · Cache', title:'Memorystore Redis — Velocity Checks', body:`<p>Sub-millisecond velocity check store. The pattern: on every payment initiation, increment a counter for the consumer (keyed by hashed phone number) with a sliding window TTL. If the counter exceeds your velocity threshold (e.g., 5 payments in 60 seconds from the same consumer), flag for step-up auth or decline.</p><p><strong>Latency:</strong> Memorystore Redis returns in under 5ms from Cloud Run in the same region. This is fast enough to be on the critical path without impacting payment initiation latency.</p><p><strong>Failover design:</strong> If Memorystore primary fails (Redis replica promotion takes 10–30 seconds), velocity checks should default to ALLOW, not BLOCK. Blocking all payments during a Redis failover is worse than accepting some potentially fraudulent transactions. The BigQuery fraud analytics pipeline provides retrospective detection during the gap.</p>`, chips:[{t:'Sliding window velocity counter',c:'chip-amber'},{t:'Keyed by hashed phone number',c:'chip-gray'},{t:'&lt;5ms — safe for critical path',c:'chip-green'},{t:'Failover: default to ALLOW',c:'chip-orange'},{t:'Retrospective detection via BigQuery',c:'chip-teal'}]},
+
+    'cloud_monitoring': {tag:'GCP · Observability', title:'Cloud Monitoring — Payment SLOs', body:`<p>Key SLO targets for a Wero integration: <strong>Payment initiation latency</strong> &lt;500ms P99 (merchant-facing API), <strong>Webhook processing latency</strong> &lt;2 seconds from EPI delivery to AlloyDB write, <strong>Reconciliation gap</strong> &lt;€0 within 4 hours of any settlement file, <strong>Webhook delivery success rate</strong> &gt;99.5% (EPI fires, you ACK with 200).</p><p><strong>Critical alert: AUTHENTICATION_PENDING payments &gt;5 minutes old.</strong> In normal operation, a Wero payment should reach COMPLETED or FAILED within 3 minutes (consumer auth timeout). Any payment stuck in AUTHENTICATION_PENDING for more than 5 minutes without a terminal status means a webhook was missed or your handler failed. This alert is your earliest warning of a webhook delivery problem.</p><p><strong>EPI API error rate:</strong> Alert if EPI API errors exceed 1% over a 5-minute window. This may indicate an EPI service degradation or your mTLS certificate is approaching expiry (EPI starts returning auth errors before certificate expiry date).</p>`, chips:[{t:'Initiation &lt;500ms P99',c:'chip-green'},{t:'Webhook &lt;2s end-to-end',c:'chip-teal'},{t:'PENDING &gt;5min = webhook miss alert',c:'chip-red'},{t:'EPI error rate &gt;1% = P1',c:'chip-amber'},{t:'Recon gap: &lt;€0 within 4hrs',c:'chip-orange'}]},
+
+    'cloud_logging': {tag:'GCP · Observability', title:'Cloud Logging — Structured Audit Trail', body:`<p>Every log line in the Wero payment path must include: <code>epi_transaction_id</code>, <code>merchant_id</code>, <code>status</code>, <code>timestamp</code>, and a correlation <code>trace_id</code>. This is the minimum context needed to reconstruct a complete payment history from logs alone during a regulatory examination or incident.</p><p><strong>PII in logs:</strong> Never log raw consumer phone numbers or IBANs. Log only the hashed phone number and a tokenized IBAN reference. The raw values exist only in AlloyDB (encrypted) and EPI's systems.</p><p><strong>Retention:</strong> 90 days in Cloud Logging, then export to BigQuery (90 days queryable) and GCS Archive (7 years). The GCS archive is your PSD2 compliance artifact — it must be tamper-evident. Use Object Lock.</p>`, chips:[{t:'epi_transaction_id in every log line',c:'chip-amber'},{t:'No raw phone/IBAN in logs',c:'chip-red'},{t:'90d hot → BigQuery → GCS Archive',c:'chip-teal'},{t:'Object Lock on archive',c:'chip-orange'},{t:'Trace ID for end-to-end correlation',c:'chip-purple'}]},
+
+    'cloud_trace': {tag:'GCP · Observability', title:'Cloud Trace — Distributed Tracing', body:`<p>Propagate W3C <code>traceparent</code> headers through every hop: merchant API call → Apigee → Cloud Run → Pub/Sub → webhook handler → AlloyDB write. For EPI API calls, include the trace ID in request headers (EPI may not propagate it, but having it in your egress logs ties your trace to EPI's request logs if needed for incident investigation).</p><p><strong>Key spans to instrument:</strong> EPI API call latency (is EPI slow or are you?), AlloyDB write latency (is state persistence the bottleneck?), Pub/Sub publish latency, webhook consumer processing time, Vertex AI prediction latency.</p><p><strong>Trace sampling:</strong> 100% sampling for payments — volume is low enough that full trace capture is affordable, and every payment trace is potentially needed for dispute resolution or regulatory investigation.</p>`, chips:[{t:'W3C traceparent propagated everywhere',c:'chip-teal'},{t:'100% sampling — every payment',c:'chip-amber'},{t:'EPI API call span: is EPI slow?',c:'chip-blue'},{t:'Vertex AI prediction span',c:'chip-purple'},{t:'Ties to EPI incident investigation',c:'chip-gray'}]}
+};
+
+function om(id){
+    const d=D[id]; if(!d) return;
+    document.getElementById('mtag').textContent=d.tag;
+    document.getElementById('mtitle').textContent=d.title;
+    let h=d.body;
+    if(d.chips && d.chips.length){
+        h+='<div class="chips">';
+        d.chips.forEach(c=>{h+=`<span class="chip ${c.c}">${c.t}</span>`;});
+        h+='</div>';
+    }
+    document.getElementById('mbody').innerHTML=h;
+    document.getElementById('mbg').classList.add('open');
+    document.body.style.overflow='hidden';
+}
+function cm(){document.getElementById('mbg').classList.remove('open');document.body.style.overflow='';}
+function cbg(e){if(e.target===document.getElementById('mbg'))cm();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')cm();});
+
+function filterStage(stage){
+    document.querySelectorAll('.stage-btn').forEach(b=>{
+        b.classList.toggle('active',b.getAttribute('onclick').includes(`'${stage}'`));
+    });
+    document.querySelectorAll('.stage-title').forEach(t=>t.classList.remove('active'));
+    const stEl=document.getElementById('st-'+stage);
+    if(stEl)stEl.classList.add('active');
+
+    const allSections=document.querySelectorAll('[data-section]');
+    if(stage==='compare'){
+        allSections.forEach(s=>{
+            s.classList.remove('filtering');
+            s.querySelectorAll('.flow-area[data-stage]').forEach(f=>f.classList.remove('stage-visible'));
+            s.querySelectorAll('[data-stage-header]').forEach(h=>h.classList.remove('stage-visible'));
+        });
+        return;
+    }
+    allSections.forEach(s=>{
+        s.classList.add('filtering');
+        let hasVisible=false;
+        s.querySelectorAll('.flow-area[data-stage]').forEach(f=>{
+            const match=f.getAttribute('data-stage')===stage;
+            f.classList.toggle('stage-visible',match);
+            if(match)hasVisible=true;
+        });
+        const stageHeaders=s.querySelectorAll('[data-stage-header]');
+        if(stageHeaders.length>0){
+            stageHeaders.forEach(h=>{
+                const hStage=h.getAttribute('data-stage-header');
+                h.classList.toggle('stage-visible', hStage===stage && hasVisible);
+            });
+        }
+    });
+    window.scrollTo({top:document.querySelector('.stage-bar').offsetTop-10,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
