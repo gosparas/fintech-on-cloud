@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Wero — Issuer-Side Production Architecture | Fintech on Cloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet"/>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#FFFFFF;font-family:'Outfit',sans-serif;color:#18181B;min-height:100vh;padding:0 0 60px;min-width:320px}
+        .header{background:#18181B;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+        .brand{font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#F8FAFC}
+        .brand span{color:#34D399}
+        .back{font-family:'JetBrains Mono',monospace;font-size:11px;color:#52525B;text-decoration:none;letter-spacing:0.1em}
+        .back:hover{color:#94A3B8}
+        .hero{text-align:center;padding:32px 24px 20px;max-width:900px;margin:0 auto}
+        .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#0891B2;text-transform:uppercase;margin-bottom:8px}
+        .hero h1{font-family:'Fraunces',serif;font-size:clamp(20px,3.5vw,32px);font-weight:700;color:#18181B;line-height:1.15;margin-bottom:8px}
+        .hero p{font-size:13px;color:#64748B;margin-bottom:16px}
+        .tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+        .tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:3px;letter-spacing:0.1em;text-transform:uppercase}
+        .tag-blue{background:#DBEAFE;color:#1D4ED8}.tag-green{background:#D1FAE5;color:#065F46}.tag-red{background:#FEE2E2;color:#B91C1C}.tag-purple{background:#EDE9FE;color:#4C1D95}.tag-cyan{background:#CFFAFE;color:#0E7490}.tag-amber{background:#FEF3C7;color:#78350F}.tag-orange{background:#FFEDD5;color:#C2410C}.tag-gray{background:#F1F5F9;color:#475569}
+        .hint{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#94A3B8;padding:9px;background:#F8FAFC;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;letter-spacing:0.05em}
+        .section{max-width:100%;margin:0 auto;padding:20px 12px 0}
+        .section[data-section].filtering .flow-area[data-stage]{display:none}
+        .section[data-section].filtering .flow-area[data-stage].stage-visible{display:block}
+        .section.filtering .section-header,.section.filtering > .banner{display:none}
+        .section.filtering .section-header.stage-visible{display:flex}
+        .section-header.stage-header{display:none}
+        .section.filtering .section-header.default-header{display:none}
+        .section-header{display:flex;align-items:flex-start;margin-bottom:12px;padding:12px 18px;border-radius:8px;border-left:4px solid}
+        .section-header h2{font-family:'Fraunces',serif;font-size:16px;font-weight:700;margin-bottom:3px}
+        .section-header p{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em}
+        .sh-wero{background:#ECFEFF;border-color:#0891B2}.sh-wero h2{color:#0E4F6B}.sh-wero p{color:#0891B2}
+        .sh-gcp{background:#E6F2FF;border-color:#3B82F6}.sh-gcp h2{color:#1D4ED8}.sh-gcp p{color:#3B82F6}
+        .sh-fail{background:#FFF1F2;border-color:#E11D48}.sh-fail h2{color:#881337}.sh-fail p{color:#E11D48}
+        .sh-ops{background:#FFFBEB;border-color:#D97706}.sh-ops h2{color:#78350F}.sh-ops p{color:#B45309}
+        .flow-area{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin-bottom:6px;border-left:4px solid #E2E8F0}
+        .flow-area.wallet-row{border-left-color:#0891B2}.flow-area.ledger-row{border-left-color:#059669}.flow-area.clearing-row{border-left-color:#3B82F6}.flow-area.ops-row{border-left-color:#D97706}.flow-area.fail-row{border-left-color:#E11D48}
+        .flow-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#94A3B8;margin-bottom:10px}
+        .flow-label.wallet{color:#0891B2}.flow-label.ledger{color:#059669}.flow-label.clearing{color:#3B82F6}.flow-label.ops{color:#D97706}.flow-label.fail{color:#E11D48}
+        .flow-row{display:flex;align-items:center;flex-wrap:wrap;row-gap:10px;column-gap:0px;padding-bottom:4px}
+        .box{flex-shrink:2;flex-grow:0;border-radius:7px;padding:8px 10px;cursor:pointer;border:2px solid;transition:transform 0.1s,box-shadow 0.1s;min-width:90px;max-width:152px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.10)}
+        .box:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,0.15)}
+        .bt{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;margin-bottom:3px;line-height:1.25}
+        .bs{font-family:'JetBrains Mono',monospace;font-size:8px;line-height:1.4}
+        .box-cyan{background:#0E4F6B;border-color:#0891B2}.box-cyan .bt{color:#FFFFFF}.box-cyan .bs{color:#A5F3FC}
+        .box-green{background:#14532D;border-color:#16A34A}.box-green .bt{color:#FFFFFF}.box-green .bs{color:#BBF7D0}
+        .box-blue{background:#1E40AF;border-color:#1D4ED8}.box-blue .bt{color:#FFFFFF}.box-blue .bs{color:#BFDBFE}
+        .box-amber{background:#92400E;border-color:#B45309}.box-amber .bt{color:#FFFFFF}.box-amber .bs{color:#FDE68A}
+        .box-purple{background:#4C1D95;border-color:#6D28D9}.box-purple .bt{color:#FFFFFF}.box-purple .bs{color:#DDD6FE}
+        .box-red{background:#991B1B;border-color:#DC2626}.box-red .bt{color:#FFFFFF}.box-red .bs{color:#FECACA}
+        .box-indigo{background:#312E81;border-color:#4F46E5}.box-indigo .bt{color:#FFFFFF}.box-indigo .bs{color:#C7D2FE}
+        .box-ext{background:#374151;border-color:#6B7280;border-style:dashed}.box-ext .bt{color:#F9FAFB}.box-ext .bs{color:#D1D5DB}
+        .box-rose{background:#881337;border-color:#E11D48}.box-rose .bt{color:#FFFFFF}.box-rose .bs{color:#FECDD3}
+        .box-orange{background:#7C2D12;border-color:#EA580C}.box-orange .bt{color:#FFFFFF}.box-orange .bs{color:#FDBA74}
+        .arr{flex-shrink:1;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 6px;min-width:64px;max-width:96px;position:relative;overflow:visible}
+        .arr-line{height:2px;width:100%;position:relative;flex-shrink:0}
+        .arr-line::after{content:'▶';position:absolute;right:-7px;top:50%;transform:translateY(-50%);font-size:9px}
+        .arr-sync .arr-line{background:#0891B2}.arr-sync .arr-line::after{color:#0891B2}
+        .arr-async .arr-line{background:transparent;border-top:2px dashed #0891B2}.arr-async .arr-line::after{color:#0891B2}
+        .arr-event .arr-line{background:transparent;border-top:2px dashed #059669}.arr-event .arr-line::after{color:#059669}
+        .arr-fail .arr-line{background:transparent;border-top:2px dashed #E11D48}.arr-fail .arr-line::after{color:#E11D48}
+        .arr-label{font-family:'JetBrains Mono',monospace;font-size:8px;margin-top:4px;white-space:normal;text-align:center;width:100%;line-height:1.3;word-break:break-word}
+        .arr-sync .arr-label{color:#0E7490}.arr-async .arr-label{color:#0E7490}.arr-event .arr-label{color:#065F46}.arr-fail .arr-label{color:#E11D48}
+        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+        .modal-bg.open{display:flex}
+        .modal{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.12)}
+        .modal-head{padding:18px 22px 14px;border-bottom:1px solid #F1F5F9;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:#fff;z-index:1}
+        .modal-hl{flex:1}.modal-tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#0891B2;margin-bottom:4px}
+        .modal-title{font-family:'Fraunces',serif;font-size:19px;font-weight:700;color:#18181B;line-height:1.2}
+        .modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:#94A3B8;flex-shrink:0;line-height:1}.modal-x:hover{color:#18181B}
+        .modal-body{padding:18px 22px 22px}
+        .modal-body p{font-family:'Outfit',sans-serif;font-size:13px;color:#475569;line-height:1.75;margin-bottom:12px}
+        .modal-body p:last-child{margin-bottom:0}
+        .modal-body strong{color:#18181B;font-weight:600}
+        .modal-body code{font-family:'JetBrains Mono',monospace;font-size:11px;background:#F1F5F9;padding:1px 5px;border-radius:3px;color:#7C3AED}
+        .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+        .chip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:4px}
+        .chip-blue{background:#DBEAFE;color:#1E3A8A}.chip-teal{background:#D1FAE5;color:#064E3B}.chip-amber{background:#FEF3C7;color:#78350F}.chip-gray{background:#F1F5F9;color:#475569}.chip-red{background:#FEE2E2;color:#B91C1C}.chip-purple{background:#EDE9FE;color:#4C1D95}.chip-orange{background:#FFEDD5;color:#C2410C}.chip-cyan{background:#CFFAFE;color:#0E7490}.chip-green{background:#D1FAE5;color:#065F46}.chip-indigo{background:#E0E7FF;color:#3730A3}
+        .stage-bar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:12px 14px 6px;max-width:1300px;margin:0 auto}
+        .stage-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:6px 14px;border-radius:6px;border:1.5px solid #E2E8F0;background:#FFFFFF;color:#64748B;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;text-transform:uppercase}
+        .stage-btn:hover{border-color:#94A3B8;color:#18181B}
+        .stage-btn.active{background:#18181B;color:#F8FAFC;border-color:#18181B}
+        .stage-divider{width:1px;height:24px;background:#E2E8F0;align-self:center}
+        .stage-title{text-align:center;padding:8px 14px 0;max-width:1300px;margin:0 auto;display:none}
+        .stage-title.active{display:block}
+        .stage-title h3{font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:#18181B;margin-bottom:2px}
+        .stage-title p{font-family:'JetBrains Mono',monospace;font-size:10px;color:#94A3B8;letter-spacing:0.08em}
+        .legend{max-width:1300px;margin:16px auto 0;padding:0 14px}
+        .legend-inner{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center}
+        .li{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#64748B}
+        .lb{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+        .ld{width:24px;height:2px}
+        .ld-s{background:#0891B2}.ld-a{background:transparent;border-top:2px dashed #0891B2}.ld-f{background:transparent;border-top:2px dashed #E11D48}
+        .footer{text-align:center;margin-top:36px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#CBD5E1;padding:16px;background:#18181B}
+        .footer a{color:#34D399;text-decoration:none}
+    </style>
+</head>
+<body>
+
+<!-- MODAL -->
+<div class="modal-bg" id="mbg" onclick="cbg(event)">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-hl"><div class="modal-tag" id="mtag"></div><div class="modal-title" id="mtitle"></div></div>
+            <button class="modal-x" onclick="cm()">✕</button>
+        </div>
+        <div class="modal-body" id="mbody"></div>
+    </div>
+</div>
+
+<div class="header">
+    <div class="brand">Fintech <span>on</span> Cloud</div>
+    <a class="back" href="https://fintechoncloud.substack.com">← Back to blog</a>
+</div>
+
+<div class="hero">
+    <div class="eyebrow">// Production Architecture · Post #6 · European Payment Series · Issuer Perspective</div>
+    <h1>Wero — Issuer-Side Production Architecture</h1>
+    <p>Architecture from the <strong>issuing bank</strong> viewpoint — what <em>you</em> build and operate. <strong>Solid-border boxes</strong> = your systems. <strong>Dashed-border boxes</strong> = external parties you do not control. Click any component for production details.</p>
+    <div class="tags">
+        <span class="tag tag-cyan">Wero/SEPA Instant</span>
+        <span class="tag tag-blue">GCP Architecture</span>
+        <span class="tag tag-green">Ledger Design</span>
+        <span class="tag tag-red">Failure Modes</span>
+        <span class="tag tag-amber">Real-Time Payments</span>
+        <span class="tag tag-purple">State Machine</span>
+    </div>
+</div>
+
+<div class="hint">Click any component for production details • Use tabs below to filter by layer or failure modes</div>
+
+<!-- STAGE FILTER BAR -->
+<div class="stage-bar" id="stageBar">
+    <button class="stage-btn active" data-filter="all" onclick="filterStage('all')">Show All</button>
+    <div class="stage-divider"></div>
+    <button class="stage-btn" data-filter="wallet" onclick="filterStage('wallet')">💳 Wallet Layer</button>
+    <button class="stage-btn" data-filter="ledger" onclick="filterStage('ledger')">📊 Ledger Layer</button>
+    <button class="stage-btn" data-filter="clearing" onclick="filterStage('clearing')">⚡ Clearing Layer</button>
+    <button class="stage-btn" data-filter="ops" onclick="filterStage('ops')">🔧 Operational</button>
+    <div class="stage-divider"></div>
+    <button class="stage-btn" data-filter="failure" onclick="filterStage('failure')">✕ Failure Modes</button>
+</div>
+
+<!-- STAGE TITLES -->
+<div class="stage-title" id="st-wallet"><h3>💳 Wallet Layer</h3><p>Consumer entry points → alias resolution → SCA → idempotency</p></div>
+<div class="stage-title" id="st-ledger"><h3>📊 Ledger Layer</h3><p>Cloud Spanner hot path → AlloyDB audit trail → liquidity management</p></div>
+<div class="stage-title" id="st-clearing"><h3>⚡ Clearing Layer</h3><p>PACS.008 → CSM → PACS.002 → timeout → fallback</p></div>
+<div class="stage-title" id="st-ops"><h3>🔧 Operational Layer</h3><p>Fraud scoring → compliance → monitoring → reconciliation</p></div>
+<div class="stage-title" id="st-failure"><h3>✕ Production Failure Modes</h3><p>What breaks, why it breaks, how to detect it, how to recover</p></div>
+
+<!-- ===== SECTIONS ===== -->
+<div class="section" data-section="main">
+
+    <!-- WALLET LAYER -->
+    <div class="section-header sh-wero default-header"><div><h2>💳 Wallet Layer</h2><p>Consumer-facing transaction initiation & alias management</p></div></div>
+
+    <div class="flow-area wallet-row" data-stage="wallet">
+        <div class="flow-label wallet">ENTRY POINTS & AUTHENTICATION</div>
+        <div class="flow-row">
+            <div class="box box-ext" onclick="om('mobile_app')"><div class="bt">Mobile App</div><div class="bs">Bank native<br/>Wero wallet UI</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">phone lookup</div></div>
+            <div class="box box-cyan" onclick="om('alias_resolver')"><div class="bt">Alias Resolver</div><div class="bs">Redis · phone→IBAN<br/>24h TTL · 3 max</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">IBAN found</div></div>
+            <div class="box box-purple" onclick="om('strong_auth')"><div class="bt">SCA / 2FA</div><div class="bs">PSD2 biometric<br/>3 attempts max</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">auth OK</div></div>
+            <div class="box box-cyan" onclick="om('wallet_api')"><div class="bt">Wallet API</div><div class="bs">Cloud Run<br/>stateless · autoscale</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">deduplicate</div></div>
+            <div class="box box-green" onclick="om('idempotency')"><div class="bt">Idempotency</div><div class="bs">Redis key gate<br/>write-before-call</div></div>
+        </div>
+    </div>
+
+    <!-- LEDGER LAYER -->
+    <div class="section-header sh-gcp default-header"><div><h2>📊 Ledger Layer</h2><p>Real-time atomic balance management — the irreversibility layer</p></div></div>
+
+    <div class="flow-area ledger-row" data-stage="ledger">
+        <div class="flow-label ledger">HOT PATH — CLOUD SPANNER (ACID, MULTI-REGION)</div>
+        <div class="flow-row">
+            <div class="box box-green" onclick="om('lock_service')"><div class="bt">Lock Service</div><div class="bs">Per-account mutex<br/>5s timeout max</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">acquire lock</div></div>
+            <div class="box box-green" onclick="om('cloud_spanner')"><div class="bt">Cloud Spanner</div><div class="bs">ACID ledger<br/>&lt;10ms consistency</div></div>
+            <div class="arr arr-event"><div class="arr-line"></div><div class="arr-label">atomic debit<br/>+ event emit</div></div>
+            <div class="box box-indigo" onclick="om('pubsub_topic')"><div class="bt">Pub/Sub</div><div class="bs">Event stream<br/>ordering keys</div></div>
+        </div>
+    </div>
+
+    <div class="flow-area ledger-row" data-stage="ledger">
+        <div class="flow-label ledger">COLD PATH — ALLOYDB (AUDIT, COMPLIANCE, REPLAY)</div>
+        <div class="flow-row">
+            <div class="box box-green" onclick="om('alloydb')"><div class="bt">AlloyDB</div><div class="bs">Immutable audit<br/>7-year retention</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">every state<br/>transition</div></div>
+            <div class="box box-amber" onclick="om('liquidity')"><div class="bt">Liquidity Monitor</div><div class="bs">Prefund balance<br/>alert 20%/10%/5%</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">poll 60s</div></div>
+            <div class="box box-amber" onclick="om('treasury')"><div class="bt">Treasury Alerts</div><div class="bs">Escalate at 5%<br/>request funding</div></div>
+        </div>
+    </div>
+
+    <!-- CLEARING LAYER -->
+    <div class="section-header sh-gcp default-header"><div><h2>⚡ Clearing Layer</h2><p>Real-time PACS message exchange with CSM — 10-second countdown</p></div></div>
+
+    <div class="flow-area clearing-row" data-stage="clearing">
+        <div class="flow-label clearing">PACS MESSAGE FLOW (10-SECOND TIMER STARTS)</div>
+        <div class="flow-row">
+            <div class="box box-blue" onclick="om('pubsub_consumer')"><div class="bt">Pub/Sub Consumer</div><div class="bs">Debit event<br/>async worker</div></div>
+            <div class="arr arr-event"><div class="arr-line"></div><div class="arr-label">msg: debit<br/>confirmed</div></div>
+            <div class="box box-blue" onclick="om('format_pacs')"><div class="bt">Format PACS.008</div><div class="bs">ISO 20022<br/>&lt;200ms build</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">HTTP POST</div></div>
+            <div class="box box-ext" onclick="om('csm')"><div class="bt">CSM</div><div class="bs">RT1 / TIPS<br/>&lt;10s SLA</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">PACS.002<br/>ACK/NACK</div></div>
+            <div class="box box-green" onclick="om('state_settled')"><div class="bt">Settled</div><div class="bs">Irrevocable<br/>funds moved</div></div>
+        </div>
+    </div>
+
+    <div class="flow-area clearing-row" data-stage="clearing">
+        <div class="flow-label clearing">TIMEOUT & RETRY LOGIC (CLOUD TASKS)</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('poll_15s')"><div class="bt">Poll @ 15s</div><div class="bs">Query CSM<br/>status API</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">still pending?</div></div>
+            <div class="box box-amber" onclick="om('retry_18s')"><div class="bt">Retry @ 18s</div><div class="bs">Re-query CSM<br/>last chance</div></div>
+            <div class="arr arr-fail"><div class="arr-line"></div><div class="arr-label">20s threshold<br/>breached</div></div>
+            <div class="box box-orange" onclick="om('fallback_sct')"><div class="bt">SCT Fallback</div><div class="bs">Standard SCT<br/>D+1 settlement</div></div>
+        </div>
+    </div>
+
+    <!-- OPERATIONAL LAYER -->
+    <div class="section-header sh-ops default-header"><div><h2>🔧 Operational Layer</h2><p>Fraud detection, compliance screening, monitoring, and reconciliation</p></div></div>
+
+    <div class="flow-area ops-row" data-stage="ops">
+        <div class="flow-label ops">FRAUD & COMPLIANCE (PARALLEL TO CLEARING — NEVER BLOCKS)</div>
+        <div class="flow-row">
+            <div class="box box-purple" onclick="om('vertex_ai')"><div class="bt">Vertex AI</div><div class="bs">Fraud score 0-100<br/>&lt;50ms inference</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">parallel<br/>scoring</div></div>
+            <div class="box box-purple" onclick="om('rules_engine')"><div class="bt">Rules Engine</div><div class="bs">Velocity checks<br/>geo anomaly</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">screen</div></div>
+            <div class="box box-purple" onclick="om('sanctions')"><div class="bt">Sanctions</div><div class="bs">OFAC / EU lists<br/>beneficiary check</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">log</div></div>
+            <div class="box box-amber" onclick="om('aml_logger')"><div class="bt">AML Logger</div><div class="bs">AlloyDB record<br/>immutable</div></div>
+        </div>
+    </div>
+
+    <div class="flow-area ops-row" data-stage="ops">
+        <div class="flow-label ops">OBSERVABILITY & RECONCILIATION</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('cloud_logging')"><div class="bt">Cloud Logging</div><div class="bs">Structured JSON<br/>trace IDs</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">all events</div></div>
+            <div class="box box-amber" onclick="om('monitoring')"><div class="bt">Monitoring</div><div class="bs">p50/p95/p99<br/>latency + SLOs</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">breach?</div></div>
+            <div class="box box-red" onclick="om('alerts')"><div class="bt">Alerts</div><div class="bs">&gt;8s latency<br/>&gt;0.1% pending</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">daily</div></div>
+            <div class="box box-amber" onclick="om('recon')"><div class="bt">Reconciliation</div><div class="bs">Ledger vs CSM<br/>zero tolerance</div></div>
+        </div>
+    </div>
+
+    <!-- FAILURE MODES -->
+    <div class="section-header sh-fail default-header"><div><h2>✕ Production Failure Modes</h2><p>What actually breaks in production — real scenarios with detection and recovery</p></div></div>
+
+    <div class="flow-area fail-row" data-stage="failure">
+        <div class="flow-label fail">FAILURE #1: 10-SECOND TIMEOUT RACE</div>
+        <div class="flow-row">
+            <div class="box box-blue" onclick="om('fail_timeout')"><div class="bt">PACS.008 Sent</div><div class="bs">CSM processing<br/>network jitter</div></div>
+            <div class="arr arr-fail"><div class="arr-line"></div><div class="arr-label">response at<br/>9.8s…</div></div>
+            <div class="box box-rose" onclick="om('fail_timeout')"><div class="bt">Router Hiccup</div><div class="bs">Packet loss<br/>+100ms retransmit</div></div>
+            <div class="arr arr-fail"><div class="arr-line"></div><div class="arr-label">arrives at<br/>11.3s</div></div>
+            <div class="box box-red" onclick="om('fail_timeout')"><div class="bt">Timeout!</div><div class="bs">Wallet shows pending<br/>user retries</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">detect: p99<br/>&gt;8s latency</div></div>
+            <div class="box box-green" onclick="om('fail_timeout')"><div class="bt">Fix: Pre-reserve</div><div class="bs">Reserve funds<br/>before clearing</div></div>
+        </div>
+    </div>
+
+    <div class="flow-area fail-row" data-stage="failure">
+        <div class="flow-label fail">FAILURE #2: PHANTOM TRANSACTION (SETTLED LOCALLY, CSM LOST IT)</div>
+        <div class="flow-row">
+            <div class="box box-green" onclick="om('fail_phantom')"><div class="bt">Ledger: Settled</div><div class="bs">PACS.002 received<br/>AlloyDB logged</div></div>
+            <div class="arr arr-fail"><div class="arr-line"></div><div class="arr-label">CSM replication<br/>lag</div></div>
+            <div class="box box-rose" onclick="om('fail_phantom')"><div class="bt">CSM: Missing</div><div class="bs">Transaction lost<br/>in replication</div></div>
+            <div class="arr arr-fail"><div class="arr-line"></div><div class="arr-label">daily recon<br/>finds gap</div></div>
+            <div class="box box-red" onclick="om('fail_phantom')"><div class="bt">Money in Limbo</div><div class="bs">€4.2M stranded<br/>weekend reversal</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">fix: CSM ACK<br/>before settle</div></div>
+            <div class="box box-amber" onclick="om('fail_phantom')"><div class="bt">Dispute Fund</div><div class="bs">0.001% reserve<br/>pool covers gaps</div></div>
+        </div>
+    </div>
+
+    <div class="flow-area fail-row" data-stage="failure">
+        <div class="flow-label fail">FAILURE #3: ALIAS LOOKUP DEADLOCK</div>
+        <div class="flow-row">
+            <div class="box box-cyan" onclick="om('fail_alias')"><div class="bt">Alias Lookup</div><div class="bs">Phone → IBAN<br/>queries core</div></div>
+            <div class="arr arr-fail"><div class="arr-line"></div><div class="arr-label">core system<br/>maintenance</div></div>
+            <div class="box box-rose" onclick="om('fail_alias')"><div class="bt">Core Unavailable</div><div class="bs">Rolling update<br/>Saturday AM</div></div>
+            <div class="arr arr-fail"><div class="arr-line"></div><div class="arr-label">100 lookups<br/>queue behind</div></div>
+            <div class="box box-red" onclick="om('fail_alias')"><div class="bt">30s Timeout</div><div class="bs">Conversion drops<br/>30% for 5 min</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">fix: Redis<br/>replica</div></div>
+            <div class="box box-green" onclick="om('fail_alias')"><div class="bt">Stale Cache OK</div><div class="bs">6h sync cycle<br/>stale > nothing</div></div>
+        </div>
+    </div>
+
+    <div class="flow-area fail-row" data-stage="failure">
+        <div class="flow-label fail">FAILURE #4: FRAUD DETECTOR BLOCKS HAPPY PATH</div>
+        <div class="flow-row">
+            <div class="box box-purple" onclick="om('fail_fraud')"><div class="bt">New ML Model</div><div class="bs">Conservative<br/>Q4-trained</div></div>
+            <div class="arr arr-fail"><div class="arr-line"></div><div class="arr-label">deployed<br/>to prod</div></div>
+            <div class="box box-rose" onclick="om('fail_fraud')"><div class="bt">15% Flagged</div><div class="bs">Legit txns blocked<br/>support overwhelmed</div></div>
+            <div class="arr arr-fail"><div class="arr-line"></div><div class="arr-label">FP rate<br/>&gt;10%</div></div>
+            <div class="box box-red" onclick="om('fail_fraud')"><div class="bt">Wero "Broken"</div><div class="bs">Users call support<br/>"my payment failed"</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">fix: never<br/>block on ML</div></div>
+            <div class="box box-green" onclick="om('fail_fraud')"><div class="bt">Flag, Don't Block</div><div class="bs">Send + flag<br/>review post-hoc</div></div>
+        </div>
+    </div>
+
+    <div class="flow-area fail-row" data-stage="failure">
+        <div class="flow-label fail">FAILURE #5: RECONCILIATION DOESN'T RECONCILE</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('fail_recon')"><div class="bt">Daily Recon</div><div class="bs">Ledger vs CSM<br/>47 mismatches</div></div>
+            <div class="arr arr-fail"><div class="arr-line"></div><div class="arr-label">reverse<br/>attempts</div></div>
+            <div class="box box-rose" onclick="om('fail_recon')"><div class="bt">12 Reversals Fail</div><div class="bs">User already<br/>transferred out</div></div>
+            <div class="arr arr-fail"><div class="arr-line"></div><div class="arr-label">orphaned<br/>transactions</div></div>
+            <div class="box box-red" onclick="om('fail_recon')"><div class="bt">12 Orphaned</div><div class="bs">Network partition<br/>30s window</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">fix: dispute<br/>fund + CSM key</div></div>
+            <div class="box box-green" onclick="om('fail_recon')"><div class="bt">Idempotent CSM</div><div class="bs">CSM-level key<br/>deduplicate retry</div></div>
+        </div>
+    </div>
+
+    <div class="flow-area fail-row" data-stage="failure">
+        <div class="flow-label fail">FAILURE #6: LIQUIDITY CRISIS (FRIDAY 4PM)</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('fail_liquidity')"><div class="bt">100k txns/day</div><div class="bs">€15M outbound<br/>€20M prefunded</div></div>
+            <div class="arr arr-fail"><div class="arr-line"></div><div class="arr-label">B2B payout<br/>€8M at 4pm</div></div>
+            <div class="box box-rose" onclick="om('fail_liquidity')"><div class="bt">€12M Remaining</div><div class="bs">Friday 4:15pm<br/>cutoff at 5pm</div></div>
+            <div class="arr arr-fail"><div class="arr-line"></div><div class="arr-label">another €4M<br/>submitted</div></div>
+            <div class="box box-red" onclick="om('fail_liquidity')"><div class="bt">Funds Exhausted</div><div class="bs">Transactions fail<br/>no funding til Mon</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">fix: 150%<br/>prefund buffer</div></div>
+            <div class="box box-green" onclick="om('fail_liquidity')"><div class="bt">Intraday Funding</div><div class="bs">Auto-request line<br/>at 10% capacity</div></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+    <div class="legend-inner">
+        <div class="li"><div class="lb" style="background:#0891B2;border:1.5px solid #0891B2"></div>Wallet Layer</div>
+        <div class="li"><div class="lb" style="background:#059669;border:1.5px solid #059669"></div>Ledger Layer</div>
+        <div class="li"><div class="lb" style="background:#3B82F6;border:1.5px solid #3B82F6"></div>Clearing Layer</div>
+        <div class="li"><div class="lb" style="background:#D97706;border:1.5px solid #D97706"></div>Operational Layer</div>
+        <div class="li"><div class="lb" style="background:#E11D48;border:1.5px solid #E11D48"></div>Failure Modes</div>
+        <div class="li"><div class="lb" style="background:#374151;border:1.5px dashed #6B7280"></div>External Actor</div>
+        <div class="li"><div class="ld ld-s"></div>Synchronous</div>
+        <div class="li"><div class="ld ld-a"></div>Async / Event</div>
+        <div class="li"><div class="ld ld-f"></div>Failure Path</div>
+    </div>
+</div>
+
+<div class="footer">
+    Interactive architecture diagram · <a href="https://fintechoncloud.substack.com">Fintech on Cloud</a> · Post #6: Wero — Issuer-Side GCP Architecture · European Payment Series
+</div>
+
+<script>
+const D = {
+    'mobile_app': {tag:'External · Consumer', title:'Mobile App — Bank-Embedded Wero Wallet', body:`<p>The consumer's own banking app with Wero functionality embedded. No separate wallet app — Wero lives inside ING, Deutsche Bank, BNP Paribas, etc. The consumer selects a contact by phone number, enters an amount, and taps send.</p><p><strong>Critical UX constraint:</strong> The 10-second countdown begins the moment the consumer taps "send." Your backend must have already resolved the alias, validated SCA, checked balance, and emitted the clearing instruction before the consumer sees "payment sent."</p><p><strong>Push notification flow:</strong> For web checkout, the merchant's PSP sends an authentication request to EPI Central Services, which routes to your bank app via push notification. The consumer approves in-app. You have ~4 seconds for the entire SCA flow before timeout risk.</p>`, chips:[{t:'Embedded in bank app',c:'chip-blue'},{t:'4s SCA window',c:'chip-red'},{t:'Push notification for web',c:'chip-amber'},{t:'Phone number as identifier',c:'chip-cyan'}]},
+
+    'alias_resolver': {tag:'GCP · Cloud Run + Redis', title:'Alias Resolver — Phone Number to IBAN', body:`<p>Redis-cached service resolving consumer phone numbers to IBANs. A user can bind up to 3 phone numbers to one IBAN. This is not a general database query — it's a hot-path lookup that must complete in &lt;50ms.</p><p><strong>Cache strategy:</strong> Redis with 24h TTL. Bulk-refresh from core banking system every 6 hours. If core system is unreachable during sync, <strong>keep the stale cache</strong> — a slightly out-of-date alias is infinitely better than no alias.</p><p><strong>Failure mode:</strong> If the alias cache is empty AND core is down, you cannot process payments. This is why you need a local replica, not just a passthrough to core. See Failure #3 (Alias Lookup Deadlock).</p><p><strong>Validation:</strong> Always validate the returned IBAN using checksum (MOD 97) before submitting to clearing. Never trust external data blindly.</p>`, chips:[{t:'Redis · <50ms lookup',c:'chip-cyan'},{t:'24h TTL · 6h bulk sync',c:'chip-gray'},{t:'Max 3 phones per IBAN',c:'chip-teal'},{t:'Stale cache > no cache',c:'chip-red'},{t:'IBAN checksum validation',c:'chip-amber'}]},
+
+    'strong_auth': {tag:'GCP · Security', title:'Strong Customer Authentication (SCA)', body:`<p>PSD2-mandated Strong Customer Authentication. For Wero, this means biometric (Face ID / fingerprint) or PIN confirmation in the bank's mobile app. Required for all payments — no exemption threshold like card payments.</p><p><strong>Timing constraint:</strong> SCA must complete within ~4 seconds to leave enough headroom for the 10-second CSM countdown. If SCA takes 6 seconds, you only have 4 seconds for clearing + network. That's dangerously tight.</p><p><strong>Lockout policy:</strong> 3 failed attempts → block account for 24 hours. This is a fraud prevention measure but also a customer experience risk — false biometric failures (wet fingers, broken Face ID) can lock out legitimate users.</p><p><strong>Fallback:</strong> If biometric fails, fall back to PIN. Never fall back to SMS OTP — that's not PSD2-compliant for Wero.</p>`, chips:[{t:'PSD2 mandatory',c:'chip-red'},{t:'4s timing budget',c:'chip-amber'},{t:'Biometric preferred',c:'chip-purple'},{t:'3 attempts then lockout',c:'chip-red'},{t:'No SMS OTP fallback',c:'chip-orange'}]},
+
+    'wallet_api': {tag:'GCP · Cloud Run', title:'Wallet API — Payment Orchestration', body:`<p>Stateless Cloud Run service handling payment initiation. Receives authenticated request from mobile app, checks idempotency, calls ledger for debit, emits Pub/Sub event for clearing. <strong>Must respond to the mobile app within 2 seconds</strong> to leave 8 seconds for CSM processing.</p><p><strong>Deployment:</strong> <code>minScale=2</code> (never cold start on payment path). <code>maxScale=100</code>. Concurrency=80 for async Go/Python. VPC connector for private Spanner access.</p><p><strong>Cloud Armor:</strong> Rate limiting at 10 payments/min per account. Geo-blocking non-EU IPs. DDoS protection — a brute-force attack that causes 10-second timeouts is a production incident.</p>`, chips:[{t:'Cloud Run · minScale=2',c:'chip-blue'},{t:'2s response target',c:'chip-red'},{t:'Cloud Armor WAF',c:'chip-amber'},{t:'10/min rate limit',c:'chip-orange'},{t:'VPC connector',c:'chip-gray'}]},
+
+    'idempotency': {tag:'GCP · Redis', title:'Idempotency Gate — Write-Before-Call', body:`<p>Redis-backed idempotency service preventing double-debits on retries. <strong>The single most important safety mechanism in the entire system.</strong></p><p><strong>Pattern:</strong> Write idempotency key to Redis BEFORE calling the ledger. On retry, check Redis first. If key exists, return the cached result without re-debiting. If key doesn't exist, proceed with new debit.</p><p><strong>Why write-before-call?</strong> If you call the ledger first and the response is lost (network timeout), you'll retry and double-debit. By writing the key first, a retry finds the key and returns the previous result.</p><p><strong>TTL:</strong> 24 hours. After that, the key expires and a retry would create a new payment. This is acceptable because no legitimate retry happens 24 hours later.</p><p><strong>Failure mode:</strong> If Redis is down, you cannot process payments safely. Have a fallback: check Spanner for existing transactions with the same idempotency key. Slower, but safe.</p>`, chips:[{t:'Write-before-call pattern',c:'chip-red'},{t:'Redis-backed · 24h TTL',c:'chip-cyan'},{t:'Prevents double-debit',c:'chip-green'},{t:'Spanner fallback if Redis down',c:'chip-amber'},{t:'Most critical safety gate',c:'chip-red'}]},
+
+    'lock_service': {tag:'GCP · Spanner / Redis', title:'Distributed Lock — Per-Account Mutex', body:`<p>Prevents concurrent debits on the same account. Two payments hitting the same account simultaneously must be serialized — otherwise you risk overdrawing.</p><p><strong>Implementation:</strong> Spanner's built-in row-level locking via <code>SELECT FOR UPDATE</code> within a read-write transaction. Alternative: Redis-based distributed lock (Redlock) for lower latency but weaker guarantees.</p><p><strong>Timeout:</strong> 5 seconds maximum lock hold. If a lock is held longer, it's likely a stuck process. Release and alert. A deadlock here blocks all payments for that account.</p>`, chips:[{t:'Per-account mutex',c:'chip-green'},{t:'5s max hold',c:'chip-amber'},{t:'Spanner row-level lock',c:'chip-blue'},{t:'Prevents overdraw',c:'chip-red'}]},
+
+    'cloud_spanner': {tag:'GCP · Database', title:'Cloud Spanner — ACID Distributed Ledger', body:`<p>The source of truth for all account balances. Multi-region ACID database with external consistency — the strongest consistency guarantee available in any cloud database.</p><p><strong>Why Spanner, not DynamoDB?</strong> Wero requires that a debit in Europe and a balance check in any other region see the same state simultaneously. DynamoDB's eventual consistency would allow a race condition where you debit €100 but another region still sees the old balance. With Spanner, this is impossible.</p><p><strong>Cost:</strong> ~€0.08 per transaction at 10M transactions/month. Expensive per-transaction, but a single balance inconsistency costs your weekend + manual treasury intervention + regulatory scrutiny. Worth it.</p><p><strong>Schema:</strong> Accounts (balance, held_amount, last_updated), Transactions (idempotency_key, amount, state, timestamps), Audit (every state transition with snapshot).</p>`, chips:[{t:'ACID + external consistency',c:'chip-green'},{t:'Multi-region · zero RPO',c:'chip-blue'},{t:'~€0.08/txn at scale',c:'chip-amber'},{t:'Stronger than DynamoDB',c:'chip-red'},{t:'Balance = source of truth',c:'chip-teal'}]},
+
+    'pubsub_topic': {tag:'GCP · Messaging', title:'Pub/Sub — Event Backbone', body:`<p>The moment the ledger confirms a debit, an event is emitted. Subscribers: (1) clearing adapter → formats PACS.008, (2) compliance → AML logging, (3) wallet notifier → tells app "in progress," (4) reconciliation → writes to AlloyDB. Each has its own subscription — a slow compliance check doesn't delay clearing.</p><p><strong>Ordering keys:</strong> Use account ID as ordering key. This ensures that two payments from the same account are processed in order — critical for balance consistency.</p><p><strong>At-least-once delivery:</strong> Pub/Sub can deliver duplicates. Your clearing adapter must be idempotent — receiving the same event twice must not send PACS.008 twice.</p>`, chips:[{t:'At-least-once delivery',c:'chip-indigo'},{t:'Ordering keys per account',c:'chip-purple'},{t:'4 subscriber groups',c:'chip-blue'},{t:'Idempotent consumers required',c:'chip-red'}]},
+
+    'alloydb': {tag:'GCP · Database', title:'AlloyDB — Immutable Audit Trail', body:`<p>PostgreSQL-compatible database for immutable transaction logging. Every state transition, every fraud score, every CSM response is logged here. This isn't compliance theater — it's operational archaeology.</p><p><strong>Use case:</strong> When a user disputes a transaction 3 months later, you need to replay the exact sequence: when did SCA complete? What was the fraud score? When did CSM acknowledge? What was the account balance at that moment?</p><p><strong>Retention:</strong> 7 years (EU regulatory requirement). Cross-region backup daily.</p>`, chips:[{t:'Immutable append-only',c:'chip-green'},{t:'7-year retention',c:'chip-red'},{t:'PostgreSQL compatible',c:'chip-blue'},{t:'Dispute replay capability',c:'chip-amber'}]},
+
+    'liquidity': {tag:'GCP · Cloud Run + Spanner', title:'Liquidity Monitor — Prefund Balance Tracking', body:`<p>Real-time monitoring of your prefunded account at the CSM. Every 60 seconds, query the balance. Alert at 20% capacity remaining (warning), 10% (urgent), 5% (critical — queue high-value transactions for Monday).</p><p><strong>Why this matters:</strong> SEPA Instant requires prefunded settlement. You can't process more payments than you have funds deposited at the CSM. Running out = instant payment rejection = merchant churn.</p><p><strong>Friday afternoon risk:</strong> A large B2B customer can exhaust your liquidity in minutes. You can't request emergency funding after banking hours. See Failure #6.</p>`, chips:[{t:'60s polling interval',c:'chip-amber'},{t:'20%/10%/5% thresholds',c:'chip-red'},{t:'Prefund = hard limit',c:'chip-orange'},{t:'Friday afternoon risk',c:'chip-red'}]},
+
+    'treasury': {tag:'Operational', title:'Treasury Alert System', body:`<p>When liquidity drops below 10%, automatically requests intraday funding from your bank's treasury desk. At 5%, escalates to manual review: should we queue high-value transactions for Monday settlement?</p><p><strong>Prefund buffer rule:</strong> Always prefund 150% of expected daily volume, not 100%. The extra 50% covers B2B surges and Friday afternoon peaks.</p>`, chips:[{t:'Auto-funding at 10%',c:'chip-amber'},{t:'Manual review at 5%',c:'chip-red'},{t:'150% prefund buffer',c:'chip-green'}]},
+
+    'pubsub_consumer': {tag:'GCP · Cloud Run', title:'Pub/Sub Consumer — Clearing Worker', body:`<p>Async worker that receives debit-confirmed events from Pub/Sub and triggers the clearing pipeline. Formats PACS.008, sends to CSM, awaits response.</p><p><strong>Idempotency:</strong> Must be idempotent — receiving the same Pub/Sub message twice (at-least-once delivery) must not send PACS.008 twice. Check transaction state in Spanner before sending.</p>`, chips:[{t:'Async worker',c:'chip-blue'},{t:'Idempotent processing',c:'chip-red'},{t:'State check before send',c:'chip-green'}]},
+
+    'format_pacs': {tag:'GCP · Cloud Run', title:'PACS.008 Formatter — ISO 20022 Message Builder', body:`<p>Builds the SCT Instant payment instruction in ISO 20022 XML format. Includes: debtor IBAN, creditor IBAN, amount, currency (EUR), settlement date (immediate), and your institution's BIC.</p><p><strong>Performance:</strong> Must complete in &lt;200ms. Any delay here eats into the 10-second CSM window.</p><p><strong>Validation:</strong> Validate all IBANs (MOD 97), BICs (SWIFT format), and amounts (positive, &lt;€100,000 per transaction for instant) before sending. A malformed PACS.008 is rejected by CSM and counts against your error rate.</p>`, chips:[{t:'ISO 20022 XML',c:'chip-blue'},{t:'<200ms build time',c:'chip-green'},{t:'IBAN/BIC validation',c:'chip-amber'},{t:'€100k per-txn limit',c:'chip-red'}]},
+
+    'csm': {tag:'External · Interbank', title:'CSM — Central Settlement Mechanism', body:`<p>The interbank clearing infrastructure. In Europe, this is either <strong>EBA CLEARING RT1</strong> or <strong>TARGET Instant Payment Settlement (TIPS)</strong> operated by the Eurosystem. Processes PACS.008 instructions and returns PACS.002 (ACK or NACK).</p><p><strong>SLA:</strong> &lt;10 seconds end-to-end. But "end-to-end" includes network transit. Your system's contribution might be 200ms; CSM processing might be 8.5 seconds. A single packet retransmit at the wrong moment pushes you past 10 seconds.</p><p><strong>Availability:</strong> 99.95% uptime target. But when it's down, <em>all</em> instant payments fail. Your system must detect CSM unavailability within 30 seconds and switch to SCT Standard fallback.</p><p><strong>You do not control this system.</strong> You can only observe its behavior and design your architecture to handle its failure modes.</p>`, chips:[{t:'RT1 or TIPS',c:'chip-blue'},{t:'<10s SLA',c:'chip-green'},{t:'99.95% target',c:'chip-amber'},{t:'You do not control this',c:'chip-red'},{t:'Fallback required',c:'chip-orange'}]},
+
+    'state_settled': {tag:'GCP · State Machine', title:'State: Settled — Irrevocable Commitment', body:`<p>Once CSM returns PACS.002 (positive acknowledgment), funds are irrevocably transferred. There is no undo. There is no merchant-initiated reversal. The money has moved.</p><p><strong>What "irrevocable" means in practice:</strong> If you discover an error after settlement (wrong amount, wrong beneficiary), you must initiate a <em>new</em> payment request to the beneficiary's bank asking for a return. They are not obligated to comply. This is fundamentally different from card payments where you can chargeback.</p><p><strong>Downstream actions on settlement:</strong> (1) Update Spanner state to SETTLED, (2) Write AlloyDB audit entry, (3) Update liquidity monitor, (4) Notify wallet "payment complete," (5) Notify EPI Hub (Hub Notified state).</p>`, chips:[{t:'Irrevocable — no undo',c:'chip-red'},{t:'PACS.002 = commitment',c:'chip-green'},{t:'No chargeback mechanism',c:'chip-orange'},{t:'5 downstream actions',c:'chip-blue'}]},
+
+    'poll_15s': {tag:'GCP · Cloud Tasks', title:'Poll at 15 Seconds — CSM Status Check', body:`<p>If no PACS.002 response is received within 15 seconds, schedule a Cloud Tasks job to query the CSM status API. This is your first "are you still there?" check.</p><p><strong>Why 15 seconds?</strong> The 10-second SLA has passed, but the 20-second timeout hasn't been reached. There's a window where CSM might still be processing (network congestion, queue backlog). Don't give up yet.</p>`, chips:[{t:'Cloud Tasks scheduled',c:'chip-amber'},{t:'15s threshold',c:'chip-gray'},{t:'CSM status API query',c:'chip-blue'}]},
+
+    'retry_18s': {tag:'GCP · Cloud Tasks', title:'Retry at 18 Seconds — Last Chance', body:`<p>Second poll attempt. If CSM still shows "pending" at 18 seconds, you have 2 seconds before the hard 20-second timeout. Emit a warning log — this transaction is at the edge.</p><p><strong>Escalation:</strong> If this retry also fails, the next step is SCT Standard fallback. Do not poll indefinitely — that creates load on an already-struggling CSM.</p>`, chips:[{t:'18s — last chance',c:'chip-red'},{t:'Warning log emitted',c:'chip-amber'},{t:'2s until hard timeout',c:'chip-orange'}]},
+
+    'fallback_sct': {tag:'GCP · Clearing', title:'SCT Standard Fallback — D+1 Settlement', body:`<p>When SCT Instant times out (>20 seconds), fall back to standard SEPA Credit Transfer. This settles on the next business day (D+1) instead of instantly.</p><p><strong>User impact:</strong> The consumer sees "payment processing" instead of "payment sent." Funds are held (not debited) until D+1 confirmation. The experience is degraded but not broken.</p><p><strong>Transparency:</strong> Always tell the user what happened. "Your payment is being processed via standard transfer and will complete by tomorrow." Never silently switch without notification.</p>`, chips:[{t:'D+1 settlement',c:'chip-orange'},{t:'Degraded, not broken',c:'chip-amber'},{t:'User notification required',c:'chip-red'},{t:'Funds held, not debited',c:'chip-blue'}]},
+
+    'vertex_ai': {tag:'GCP · ML', title:'Vertex AI — Real-Time Fraud Scoring', body:`<p>Lightweight ML model deployed on Vertex AI that scores every transaction 0-100 for fraud risk. Runs <strong>in parallel</strong> with the clearing request — never on the critical path. &lt;50ms inference latency.</p><p><strong>Critical rule: NEVER block on fraud score.</strong> If you block, a slow model inference delays the 10-second timer. Instead: send the payment, score in parallel, flag high-risk transactions for post-hoc review.</p><p><strong>Model lifecycle:</strong> Train offline on historical data. Deploy as online prediction endpoint. Retrain monthly. Monitor precision/recall weekly. If false positive rate exceeds 10%, the model is hurting more than helping.</p><p><strong>Day 1 alternative:</strong> Start with simple rules (velocity checks, geolocation, amount thresholds). Don't build ML until you have 3+ months of Wero-specific data.</p>`, chips:[{t:'Parallel — never blocks',c:'chip-red'},{t:'<50ms inference',c:'chip-green'},{t:'Score 0-100',c:'chip-purple'},{t:'FP rate <10% target',c:'chip-amber'},{t:'Rules first, ML later',c:'chip-gray'}]},
+
+    'rules_engine': {tag:'GCP · Cloud Run', title:'Rules Engine — Deterministic Fraud Checks', body:`<p>Hard-coded rules that don't require ML: velocity limits (max 10 payments in 5 minutes), geolocation anomaly (payment from Netherlands, device in Nigeria), amount thresholds (>€5,000 requires additional verification), known fraud patterns.</p><p><strong>These run BEFORE ML scoring</strong> — they're fast (&lt;5ms) and catch obvious fraud without model inference.</p>`, chips:[{t:'<5ms execution',c:'chip-green'},{t:'Velocity limits',c:'chip-purple'},{t:'Geo anomaly detection',c:'chip-amber'},{t:'Before ML scoring',c:'chip-blue'}]},
+
+    'sanctions': {tag:'GCP · Cloud Run', title:'Sanctions Screening — OFAC/EU Lists', body:`<p>Screens beneficiary against OFAC, EU, and UN sanctions lists. Must complete before clearing. A sanctioned beneficiary = immediate block, no exceptions, regulatory reporting required within 24 hours.</p><p><strong>Update frequency:</strong> Lists update daily. Your local copy must sync at least once per day. A stale sanctions list is a compliance violation.</p>`, chips:[{t:'OFAC/EU/UN lists',c:'chip-red'},{t:'Daily sync required',c:'chip-amber'},{t:'Immediate block if match',c:'chip-red'},{t:'24h regulatory report',c:'chip-orange'}]},
+
+    'aml_logger': {tag:'GCP · AlloyDB', title:'AML Logger — Anti-Money Laundering Record', body:`<p>Every transaction is logged for AML review. Immutable append-only log in AlloyDB. Includes: amount, beneficiary, fraud score, sanctions result, SCA method, device fingerprint, IP address, timestamp.</p><p><strong>Regulatory requirement:</strong> Must be available for regulator inspection within 48 hours of request. 7-year retention minimum.</p>`, chips:[{t:'Immutable log',c:'chip-green'},{t:'48h regulator access',c:'chip-red'},{t:'7-year retention',c:'chip-amber'}]},
+
+    'cloud_logging': {tag:'GCP · Operations', title:'Cloud Logging — Structured State Transitions', body:`<p>Every state transition gets a structured JSON log entry: "Transaction X moved from INITIATED to DEBIT_CONFIRMED at T with ledger snapshot Y." Includes trace ID for end-to-end correlation.</p><p><strong>Key metrics to log:</strong> Time from SCA to debit (target: &lt;500ms), time from debit to PACS.008 send (target: &lt;200ms), time from PACS.008 to PACS.002 (target: &lt;10s), total end-to-end (target: &lt;12s).</p>`, chips:[{t:'Structured JSON',c:'chip-amber'},{t:'Trace ID correlation',c:'chip-blue'},{t:'Every state transition',c:'chip-green'}]},
+
+    'monitoring': {tag:'GCP · Cloud Monitoring', title:'SLO Dashboard — Latency & Success Rates', body:`<p>Custom dashboards tracking: (1) % of transactions completing within 5 seconds (want >99.5%), (2) % pending >20 seconds (want <0.5%), (3) % cleared by CSM vs fallback (want >99%), (4) fraud false positive rate (want <5%).</p><p><strong>Alerting thresholds:</strong> p95 latency >5s = warning. p99 latency >8s = critical. Success rate <99% = page on-call.</p>`, chips:[{t:'p50/p95/p99 latency',c:'chip-amber'},{t:'>99.5% within 5s',c:'chip-green'},{t:'<0.5% pending >20s',c:'chip-red'}]},
+
+    'alerts': {tag:'GCP · Cloud Monitoring', title:'Alert System — On-Call Escalation', body:`<p>PagerDuty/Opsgenie integration. Triggers: (1) >8s p99 latency, (2) >0.1% transactions stuck in PENDING >20s, (3) CSM unreachable for >30s, (4) liquidity below 10%, (5) reconciliation gap >0 for >1 hour.</p>`, chips:[{t:'On-call escalation',c:'chip-red'},{t:'5 trigger conditions',c:'chip-amber'},{t:'PagerDuty/Opsgenie',c:'chip-gray'}]},
+
+    'recon': {tag:'GCP · Cloud Run + AlloyDB', title:'Daily Reconciliation — Ledger vs CSM', body:`<p>At midnight, query all SETTLED transactions from your ledger. Query CSM API for all transactions from that day. Diff them. Any discrepancy >€0 is an alert.</p><p><strong>Three possible outcomes:</strong> (1) In your ledger, in CSM → reconciled ✓. (2) In your ledger, NOT in CSM → phantom transaction, escalate immediately. (3) In CSM, NOT in your ledger → duplicate at CSM, investigate.</p>`, chips:[{t:'Daily at midnight',c:'chip-amber'},{t:'Zero tolerance',c:'chip-red'},{t:'Three-way match',c:'chip-blue'},{t:'Phantom = escalate',c:'chip-red'}]},
+
+    'fail_timeout': {tag:'Failure Mode #1', title:'10-Second Timeout Race — Network Jitter', body:`<p><strong>What breaks:</strong> You send PACS.008 at T+0.5s. CSM processes it in 8.5s. Response leaves CSM at T+9.0s. But a router hiccup adds 100ms. A GCP region hiccup adds another 100ms. Response arrives at T+9.8s. You're at the edge — one more packet loss and you're at 11.3s. Your system has moved on to fallback, but the CSM has already settled the payment.</p><p><strong>Why it breaks:</strong> The 10-second SLA is end-to-end, but you don't control network latency. Your contribution might be 200ms. CSM might use 8.5s. A single retransmit burns the remaining buffer.</p><p><strong>Detection:</strong> Track p99 of PACS.008-to-PACS.002 latency. When >1% of transactions exceed 8 seconds, you're running too hot. When >0.1% exceed 9.5 seconds, you have a problem.</p><p><strong>Fix:</strong> (1) Pre-reserve funds before clearing — ensures no double-debit on timeout race. (2) Target 2-second wallet response — gives 8-second CSM buffer. (3) Use closest GCP region to CSM endpoint — milliseconds matter.</p>`, chips:[{t:'Root cause: network jitter',c:'chip-red'},{t:'Detection: p99 >8s',c:'chip-amber'},{t:'Fix: pre-reserve funds',c:'chip-green'},{t:'Risk: double-processing',c:'chip-orange'}]},
+
+    'fail_phantom': {tag:'Failure Mode #2', title:'Phantom Transaction — Settled Locally, CSM Lost It', body:`<p><strong>What breaks:</strong> You receive PACS.002 (ACK), confirm the transaction, write to AlloyDB. But CSM had a database replication lag. By the time it replicated, the transaction was lost. You have a settled transaction in your ledger, but the beneficiary's bank never received it.</p><p><strong>War story (Q4 2024):</strong> A mid-sized German issuer went live with Wero. Three weeks, zero issues. Then on a Friday afternoon, AlloyDB had a 3-second replication hiccup. €4.2M in transfers appeared in the issuer's ledger but never reached the CSM. Only 2 of 15 transfers had actually arrived. The issuer spent the weekend manually reversing transactions. Cost: €2.1M + 20 hours manual labor.</p><p><strong>Detection:</strong> Daily reconciliation. Diff your SETTLED transactions against CSM settlement report. If you have more than CSM, investigate immediately.</p><p><strong>Fix:</strong> (1) Require CSM acknowledgment BEFORE marking settled locally. (2) Weekly deep reconciliation against full CSM ledger. (3) Maintain a dispute fund — 0.001% of transaction volume in a dedicated reserve pool.</p>`, chips:[{t:'Root cause: CSM replication lag',c:'chip-red'},{t:'Real example: €4.2M loss',c:'chip-red'},{t:'Detection: daily recon diff',c:'chip-amber'},{t:'Fix: CSM ACK before settle',c:'chip-green'},{t:'Fix: dispute fund reserve',c:'chip-teal'}]},
+
+    'fail_alias': {tag:'Failure Mode #3', title:'Alias Lookup Deadlock — Core System Down', body:`<p><strong>What breaks:</strong> Wallet asks for IBAN for +31 6 1234 5678. Alias service queries core banking system. Core is under maintenance (rolling update, Saturday morning). Alias service waits. 100 more lookups queue behind. After 30 seconds, they all timeout. Conversion drops 30% for 5 minutes.</p><p><strong>Why it breaks:</strong> Alias resolution depends on core banking, which you don't fully control. Core systems have planned maintenance windows. If your cache is stale and core is unavailable, you're stuck.</p><p><strong>Detection:</strong> Monitor alias lookup latency. Alert if p99 exceeds 100ms. If it breaches 500ms, you're already losing users.</p><p><strong>Fix:</strong> (1) Redis replica of alias directory, synced every 6 hours. (2) If core unreachable during sync, keep stale cache. (3) Validate returned IBAN client-side using checksum before payment. (4) Circuit breaker on core system calls — fail fast, serve from cache.</p>`, chips:[{t:'Root cause: core maintenance',c:'chip-red'},{t:'Impact: 30% conversion drop',c:'chip-orange'},{t:'Detection: p99 >100ms',c:'chip-amber'},{t:'Fix: Redis replica + stale cache',c:'chip-green'},{t:'Fix: circuit breaker',c:'chip-blue'}]},
+
+    'fail_fraud': {tag:'Failure Mode #4', title:'Fraud Detector Blocks Happy Path', body:`<p><strong>What breaks:</strong> You deploy a new ML model trained on Q4 data. On day 1, it flags 15% of legitimate transactions as high-risk. You temporarily block these. Users call support: "Wero isn't working." Fraud team is overwhelmed with false positives.</p><p><strong>Why it breaks:</strong> ML models don't generalize across seasons. Q4 model doesn't understand Q1 tax-software purchases. Sudden behavior changes trigger false positives.</p><p><strong>Detection:</strong> Monitor false positive rate: % of high-risk flagged transactions that eventually settle without chargeback. If >10%, model is too conservative.</p><p><strong>Fix:</strong> (1) NEVER block on fraud score — always send, always flag, review post-hoc. (2) A/B test models: run two in parallel, compare against ground truth (eventual chargebacks). (3) Start with rules, not ML. Only deploy ML after 3+ months of Wero-specific data.</p>`, chips:[{t:'Root cause: model drift',c:'chip-red'},{t:'Impact: 15% false positives',c:'chip-orange'},{t:'Rule: never block on ML',c:'chip-red'},{t:'Fix: flag, don\'t block',c:'chip-green'},{t:'Fix: rules first, ML later',c:'chip-blue'}]},
+
+    'fail_recon': {tag:'Failure Mode #5', title:'Reconciliation Doesn\'t Reconcile', body:`<p><strong>What breaks:</strong> Daily recon finds 47 transactions in your ledger that CSM can't find. You try to reverse them. 12 reversal requests fail — user already transferred money out. You end up with 12 genuinely orphaned transactions.</p><p><strong>Why it breaks:</strong> Network partition between you and CSM lasting >30 seconds. You committed locally, CSM lost the message. Both think the other side acknowledged.</p><p><strong>Detection:</strong> The recon report itself. These transactions have status SETTLED locally but don't appear in CSM reports.</p><p><strong>Fix:</strong> (1) Dispute fund — credit user from reserve, reverse debit. (2) CSM-level idempotency key in PACS.008 — if you retry, CSM deduplicates. (3) Escalation process: file claim with CSM per SCT Instant rulebook.</p>`, chips:[{t:'Root cause: network partition',c:'chip-red'},{t:'Impact: orphaned transactions',c:'chip-orange'},{t:'Fix: dispute fund',c:'chip-green'},{t:'Fix: CSM idempotency key',c:'chip-blue'},{t:'Fix: SCT Inst rulebook claim',c:'chip-amber'}]},
+
+    'fail_liquidity': {tag:'Failure Mode #6', title:'Liquidity Crisis — Friday 4PM', body:`<p><strong>What breaks:</strong> 100k txns/day, avg €150 = €15M daily outbound. Prefunded €20M at CSM. Friday 4pm: B2B customer processes €8M of payouts. Balance drops to €12M. CSM cutoff is 5pm. Customer submits another €4M. You're out of funds. Transactions fail. Can't request emergency funding — it's Friday afternoon.</p><p><strong>Why it breaks:</strong> Liquidity management is still batch-like in European clearing. Your prefunded pool is fixed until your next funding request clears (Monday morning).</p><p><strong>Detection:</strong> Real-time liquidity dashboard. Poll every 60 seconds. Alert at 20%, 10%, 5% remaining. If you hit 5%, trigger manual review.</p><p><strong>Fix:</strong> (1) Prefund 150% of expected daily volume. (2) Sliding-scale limits: at 20% capacity, accept but queue high-value transactions for Monday. (3) Intraday funding line with your bank: auto-request at 10%.</p>`, chips:[{t:'Root cause: prefund exhaustion',c:'chip-red'},{t:'Friday = no emergency funding',c:'chip-orange'},{t:'Fix: 150% prefund buffer',c:'chip-green'},{t:'Fix: intraday funding line',c:'chip-blue'},{t:'Fix: sliding-scale limits',c:'chip-amber'}]}
+};
+
+function om(id){
+    const d=D[id]; if(!d) return;
+    document.getElementById('mtag').textContent=d.tag;
+    document.getElementById('mtitle').textContent=d.title;
+    let h=d.body;
+    if(d.chips && d.chips.length){
+        h+='<div class="chips">';
+        d.chips.forEach(c=>{h+=`<span class="chip ${c.c}">${c.t}</span>`;});
+        h+='</div>';
+    }
+    document.getElementById('mbody').innerHTML=h;
+    document.getElementById('mbg').classList.add('open');
+    document.body.style.overflow='hidden';
+}
+function cm(){document.getElementById('mbg').classList.remove('open');document.body.style.overflow='';}
+function cbg(e){if(e.target===document.getElementById('mbg'))cm();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')cm();});
+
+function filterStage(stage){
+    document.querySelectorAll('.stage-btn').forEach(b=>{
+        b.classList.toggle('active',b.getAttribute('data-filter')===stage);
+    });
+    document.querySelectorAll('.stage-title').forEach(t=>t.classList.remove('active'));
+    const stEl=document.getElementById('st-'+stage);
+    if(stEl)stEl.classList.add('active');
+    const allSections=document.querySelectorAll('[data-section]');
+    if(stage==='all'){
+        allSections.forEach(s=>{
+            s.classList.remove('filtering');
+            s.querySelectorAll('.flow-area[data-stage]').forEach(f=>f.classList.remove('stage-visible'));
+        });
+        return;
+    }
+    allSections.forEach(s=>{
+        s.classList.add('filtering');
+        s.querySelectorAll('.flow-area[data-stage]').forEach(f=>{
+            const match=f.getAttribute('data-stage')===stage;
+            f.classList.toggle('stage-visible',match);
+        });
+        s.querySelectorAll('.section-header').forEach(h=>{
+            h.classList.remove('stage-visible');
+        });
+    });
+    window.scrollTo({top:document.querySelector('.stage-bar').offsetTop-10,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
