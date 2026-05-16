@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>PSD2 TPP — Open Banking Production Architecture | Fintech on Cloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet"/>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#FFFFFF;font-family:'Outfit',sans-serif;color:#18181B;min-height:100vh;padding:0 0 60px;min-width:320px}
+        .header{background:#18181B;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+        .brand{font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#F8FAFC}
+        .brand span{color:#34D399}
+        .back{font-family:'JetBrains Mono',monospace;font-size:11px;color:#52525B;text-decoration:none;letter-spacing:0.1em}
+        .back:hover{color:#94A3B8}
+        .hero{text-align:center;padding:32px 24px 20px;max-width:900px;margin:0 auto}
+        .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#0891B2;text-transform:uppercase;margin-bottom:8px}
+        .hero h1{font-family:'Fraunces',serif;font-size:clamp(20px,3.5vw,32px);font-weight:700;color:#18181B;line-height:1.15;margin-bottom:8px}
+        .hero p{font-size:13px;color:#64748B;margin-bottom:16px}
+        .tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+        .tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:3px;letter-spacing:0.1em;text-transform:uppercase}
+        .tag-blue{background:#DBEAFE;color:#1D4ED8}
+        .tag-green{background:#D1FAE5;color:#065F46}
+        .tag-gray{background:#F1F5F9;color:#475569}
+        .tag-red{background:#FEE2E2;color:#B91C1C}
+        .tag-purple{background:#EDE9FE;color:#4C1D95}
+        .tag-cyan{background:#CFFAFE;color:#0E7490}
+        .tag-amber{background:#FEF3C7;color:#78350F}
+        .tag-orange{background:#FFEDD5;color:#C2410C}
+        .hint{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#94A3B8;padding:9px;background:#F8FAFC;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;letter-spacing:0.05em}
+        /* ── SECTION ── */
+        .section{max-width:100%;margin:0 auto;padding:20px 12px 0}
+        .section-header{display:flex;align-items:flex-start;margin-bottom:12px;padding:12px 18px;border-radius:8px;border-left:4px solid}
+        .section-header h2{font-family:'Fraunces',serif;font-size:16px;font-weight:700;margin-bottom:3px}
+        .section-header p{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em}
+        .sh-psd2{background:#ECFEFF;border-color:#0891B2}.sh-psd2 h2{color:#0E4F6B}.sh-psd2 p{color:#0891B2}
+        .sh-consent{background:#F5F3FF;border-color:#7C3AED}.sh-consent h2{color:#4C1D95}.sh-consent p{color:#7C3AED}
+        .sh-failure{background:#FFF7ED;border-color:#EA580C}.sh-failure h2{color:#7C2D12}.sh-failure p{color:#EA580C}
+        .sh-recon{background:#F0FDF4;border-color:#16A34A}.sh-recon h2{color:#14532D}.sh-recon p{color:#16A34A}
+        /* ── FLOW AREAS ── */
+        .flow-area{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin-bottom:6px;border-left:4px solid #E2E8F0}
+        .flow-area.failure-row{border-left-color:#FB923C}
+        .flow-area.recon-row{border-left-color:#34D399}
+        .flow-area.consent-row{border-left-color:#A78BFA}
+        .flow-area.security-row{border-left-color:#A78BFA}
+        .flow-area.async-row{border-left-color:#22D3EE}
+        .flow-area.gcp-row{border-left-color:#4ADE80}
+        .flow-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#94A3B8;margin-bottom:10px}
+        .flow-label.warn{color:#D97706}
+        .flow-label.success{color:#059669}
+        .flow-label.danger{color:#DC2626}
+        .flow-label.cyan{color:#0891B2}
+        .flow-label.purple{color:#7C3AED}
+        .flow-label.gcp{color:#16A34A}
+        .flow-row{display:flex;align-items:center;flex-wrap:wrap;row-gap:10px;column-gap:0px;padding-bottom:4px}
+        /* ── BOXES ── */
+        .box{flex-shrink:2;flex-grow:0;border-radius:7px;padding:8px 10px;cursor:pointer;border:2px solid;transition:transform 0.1s,box-shadow 0.1s;min-width:90px;max-width:152px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.10)}
+        .box:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,0.15)}
+        .bt{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;margin-bottom:3px;line-height:1.25}
+        .bs{font-family:'JetBrains Mono',monospace;font-size:8px;line-height:1.4}
+        .box-blue{background:#1E40AF;border-color:#1D4ED8}.box-blue .bt{color:#FFFFFF}.box-blue .bs{color:#BFDBFE}
+        .box-teal{background:#065F46;border-color:#047857}.box-teal .bt{color:#FFFFFF}.box-teal .bs{color:#A7F3D0}
+        .box-purple{background:#4C1D95;border-color:#6D28D9}.box-purple .bt{color:#FFFFFF}.box-purple .bs{color:#DDD6FE}
+        .box-amber{background:#92400E;border-color:#B45309}.box-amber .bt{color:#FFFFFF}.box-amber .bs{color:#FDE68A}
+        .box-gray{background:#334155;border-color:#475569}.box-gray .bt{color:#FFFFFF}.box-gray .bs{color:#CBD5E1}
+        .box-ext{background:#374151;border-color:#6B7280;border-style:dashed}.box-ext .bt{color:#F9FAFB}.box-ext .bs{color:#D1D5DB}
+        .box-ext-browser{background:#1E3A8A;border-color:#2563EB;border-style:dashed}.box-ext-browser .bt{color:#FFFFFF}.box-ext-browser .bs{color:#BFDBFE}
+        .box-ext-bank{background:#881337;border-color:#BE123C;border-style:dashed}.box-ext-bank .bt{color:#FFFFFF}.box-ext-bank .bs{color:#FECDD3}
+        .box-ext-psp{background:#78350F;border-color:#B45309;border-style:dashed}.box-ext-psp .bt{color:#FFFFFF}.box-ext-psp .bs{color:#FDE68A}
+        .box-ext-reg{background:#1E1B4B;border-color:#4338CA;border-style:dashed}.box-ext-reg .bt{color:#FFFFFF}.box-ext-reg .bs{color:#C7D2FE}
+        .box-red{background:#991B1B;border-color:#DC2626}.box-red .bt{color:#FFFFFF}.box-red .bs{color:#FECACA}
+        .box-orange{background:#9A3412;border-color:#EA580C}.box-orange .bt{color:#FFFFFF}.box-orange .bs{color:#FED7AA}
+        .box-green{background:#14532D;border-color:#16A34A}.box-green .bt{color:#FFFFFF}.box-green .bs{color:#BBF7D0}
+        .box-yellow{background:#713F12;border-color:#CA8A04}.box-yellow .bt{color:#FFFFFF}.box-yellow .bs{color:#FEF08A}
+        .box-cyan{background:#0E4F6B;border-color:#0891B2}.box-cyan .bt{color:#FFFFFF}.box-cyan .bs{color:#A5F3FC}
+        .box-indigo{background:#312E81;border-color:#4F46E5}.box-indigo .bt{color:#FFFFFF}.box-indigo .bs{color:#C7D2FE}
+        /* ── ARROWS ── */
+        .arr{flex-shrink:1;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 6px;min-width:64px;max-width:96px;position:relative;overflow:visible}
+        .arr-line{height:2px;width:100%;position:relative;flex-shrink:0}
+        .arr-line::after{content:'▶';position:absolute;right:-7px;top:50%;transform:translateY(-50%);font-size:9px}
+        .arr-sync .arr-line{background:#0891B2}.arr-sync .arr-line::after{color:#0891B2}
+        .arr-redirect .arr-line{background:#7C3AED}.arr-redirect .arr-line::after{color:#7C3AED}
+        .arr-async .arr-line{background:transparent;border-top:2px dashed #0891B2}.arr-async .arr-line::after{color:#0891B2}
+        .arr-webhook .arr-line{background:transparent;border-top:2px dashed #EA580C}.arr-webhook .arr-line::after{color:#EA580C}
+        .arr-return .arr-line{background:transparent;border-top:2px dashed #059669}.arr-return .arr-line::after{color:#059669}
+        .arr-warn .arr-line{background:transparent;border-top:2px dashed #EA580C}.arr-warn .arr-line::after{color:#EA580C}
+        .arr-danger .arr-line{background:transparent;border-top:2px dashed #DC2626}.arr-danger .arr-line::after{color:#DC2626}
+        .arr-mtls .arr-line{background:#16A34A}.arr-mtls .arr-line::after{color:#16A34A}
+        .arr-label{font-family:'JetBrains Mono',monospace;font-size:8px;margin-top:4px;white-space:normal;text-align:center;width:100%;line-height:1.3;word-break:break-word}
+        .arr-sync .arr-label{color:#0E7490}
+        .arr-redirect .arr-label{color:#5B21B6}
+        .arr-async .arr-label{color:#0E7490}
+        .arr-webhook .arr-label{color:#C2410C}
+        .arr-return .arr-label{color:#047857}
+        .arr-warn .arr-label{color:#C2410C}
+        .arr-danger .arr-label{color:#B91C1C}
+        .arr-mtls .arr-label{color:#047857}
+        .banner{border-radius:5px;padding:7px 12px;margin-bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;text-align:left;letter-spacing:0.04em}
+        .banner-amber{background:#FFFBEB;border:1px solid #FCD34D;color:#78350F}
+        .banner-red{background:#FFF1F2;border:1px solid #FDA4AF;color:#9F1239}
+        .banner-cyan{background:#ECFEFF;border:1px solid #A5F3FC;color:#0E4F6B}
+        .banner-green{background:#F0FDF4;border:1px solid #86EFAC;color:#14532D}
+        /* ── LEGEND ── */
+        .legend{max-width:1300px;margin:16px auto 0;padding:0 14px}
+        .legend-inner{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center}
+        .li{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#64748B}
+        .ld{width:24px;height:2px}
+        .ld-s{background:#0891B2}
+        .ld-r{background:#7C3AED}
+        .ld-m{background:#16A34A}
+        .ld-a{background:transparent;border-top:2px dashed #0891B2}
+        .ld-w{background:transparent;border-top:2px dashed #EA580C}
+        .ld-d{background:transparent;border-top:2px dashed #DC2626}
+        .ld-ret{background:transparent;border-top:2px dashed #059669}
+        .lb{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+        /* ── MODAL ── */
+        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+        .modal-bg.open{display:flex}
+        .modal{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;width:100%;max-width:540px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.12)}
+        .modal-head{padding:18px 22px 14px;border-bottom:1px solid #F1F5F9;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:#fff;z-index:1}
+        .modal-hl{flex:1}
+        .modal-tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#0891B2;margin-bottom:4px}
+        .modal-title{font-family:'Fraunces',serif;font-size:19px;font-weight:700;color:#18181B;line-height:1.2}
+        .modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:#94A3B8;flex-shrink:0;line-height:1}
+        .modal-x:hover{color:#18181B}
+        .modal-body{padding:18px 22px 22px}
+        .modal-body p{font-family:'Outfit',sans-serif;font-size:13px;color:#475569;line-height:1.75;margin-bottom:12px}
+        .modal-body p:last-child{margin-bottom:0}
+        .modal-body strong{color:#18181B;font-weight:600}
+        .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+        .chip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:4px}
+        .chip-blue{background:#DBEAFE;color:#1E3A8A}
+        .chip-teal{background:#D1FAE5;color:#064E3B}
+        .chip-amber{background:#FEF3C7;color:#78350F}
+        .chip-gray{background:#F1F5F9;color:#475569}
+        .chip-red{background:#FEE2E2;color:#B91C1C}
+        .chip-purple{background:#EDE9FE;color:#4C1D95}
+        .chip-orange{background:#FFEDD5;color:#C2410C}
+        .chip-cyan{background:#CFFAFE;color:#0E7490}
+        .chip-green{background:#D1FAE5;color:#065F46}
+        .chip-indigo{background:#E0E7FF;color:#3730A3}
+        .footer{text-align:center;margin-top:36px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#CBD5E1;padding:16px;background:#18181B}
+        .footer a{color:#34D399;text-decoration:none}
+        /* ── STAGE FILTER ── */
+        .stage-bar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:12px 14px 6px;max-width:1300px;margin:0 auto}
+        .stage-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:6px 14px;border-radius:6px;border:1.5px solid #E2E8F0;background:#FFFFFF;color:#64748B;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;text-transform:uppercase}
+        .stage-btn:hover{border-color:#94A3B8;color:#18181B}
+        .stage-btn.active{background:#18181B;color:#F8FAFC;border-color:#18181B}
+        .stage-btn.active:hover{background:#334155;border-color:#334155}
+        .stage-divider{width:1px;height:24px;background:#E2E8F0;align-self:center}
+        .section[data-section].filtering .flow-area[data-stage]{display:none}
+        .section[data-section].filtering .flow-area[data-stage].stage-visible{display:block}
+        .section.filtering .section-header,.section.filtering > .banner{display:none}
+        .section.filtering .section-header.stage-visible{display:flex}
+        .section-header.stage-header{display:none}
+        .section.filtering .section-header.default-header{display:none}
+        .stage-title{text-align:center;padding:8px 14px 0;max-width:1300px;margin:0 auto}
+        .stage-title h3{font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:#18181B;margin-bottom:2px}
+        .stage-title p{font-family:'JetBrains Mono',monospace;font-size:10px;color:#94A3B8;letter-spacing:0.08em}
+        .stage-title{display:none}
+        .stage-title.active{display:block}
+        @media print{.modal-bg,.stage-bar{display:none!important}body{padding:0!important}.section{padding:8px 6px 0!important}.flow-area{break-inside:avoid;margin-bottom:4px!important}.box{max-width:140px!important;min-width:80px!important}.arr{min-width:24px!important}}
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="brand">Fintech <span>on</span> Cloud</div>
+    <a class="back" href="https://fintechoncloud.substack.com">← Back to blog</a>
+</div>
+<div class="hero">
+    <div class="eyebrow">// Production Architecture · Post #7 · European Payment Series · TPP / Fintech Perspective</div>
+    <h1>PSD2 Open Banking — Production-Grade GCP Architecture<br/>Third-Party Provider (TPP) Payment & Account Access</h1>
+    <p>Architecture from the <strong>TPP / fintech</strong> viewpoint — what <em>you</em> build and operate as a licensed PISP / AISP. External parties (banks/ASPSPs, eIDAS registries, PSU browser) shown as dashed-border components. Click any component for a full explanation.</p>
+    <div class="tags">
+        <span class="tag tag-cyan">PSD2 / NextGenPSD2</span>
+        <span class="tag tag-blue">GCP</span>
+        <span class="tag tag-purple">eIDAS · mTLS</span>
+        <span class="tag tag-orange">SCA Redirect</span>
+        <span class="tag tag-red">Failure Handling</span>
+        <span class="tag tag-green">Consent Lifecycle</span>
+        <span class="tag tag-amber">PISP · AISP</span>
+        <span class="tag tag-gray">Berlin Group XS2A</span>
+    </div>
+</div>
+
+<div style="max-width:1300px;margin:12px auto 0;padding:0 14px">
+    <div class="banner banner-cyan" style="display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:16px;line-height:1">🏗</span>
+        <div>
+            <strong style="color:#0E4F6B">Perspective: Licensed TPP (PISP + AISP)</strong><br/>
+            This diagram shows what <em>you</em> build and operate as a licensed Third-Party Provider integrating with bank APIs under PSD2. <strong style="color:#0E4F6B">Solid-border boxes</strong> = your systems (Cloud Run, Pub/Sub, Cloud SQL, etc.). <strong style="color:#0E4F6B">Dashed-border boxes</strong> = external parties you interact with (bank APIs, eIDAS registries, PSU browser) — you do not control these.
+        </div>
+    </div>
+</div>
+
+<!-- STAGE FILTER BAR -->
+<div class="stage-bar" id="stageBar">
+    <button class="stage-btn active" data-filter="all" onclick="filterStage('all')">Show All</button>
+    <div class="stage-divider"></div>
+    <button class="stage-btn" data-filter="pisp" onclick="filterStage('pisp')">💳 PISP — Payment Initiation</button>
+    <button class="stage-btn" data-filter="aisp" onclick="filterStage('aisp')">📊 AISP — Account Information</button>
+    <button class="stage-btn" data-filter="failure" onclick="filterStage('failure')">✕ Failure Modes</button>
+</div>
+
+<!-- STAGE TITLES -->
+<div class="stage-title" id="st-pisp"><h3>💳 Payment Initiation (PISP)</h3><p>MERCHANT REQUEST → TPP GATEWAY → BANK ADAPTER → POST /v1/payments → SCA REDIRECT → PSU AUTH → STATUS POLLING → MERCHANT CALLBACK</p></div>
+<div class="stage-title" id="st-aisp"><h3>📊 Account Information (AISP)</h3><p>CONSENT CREATE → SCA AUTH → VALID (90 DAYS) → GET /v1/accounts → GET /v1/accounts/{id}/transactions → TOKEN REFRESH → DELIVER</p></div>
+<div class="stage-title" id="st-failure"><h3>✕ Failure Modes &amp; Recovery</h3><p>SCA REDIRECT LOST · CERT EXPIRY · TOKEN REFRESH FAIL · STUCK PAYMENT · RACE CONDITION · AUDIT TRAIL</p></div>
+
+<!-- ═══════════ SECTION: PISP FLOW ═══════════ -->
+<div class="section" data-section="main">
+    <div class="section-header sh-psd2 default-header">
+        <div><h2>Payment Initiation (PISP) — Complete Flow</h2><p>MERCHANT → TPP → BANK API → SCA → SETTLEMENT → CALLBACK</p></div>
+    </div>
+
+    <!-- Phase 1: Payment Request -->
+    <div class="flow-area" data-stage="pisp">
+        <div class="flow-label cyan">// Phase 1 — Payment request: merchant triggers payment → TPP validates → creates payment at bank via Berlin Group API</div>
+        <div class="flow-row">
+            <div class="box box-ext-browser" onclick="om('merchant_app')"><div class="bt">Merchant App</div><div class="bs">checkout · order</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">POST /initiate</div></div>
+            <div class="box box-blue" onclick="om('tpp_gateway')"><div class="bt">TPP Gateway</div><div class="bs">Cloud Run · API</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">validate + persist</div></div>
+            <div class="box box-teal" onclick="om('payment_db')"><div class="bt">Payment Store</div><div class="bs">Cloud SQL · PostgreSQL</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">select adapter</div></div>
+            <div class="box box-purple" onclick="om('bank_adapter')"><div class="bt">Bank Adapter Layer</div><div class="bs">per-bank impl</div></div>
+            <div class="arr arr-mtls"><div class="arr-line"></div><div class="arr-label">mTLS · QWAC</div></div>
+            <div class="box box-ext-bank" onclick="om('bank_api')"><div class="bt">Bank API (ASPSP)</div><div class="bs">NextGenPSD2 XS2A</div></div>
+        </div>
+    </div>
+
+    <!-- Phase 2: SCA Redirect -->
+    <div class="flow-area" data-stage="pisp">
+        <div class="flow-label purple">// Phase 2 — SCA redirect: bank returns scaRedirect URL → PSU authenticates at bank → bank redirects back to TPP-Redirect-URI with auth code</div>
+        <div class="flow-row">
+            <div class="box box-ext-bank" onclick="om('bank_sca')"><div class="bt">Bank SCA Page</div><div class="bs">PSU authenticates</div></div>
+            <div class="arr arr-redirect"><div class="arr-line"></div><div class="arr-label">scaRedirect</div></div>
+            <div class="box box-ext-browser" onclick="om('psu_browser')"><div class="bt">PSU Browser</div><div class="bs">customer device</div></div>
+            <div class="arr arr-redirect"><div class="arr-line"></div><div class="arr-label">SCA complete</div></div>
+            <div class="box box-ext-bank" onclick="om('bank_sca')"><div class="bt">Bank Auth</div><div class="bs">2FA · biometric</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">redirect + code</div></div>
+            <div class="box box-blue" onclick="om('sca_handler')"><div class="bt">SCA Handler</div><div class="bs">Cloud Run · redirect</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">exchange code</div></div>
+            <div class="box box-purple" onclick="om('state_machine')"><div class="bt">State Machine</div><div class="bs">RCVD → ACCP → ACSC</div></div>
+        </div>
+    </div>
+
+    <!-- Phase 3: Status Polling + Merchant Callback -->
+    <div class="flow-area" data-stage="pisp">
+        <div class="flow-label cyan">// Phase 3 — Status polling: TPP polls bank for terminal status → updates state → notifies merchant via callback</div>
+        <div class="flow-row">
+            <div class="box box-purple" onclick="om('status_poller')"><div class="bt">Status Poller</div><div class="bs">Cloud Tasks · retry</div></div>
+            <div class="arr arr-mtls"><div class="arr-line"></div><div class="arr-label">GET /payments/{id}</div></div>
+            <div class="box box-ext-bank" onclick="om('bank_api')"><div class="bt">Bank API</div><div class="bs">payment status</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">ACSC / RJCT</div></div>
+            <div class="box box-teal" onclick="om('payment_db')"><div class="bt">Payment Store</div><div class="bs">update terminal</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('pubsub_payment')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.completed</div></div>
+            <div class="arr arr-webhook"><div class="arr-line"></div><div class="arr-label">callback</div></div>
+            <div class="box box-ext-browser" onclick="om('merchant_callback')"><div class="bt">Merchant Webhook</div><div class="bs">order fulfilment</div></div>
+        </div>
+    </div>
+
+    <!-- AISP Section Header -->
+    <div class="section-header sh-consent default-header" style="margin-top:16px">
+        <div><h2>Account Information (AISP) — Consent + Data Retrieval</h2><p>CONSENT → SCA → TOKEN → GET ACCOUNTS → GET TRANSACTIONS → TRANSFORM → DELIVER</p></div>
+    </div>
+
+    <!-- Phase 4: Consent Creation -->
+    <div class="flow-area consent-row" data-stage="aisp">
+        <div class="flow-label purple">// Phase 4 — Consent creation: merchant requests account access → TPP creates consent at bank → PSU authorises via SCA</div>
+        <div class="flow-row">
+            <div class="box box-ext-browser" onclick="om('merchant_ais')"><div class="bt">Merchant AIS Request</div><div class="bs">account data</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">POST /consent</div></div>
+            <div class="box box-blue" onclick="om('tpp_gateway')"><div class="bt">TPP Gateway</div><div class="bs">Cloud Run</div></div>
+            <div class="arr arr-mtls"><div class="arr-line"></div><div class="arr-label">POST /v1/consents</div></div>
+            <div class="box box-ext-bank" onclick="om('bank_consent')"><div class="bt">Bank Consent API</div><div class="bs">consentId + SCA link</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">persist</div></div>
+            <div class="box box-indigo" onclick="om('consent_store')"><div class="bt">Consent Store</div><div class="bs">Cloud SQL · tokens</div></div>
+        </div>
+    </div>
+
+    <!-- Phase 5: AISP Data Retrieval -->
+    <div class="flow-area" data-stage="aisp">
+        <div class="flow-label cyan">// Phase 5 — Account data retrieval: consent valid → fetch accounts + transactions → transform → deliver to merchant</div>
+        <div class="flow-row">
+            <div class="box box-indigo" onclick="om('consent_store')"><div class="bt">Consent Store</div><div class="bs">access_token valid</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">token</div></div>
+            <div class="box box-purple" onclick="om('bank_adapter')"><div class="bt">Bank Adapter</div><div class="bs">per-bank impl</div></div>
+            <div class="arr arr-mtls"><div class="arr-line"></div><div class="arr-label">GET /v1/accounts</div></div>
+            <div class="box box-ext-bank" onclick="om('bank_ais_api')"><div class="bt">Bank AIS API</div><div class="bs">accounts · txns</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">JSON response</div></div>
+            <div class="box box-teal" onclick="om('data_transform')"><div class="bt">Data Transformer</div><div class="bs">normalise · classify</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">deliver</div></div>
+            <div class="box box-ext-browser" onclick="om('merchant_data')"><div class="bt">Merchant</div><div class="bs">account data</div></div>
+        </div>
+    </div>
+
+    <!-- Phase 6: Consent Refresh -->
+    <div class="flow-area consent-row" data-stage="aisp">
+        <div class="flow-label purple">// Phase 6 — Consent token refresh: scheduled job refreshes access tokens before expiry — 90-day consent validity under PSD2</div>
+        <div class="flow-row">
+            <div class="box box-cyan" onclick="om('consent_refresh')"><div class="bt">Consent Refresh Job</div><div class="bs">Cloud Tasks · scheduled</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">scan near-expiry</div></div>
+            <div class="box box-indigo" onclick="om('consent_store')"><div class="bt">Consent Store</div><div class="bs">refresh_token</div></div>
+            <div class="arr arr-mtls"><div class="arr-line"></div><div class="arr-label">POST /oauth/token</div></div>
+            <div class="box box-ext-bank" onclick="om('bank_oauth')"><div class="bt">Bank OAuth</div><div class="bs">token endpoint</div></div>
+            <div class="arr arr-return"><div class="arr-line"></div><div class="arr-label">new access_token</div></div>
+            <div class="box box-indigo" onclick="om('consent_store')"><div class="bt">Consent Store</div><div class="bs">update tokens</div></div>
+        </div>
+    </div>
+
+    <!-- Failure Section Header -->
+    <div class="section-header sh-failure default-header" style="margin-top:16px">
+        <div><h2>Failure Modes, Recovery &amp; Compliance</h2><p>SCA LOST · CERT EXPIRY · TOKEN FAIL · STUCK PAYMENT · AUDIT TRAIL · REGULATOR EXPORT</p></div>
+    </div>
+
+    <!-- Phase 7: eIDAS Certificate Management -->
+    <div class="flow-area security-row" data-stage="failure">
+        <div class="flow-label danger">// Phase 7 — eIDAS cert lifecycle: QWAC + QSealC rotation — expiry = total TPP outage — monitor 90/60/30/7 day alerts</div>
+        <div class="flow-row">
+            <div class="box box-ext-reg" onclick="om('eidas_qtsp')"><div class="bt">QTSP (Certificate Authority)</div><div class="bs">eIDAS issuer</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">QWAC + QSealC</div></div>
+            <div class="box box-green" onclick="om('secret_manager')"><div class="bt">Secret Manager</div><div class="bs">cert + private key</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">load cert</div></div>
+            <div class="box box-cyan" onclick="om('cert_monitor')"><div class="bt">Cert Monitor</div><div class="bs">expiry alerts</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">90/60/30/7d</div></div>
+            <div class="box box-red" onclick="om('alerting')"><div class="bt">PagerDuty</div><div class="bs">on-call alert</div></div>
+        </div>
+    </div>
+
+    <!-- Phase 8: Stale Payment Scanner -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label warn">// Phase 8 — Stale payment scanner: catch payments stuck in PDNG > 30min — safety net for lost SCA redirects and bank queue failures</div>
+        <div class="flow-row">
+            <div class="box box-cyan" onclick="om('stale_scanner')"><div class="bt">Stale Payment Scanner</div><div class="bs">Cloud Tasks · 5min</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">query PDNG > 30m</div></div>
+            <div class="box box-teal" onclick="om('payment_db')"><div class="bt">Payment Store</div><div class="bs">partial index scan</div></div>
+            <div class="arr arr-mtls"><div class="arr-line"></div><div class="arr-label">GET status</div></div>
+            <div class="box box-ext-bank" onclick="om('bank_api')"><div class="bt">Bank API</div><div class="bs">live status</div></div>
+            <div class="arr arr-warn"><div class="arr-line"></div><div class="arr-label">escalate</div></div>
+            <div class="box box-red" onclick="om('manual_review')"><div class="bt">Manual Review</div><div class="bs">ops dashboard</div></div>
+        </div>
+    </div>
+
+    <!-- Phase 9: Audit Trail -->
+    <div class="flow-area" data-stage="failure">
+        <div class="flow-label success">// Phase 9 — Audit trail: every API call, consent event, payment state change → append-only → BigQuery → regulator export → 7yr archive</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('pubsub_audit')"><div class="bt">Cloud Pub/Sub</div><div class="bs">all lifecycle events</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">stream</div></div>
+            <div class="box box-indigo" onclick="om('audit_service')"><div class="bt">Audit Service</div><div class="bs">append-only · hash-chain</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">persist</div></div>
+            <div class="box box-teal" onclick="om('audit_store')"><div class="bt">Audit Store</div><div class="bs">BigQuery · CMEK</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">export</div></div>
+            <div class="box box-gray" onclick="om('regulator_export')"><div class="bt">Regulator Export</div><div class="bs">NCA · DNB · BaFin</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">archive</div></div>
+            <div class="box box-green" onclick="om('archive')"><div class="bt">GCS Coldline</div><div class="bs">7yr · WORM lock</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+    <div class="legend-inner">
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:#0E4F6B;text-transform:uppercase;letter-spacing:0.08em">Connections</span>
+            <div class="li"><div class="ld ld-s"></div>Synchronous API call</div>
+            <div class="li"><div class="ld ld-r"></div>SCA redirect (browser)</div>
+            <div class="li"><div class="ld ld-m"></div>mTLS (eIDAS QWAC)</div>
+            <div class="li"><div class="ld ld-a"></div>Async (Pub/Sub)</div>
+            <div class="li"><div class="ld ld-w"></div>Webhook / callback</div>
+            <div class="li"><div class="ld ld-ret"></div>Status return</div>
+            <div class="li"><div class="ld ld-d"></div>Failure path</div>
+        </div>
+        <div style="height:1px;width:100%;background:#E2E8F0"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:#065F46;text-transform:uppercase;letter-spacing:0.08em">Your Systems — solid border</span>
+            <div class="li"><div class="lb" style="background:#1E40AF;border:1.5px solid #2563EB"></div>GCP gateway / compute</div>
+            <div class="li"><div class="lb" style="background:#065F46;border:1.5px solid #047857"></div>Services / storage</div>
+            <div class="li"><div class="lb" style="background:#92400E;border:1.5px solid #B45309"></div>Messaging (Pub/Sub)</div>
+            <div class="li"><div class="lb" style="background:#4C1D95;border:1.5px solid #6D28D9"></div>Adapters / state machine</div>
+            <div class="li"><div class="lb" style="background:#312E81;border:1.5px solid #4F46E5"></div>Consent / audit stores</div>
+            <div class="li"><div class="lb" style="background:#0E4F6B;border:1.5px solid #0891B2"></div>Scheduled jobs</div>
+            <div class="li"><div class="lb" style="background:#991B1B;border:1.5px solid #DC2626"></div>Failure / alerts</div>
+        </div>
+        <div style="height:1px;width:100%;background:#E2E8F0"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:#881337;text-transform:uppercase;letter-spacing:0.08em">External — dashed border</span>
+            <div class="li"><div class="lb" style="background:#881337;border:1.5px dashed #BE123C"></div>Bank API (ASPSP)</div>
+            <div class="li"><div class="lb" style="background:#1E3A8A;border:1.5px dashed #2563EB"></div>Merchant / PSU browser</div>
+            <div class="li"><div class="lb" style="background:#1E1B4B;border:1.5px dashed #4338CA"></div>eIDAS / registry</div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="mbg" onclick="if(event.target===this)cm()">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-hl"><div class="modal-tag" id="mtag"></div><div class="modal-title" id="mtitle"></div></div>
+            <button class="modal-x" onclick="cm()">✕</button>
+        </div>
+        <div class="modal-body" id="mbody"></div>
+    </div>
+</div>
+
+<div class="footer">
+    Fintech <span style="color:#34D399">on</span> Cloud · <a href="https://fintechoncloud.substack.com">fintechoncloud.substack.com</a> · Post #5 · PSD2 Open Banking Architecture
+</div>
+
+<script>
+    const DATA={
+        'merchant_app':{tag:'External · Merchant',title:'Merchant Application',body:'<p>The merchant or fintech that integrates with your TPP to offer account-to-account payments or account data services. They call your TPP API to initiate payments (PISP) or request account information (AISP).</p><p>Your API contract with the merchant is separate from the bank API contract. The merchant sends you a payment request with: amount, currency, creditor IBAN, creditor name, remittance info, and a return URL. You translate this into a Berlin Group payment initiation request.</p>',chips:[{t:'Your API consumer',c:'chip-blue'},{t:'Payment initiation',c:'chip-cyan'},{t:'Account data request',c:'chip-teal'},{t:'Return URL provided',c:'chip-amber'}]},
+
+        'tpp_gateway':{tag:'GCP · Cloud Run',title:'TPP API Gateway',body:'<p>Your central API gateway running on Cloud Run. Handles merchant authentication (API keys / OAuth2), request validation, rate limiting, and routing to the appropriate bank adapter. Set <code>min-instances: 2</code> to eliminate cold starts — SCA redirects are latency-sensitive.</p><p><strong>Key responsibilities:</strong> Validate merchant API key, check payment amount limits, deduplicate requests using an idempotency key, persist the payment record, select the correct bank adapter based on the debtor IBAN (BIC lookup), and initiate the payment at the bank.</p>',chips:[{t:'Cloud Run · min-instances: 2',c:'chip-blue'},{t:'Merchant auth',c:'chip-teal'},{t:'Idempotency check',c:'chip-red'},{t:'BIC-based routing',c:'chip-amber'},{t:'Request validation',c:'chip-gray'}]},
+
+        'payment_db':{tag:'GCP · Storage',title:'Payment Store — Cloud SQL (PostgreSQL)',body:'<p>Stores payment state, bank-issued payment IDs, status history, and the mapping between your internal payment ID and the bank\'s <code>paymentId</code>. Use PostgreSQL for ACID guarantees — a half-persisted payment is worse than no payment.</p><p><strong>Key columns:</strong> <code>id</code> (UUID), <code>bank_payment_id</code> (unique, from bank response), <code>status</code> (RCVD/PDNG/ACCP/ACSC/RJCT), <code>merchant_id</code>, <code>amount</code>, <code>currency</code>, <code>debtor_iban</code>, <code>creditor_iban</code>, <code>created_at</code>, <code>sca_completed_at</code>, <code>terminal_at</code>.</p><p><strong>Partial index for stale scanner:</strong> <code>CREATE INDEX idx_payments_stale ON payments (status, created_at) WHERE status IN (\'RCVD\', \'PDNG\')</code></p>',chips:[{t:'Cloud SQL PostgreSQL',c:'chip-teal'},{t:'ACID transactions',c:'chip-red'},{t:'bank_payment_id unique',c:'chip-blue'},{t:'Partial index for stale scan',c:'chip-amber'},{t:'Status history tracked',c:'chip-gray'}]},
+
+        'bank_adapter':{tag:'TPP · Critical',title:'Bank Adapter Layer — Per-Bank Implementation',body:'<p><strong>This is the hardest part of building a TPP.</strong> Despite the Berlin Group NextGenPSD2 being a "standard," every bank implements it differently. Some require <code>PSU-IP-Address</code> headers; others reject them. Some return <code>RCVD</code> as the initial status; others return <code>PDNG</code>. Some skip intermediate states entirely.</p><p><strong>Architecture:</strong> Each bank gets its own adapter class behind a common <code>BankAdapter</code> interface. The adapter handles: endpoint URLs, required headers, authentication quirks, response parsing differences, SCA approach (redirect vs embedded), and error code mapping.</p><p><strong>The "bank quirks" registry:</strong> A configuration file that documents every deviation from the spec discovered in production. After 5+ bank integrations, this registry becomes your most valuable internal document.</p>',chips:[{t:'Per-bank adapter class',c:'chip-red'},{t:'Common interface',c:'chip-blue'},{t:'Bank quirks registry',c:'chip-amber'},{t:'Header differences',c:'chip-orange'},{t:'Status code mapping',c:'chip-gray'}]},
+
+        'bank_api':{tag:'External · ASPSP',title:'Bank API (ASPSP) — NextGenPSD2 XS2A',body:'<p>The bank\'s PSD2-mandated API. Core endpoints: <code>POST /v1/payments/sepa-credit-transfers</code> (initiate), <code>GET /v1/payments/{id}</code> (status), <code>POST /v1/consents</code> (consent), <code>GET /v1/accounts</code> (list), <code>GET /v1/accounts/{id}/transactions</code> (transactions).</p><p><strong>Authentication:</strong> mTLS with your QWAC certificate on every request. Some banks additionally require request signing with your QSealC. The bank validates your eIDAS certificate against the public TPP register to confirm your licence is valid and active.</p><p><strong>Reality check:</strong> Bank APIs are not always reliable. Sandbox environments often don\'t match production. Response times vary from 200ms to 5+ seconds. Some banks have maintenance windows where the PSD2 API is unavailable. Build your adapter to handle all of this gracefully.</p>',chips:[{t:'NextGenPSD2 v1.3.x',c:'chip-cyan'},{t:'mTLS required',c:'chip-red'},{t:'Response time varies',c:'chip-amber'},{t:'Sandbox ≠ production',c:'chip-orange'},{t:'Maintenance windows',c:'chip-gray'}]},
+
+        'bank_sca':{tag:'External · Bank',title:'Bank SCA Page — Strong Customer Authentication',body:'<p>The bank\'s authentication page where the PSU (customer) completes Strong Customer Authentication. PSD2 requires two of three factors: knowledge (PIN/password), possession (phone/token), and inherence (fingerprint/face).</p><p><strong>Redirect flow:</strong> The bank returns a <code>scaRedirect</code> URL in the payment initiation response. You redirect the PSU\'s browser there. After SCA, the bank redirects back to your <code>TPP-Redirect-URI</code> with an authorisation code. This redirect is the most fragile point in the entire flow.</p><p><strong>You have zero control over:</strong> The bank\'s SCA page design, the authentication method offered, the session timeout, or the redirect behaviour. If the bank\'s SCA page is slow, your conversion rate drops. If it crashes, the payment fails. Track SCA completion rates per bank to identify which banks are hurting your conversion.</p>',chips:[{t:'2FA mandatory (PSD2)',c:'chip-red'},{t:'scaRedirect URL',c:'chip-purple'},{t:'You have zero control',c:'chip-orange'},{t:'Track per-bank conversion',c:'chip-amber'},{t:'Session timeout varies',c:'chip-gray'}]},
+
+        'psu_browser':{tag:'External · PSU',title:'PSU Browser — Customer Device',body:'<p>The Payment Service User\'s browser or mobile device. The PSU is redirected from your app to the bank\'s SCA page and back. They may close the browser, lose connectivity, or their session may expire at any point in this chain.</p><p><strong>Design for abandonment:</strong> A significant percentage of PSUs will not complete the SCA redirect chain. They close the tab, get distracted, or the bank\'s page takes too long to load. Your stale payment scanner must catch these abandoned sessions.</p>',chips:[{t:'Redirect chain participant',c:'chip-blue'},{t:'May abandon mid-flow',c:'chip-orange'},{t:'Session can expire',c:'chip-amber'}]},
+
+        'sca_handler':{tag:'GCP · Cloud Run',title:'SCA Redirect Handler — TPP-Redirect-URI',body:'<p>The endpoint registered as your <code>TPP-Redirect-URI</code> with each bank. After the PSU completes SCA, the bank redirects them here with an authorisation code (or an error). This endpoint must be <strong>always available</strong> — if it\'s down during a redirect, the payment is lost.</p><p><strong>On receiving the redirect:</strong> (1) Extract the auth code from query params. (2) Look up the payment by the state parameter or bank reference. (3) Exchange the auth code for a token (if required by the bank). (4) Update payment status to post-SCA state. (5) Redirect the PSU to the merchant\'s return URL with your payment reference.</p><p><strong>Critical:</strong> This endpoint must survive deployments. Use Cloud Run\'s traffic splitting to ensure zero-downtime deploys — a rolling deployment that takes down the redirect endpoint for even 2 seconds can lose payments in flight.</p>',chips:[{t:'Must be always-available',c:'chip-red'},{t:'Zero-downtime deploys',c:'chip-red'},{t:'Extract auth code',c:'chip-blue'},{t:'State parameter validation',c:'chip-teal'},{t:'Redirect to merchant',c:'chip-amber'}]},
+
+        'state_machine':{tag:'TPP · Orchestration',title:'Payment State Machine',body:'<p>Tracks payment through NextGenPSD2 status codes: <code>RCVD</code> (received by bank) → <code>PDNG</code> (pending SCA) → <code>ACCP</code> (accepted by bank) → <code>ACSP</code> (settlement in process) → <code>ACSC</code> (settlement completed). Terminal failure: <code>RJCT</code> (rejected).</p><p><strong>State transition rules:</strong> Only forward transitions are valid. A payment in ACSC cannot go back to PDNG. Some banks skip intermediate states (e.g. jump from PDNG directly to ACSC). Your state machine must handle this — validate that the new status is "later" in the lifecycle, not "exactly the next expected status".</p><p><strong>Idempotency:</strong> If you receive the same status update twice (duplicate webhook or poll), the state machine must be a no-op. Use compare-and-swap: <code>UPDATE payments SET status = $new WHERE id = $id AND status = $old</code>.</p>',chips:[{t:'RCVD → PDNG → ACCP → ACSC',c:'chip-blue'},{t:'RJCT = terminal failure',c:'chip-red'},{t:'Forward-only transitions',c:'chip-teal'},{t:'Banks skip states',c:'chip-amber'},{t:'Compare-and-swap update',c:'chip-purple'}]},
+
+        'status_poller':{tag:'GCP · Cloud Tasks',title:'Status Poller — Active Payment Status Checking',body:'<p>Not all banks send webhooks or status callbacks. For many bank integrations, the only way to know a payment\'s terminal status is to poll <code>GET /v1/payments/{id}</code>. The status poller runs as a Cloud Tasks scheduled job.</p><p><strong>Polling strategy:</strong> After SCA completion, poll every 5 seconds for the first 30 seconds (when most payments reach terminal status), then every 30 seconds for 5 minutes, then every 5 minutes for 30 minutes. After 30 minutes, hand off to the stale scanner. This progressive backoff avoids hitting bank API rate limits.</p>',chips:[{t:'Cloud Tasks scheduled',c:'chip-cyan'},{t:'Progressive backoff',c:'chip-amber'},{t:'5s → 30s → 5min intervals',c:'chip-teal'},{t:'Handoff to stale scanner',c:'chip-gray'}]},
+
+        'pubsub_payment':{tag:'GCP · Messaging',title:'Cloud Pub/Sub — payment.completed',body:'<p>Published after the payment reaches a terminal state (ACSC or RJCT). Multiple subscribers fan out independently: merchant callback service, audit log, ledger service, analytics pipeline.</p><p>Enable <strong>ordering keys</strong> set to the payment ID so multiple events for the same payment are processed in order. All subscribers must be idempotent regardless.</p>',chips:[{t:'payment.completed',c:'chip-cyan'},{t:'payment.rejected',c:'chip-red'},{t:'Fan-out pattern',c:'chip-blue'},{t:'Ordering key: payment_id',c:'chip-teal'}]},
+
+        'merchant_callback':{tag:'External · Merchant',title:'Merchant Webhook — Payment Result Callback',body:'<p>Your TPP calls the merchant\'s registered webhook URL with the payment result. Include: your payment ID, status (completed/rejected), the bank\'s payment ID, timestamp, and a signature so the merchant can verify the callback authenticity.</p><p><strong>Retry logic:</strong> If the merchant\'s endpoint returns 5xx or times out, retry with exponential backoff (3 attempts over 15 minutes). After final failure, mark as "callback failed" and make the status available via your GET /payments/{id} endpoint for the merchant to poll.</p>',chips:[{t:'HMAC-signed callback',c:'chip-blue'},{t:'3 retries · 15min window',c:'chip-amber'},{t:'Fallback to polling',c:'chip-teal'},{t:'Include bank payment ID',c:'chip-gray'}]},
+
+        'consent_store':{tag:'GCP · Storage',title:'Consent Store — Cloud SQL',body:'<p>Stores AISP consent lifecycle: consent ID (from bank), access token, refresh token, token expiry, consent expiry (90 days under PSD2), PSU reference, permitted accounts, and consent status (RECEIVED/VALID/EXPIRED/REVOKED/TERMINATED_BY_TPP).</p><p><strong>Token security:</strong> Access and refresh tokens are encrypted at rest using Cloud KMS customer-managed encryption keys. The application layer handles encryption/decryption — the database never sees plaintext tokens.</p><p><strong>90-day expiry:</strong> PSD2 mandates that consents require SCA re-authentication every 90 days (proposed to extend to 180 days under PSD3). Your consent refresh job must track this and trigger re-consent flows before expiry.</p>',chips:[{t:'Consent lifecycle store',c:'chip-indigo'},{t:'KMS-encrypted tokens',c:'chip-red'},{t:'90-day PSD2 limit',c:'chip-amber'},{t:'180-day under PSD3',c:'chip-teal'},{t:'VALID/EXPIRED/REVOKED',c:'chip-gray'}]},
+
+        'merchant_ais':{tag:'External · Merchant',title:'Merchant AIS Request',body:'<p>The merchant requests account information from your TPP — typically to verify income, assess creditworthiness, or aggregate account data for the customer. The request specifies which data is needed: balances, transactions (with date range), and/or account details.</p>',chips:[{t:'Income verification',c:'chip-teal'},{t:'Creditworthiness',c:'chip-blue'},{t:'Account aggregation',c:'chip-cyan'}]},
+
+        'bank_consent':{tag:'External · ASPSP',title:'Bank Consent API',body:'<p>The bank\'s consent endpoint: <code>POST /v1/consents</code>. Returns a <code>consentId</code> and an SCA redirect link. The PSU must authenticate at the bank to authorise the consent. After SCA, the consent status changes to VALID and you receive access/refresh tokens.</p>',chips:[{t:'POST /v1/consents',c:'chip-cyan'},{t:'Returns consentId',c:'chip-blue'},{t:'SCA required',c:'chip-purple'},{t:'Token exchange after SCA',c:'chip-teal'}]},
+
+        'bank_ais_api':{tag:'External · ASPSP',title:'Bank AIS API — Account Data',body:'<p>The bank\'s account information endpoints: <code>GET /v1/accounts</code> (list accounts under consent), <code>GET /v1/accounts/{id}/balances</code> (current/available balance), <code>GET /v1/accounts/{id}/transactions</code> (transaction history with date range). Rate-limited per bank — typically 4 calls per day per consent without PSU presence.</p>',chips:[{t:'GET /v1/accounts',c:'chip-cyan'},{t:'Rate limited: 4/day/consent',c:'chip-amber'},{t:'PSU-present = unlimited',c:'chip-teal'},{t:'Transaction date range',c:'chip-gray'}]},
+
+        'data_transform':{tag:'GCP · Processing',title:'Data Transformer — Normalise & Classify',body:'<p>Bank transaction data comes in wildly different formats. Some banks return structured remittance info; others stuff everything into a free-text field. Some use ISO 20022 purpose codes; others don\'t. The transformer normalises everything into your canonical schema and optionally classifies transactions (income/expense, category) using Vertex AI.</p>',chips:[{t:'Schema normalisation',c:'chip-blue'},{t:'Vertex AI classification',c:'chip-purple'},{t:'ISO 20022 mapping',c:'chip-teal'},{t:'Free-text parsing',c:'chip-amber'}]},
+
+        'merchant_data':{tag:'External · Merchant',title:'Merchant — Account Data Delivery',body:'<p>The normalised, classified account data is delivered to the merchant via your AISP API response. The merchant uses this for their business logic: lending decisions, account verification, personal finance management, etc.</p>',chips:[{t:'Normalised response',c:'chip-blue'},{t:'Real-time or cached',c:'chip-teal'}]},
+
+        'consent_refresh':{tag:'GCP · Cloud Tasks',title:'Consent Refresh Job',body:'<p>Scheduled Cloud Tasks job that scans for consents where the access token is approaching expiry (e.g. within 1 hour) and uses the refresh token to obtain a new access token from the bank\'s OAuth endpoint.</p><p><strong>Key edge case:</strong> Some banks revoke refresh tokens after a single use (one-time refresh tokens). Your job must handle this: after refreshing, persist both the new access token AND the new refresh token atomically. If you lose the new refresh token, the consent is effectively dead.</p>',chips:[{t:'Scheduled per-bank',c:'chip-cyan'},{t:'One-time refresh tokens',c:'chip-red'},{t:'Atomic token update',c:'chip-red'},{t:'Track per-bank success rate',c:'chip-amber'}]},
+
+        'bank_oauth':{tag:'External · ASPSP',title:'Bank OAuth Token Endpoint',body:'<p>The bank\'s OAuth2 token endpoint for exchanging refresh tokens for new access tokens. Authenticated with your eIDAS QWAC certificate (mTLS). Some banks use a separate OAuth client_id and client_secret in addition to the certificate.</p>',chips:[{t:'POST /oauth/token',c:'chip-cyan'},{t:'mTLS authenticated',c:'chip-red'},{t:'Refresh grant type',c:'chip-blue'}]},
+
+        'eidas_qtsp':{tag:'External · Trust',title:'QTSP — Qualified Trust Service Provider',body:'<p>The eIDAS certificate authority (e.g. D-Trust, Digicert, Entrust) that issues your QWAC and QSealC certificates. Your TPP licence number is embedded in the certificate. The bank validates your certificate against the public TPP register maintained by EBA or the national competent authority.</p><p><strong>Certificate types:</strong> QWAC (Qualified Website Authentication Certificate) — used for mTLS to authenticate your server to the bank\'s API. QSealC (Qualified Certificate for Electronic Seals) — used to sign API requests so the bank can verify the request originated from you and wasn\'t tampered with.</p>',chips:[{t:'QWAC for mTLS',c:'chip-blue'},{t:'QSealC for signing',c:'chip-purple'},{t:'Licence number embedded',c:'chip-red'},{t:'1-2 year validity',c:'chip-amber'},{t:'Renewal takes days',c:'chip-orange'}]},
+
+        'secret_manager':{tag:'GCP · Security',title:'Secret Manager — Certificate Storage',body:'<p>GCP Secret Manager stores your eIDAS private keys and certificates. Use separate secret versions for QWAC and QSealC. Enable IAM-scoped access: only the bank adapter service account can read the private keys. Enable audit logging on all secret access events.</p><p><strong>Rotation:</strong> Upload the new certificate as a new secret version before the old one expires. Update your Cloud Run service to reference the new version. The old version remains available as a rollback.</p>',chips:[{t:'IAM-scoped access',c:'chip-red'},{t:'Separate QWAC + QSealC',c:'chip-blue'},{t:'Version-based rotation',c:'chip-teal'},{t:'Audit all access',c:'chip-amber'}]},
+
+        'cert_monitor':{tag:'GCP · Monitoring',title:'Certificate Expiry Monitor',body:'<p>A scheduled Cloud Function that reads your eIDAS certificate from Secret Manager, parses the <code>NotAfter</code> field, and alerts at 90, 60, 30, and 7 days before expiry. An expired eIDAS certificate means <strong>total TPP outage</strong> — every bank call fails at the mTLS handshake.</p><p><strong>Also monitor:</strong> The certificate serial number deployed on each Cloud Run instance matches the latest version in Secret Manager. A deployment that references an old certificate version can silently use an expired cert.</p>',chips:[{t:'90/60/30/7d alerts',c:'chip-red'},{t:'Parse NotAfter field',c:'chip-blue'},{t:'Total outage on expiry',c:'chip-red'},{t:'Check deployed vs stored',c:'chip-amber'}]},
+
+        'alerting':{tag:'Ops · Incident',title:'PagerDuty — On-Call Alert',body:'<p>Certificate expiry alerts go directly to PagerDuty with P1 severity. eIDAS certificate expiry is a business-critical event — it shuts down your entire TPP operation. Treat it with the same urgency as a production database failure.</p>',chips:[{t:'P1 severity',c:'chip-red'},{t:'On-call rotation',c:'chip-amber'}]},
+
+        'stale_scanner':{tag:'GCP · Recovery',title:'Stale Payment Scanner',body:'<p>Scheduled Cloud Tasks job (every 5 minutes) that queries payments stuck in non-terminal status (RCVD, PDNG) for more than 30 minutes. For each stale payment, fetches live status from the bank API.</p><p><strong>Why 30 minutes:</strong> Most bank SCA sessions time out after 5-15 minutes. Adding a buffer to 30 minutes avoids false positives while catching genuinely stuck payments. If the bank reports the payment as ACSC (completed), trigger the normal downstream flow — the customer completed SCA, but the redirect was lost.</p>',chips:[{t:'Every 5 minutes',c:'chip-cyan'},{t:'30min threshold',c:'chip-amber'},{t:'Safety net for lost redirects',c:'chip-red'},{t:'Partial index scan',c:'chip-teal'}]},
+
+        'manual_review':{tag:'Ops · Dashboard',title:'Manual Review Queue',body:'<p>Payments that the stale scanner cannot resolve (bank still reports PDNG after 30+ minutes, or bank returns an unexpected status) are escalated to manual review. Operators can: contact the bank\'s TPP support desk, mark the payment as stuck, trigger a refund if applicable, or notify the merchant.</p>',chips:[{t:'Ops dashboard',c:'chip-gray'},{t:'Bank TPP desk contact',c:'chip-amber'},{t:'Manual resolution',c:'chip-teal'}]},
+
+        'pubsub_audit':{tag:'GCP · Messaging',title:'Cloud Pub/Sub — Audit Events',body:'<p>Every API call to a bank, every consent event, every payment state change, and every SCA redirect is published as an audit event. Multiple subscribers: the audit service (compliance), analytics pipeline (operational metrics), and the monitoring system (alerting).</p>',chips:[{t:'All lifecycle events',c:'chip-cyan'},{t:'Fan-out to audit + analytics',c:'chip-blue'}]},
+
+        'audit_service':{tag:'GCP · Compliance',title:'Audit Service — Append-Only Hash-Chain',body:'<p>Central append-only, immutable audit trail. Every entry includes: timestamp, actor (service identity), action, payment/consent ID, before/after state, and a hash chaining to the previous entry for tamper evidence. Strict write-only access — no service can update or delete entries.</p><p><strong>PSD2 requirement:</strong> Regulators (DNB, BaFin, FCA) can request a complete audit trail of all TPP activities. This service must produce it within 24 hours.</p>',chips:[{t:'Append-only',c:'chip-red'},{t:'Hash-chained',c:'chip-purple'},{t:'Write-only access',c:'chip-red'},{t:'PSD2 compliant',c:'chip-blue'},{t:'24h regulator SLA',c:'chip-amber'}]},
+
+        'audit_store':{tag:'GCP · Storage',title:'Audit Store — BigQuery + CMEK',body:'<p>BigQuery as the primary audit store: streaming inserts from the Audit Service, column-level CMEK encryption, and SQL queries for regulatory requests. Append-only table policy prevents deletion. Point-in-time query support for "show me the complete history of payment X."</p>',chips:[{t:'BigQuery append-only',c:'chip-teal'},{t:'CMEK encryption',c:'chip-red'},{t:'Streaming inserts',c:'chip-blue'}]},
+
+        'regulator_export':{tag:'Compliance · Reporting',title:'Regulator Export',body:'<p>Automated and on-demand exports for national competent authorities: DNB (Netherlands), BaFin (Germany), FCA (UK — post-Brexit, separate regime). Exports include: payment volumes, consent statistics, SCA success rates, and incident reports. All in regulator-specified formats.</p>',chips:[{t:'DNB / BaFin / FCA',c:'chip-blue'},{t:'On-demand + scheduled',c:'chip-teal'},{t:'Regulator-specified format',c:'chip-amber'}]},
+
+        'archive':{tag:'GCP · Storage',title:'GCS Coldline — 7-Year Archive',body:'<p>Audit entries older than 2 years archived to GCS Coldline for cost-efficient long-term storage. <strong>7-year minimum retention</strong> per PSD2 financial regulations. Object Lock (WORM) prevents deletion. Monthly integrity checks verify archive completeness.</p>',chips:[{t:'GCS Coldline',c:'chip-teal'},{t:'7yr retention',c:'chip-red'},{t:'WORM lock',c:'chip-red'},{t:'Monthly integrity check',c:'chip-amber'}]}
+    };
+
+    function om(k){
+        const d=DATA[k];
+        if(!d)return;
+        document.getElementById('mtag').textContent=d.tag;
+        document.getElementById('mtitle').textContent=d.title;
+        let html=d.body;
+        if(d.chips&&d.chips.length){
+            html+='<div class="chips">';
+            d.chips.forEach(c=>{html+='<span class="chip '+c.c+'">'+c.t+'</span>'});
+            html+='</div>';
+        }
+        document.getElementById('mbody').innerHTML=html;
+        document.getElementById('mbg').classList.add('open');
+    }
+    function cm(){document.getElementById('mbg').classList.remove('open')}
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')cm()});
+
+    // Stage filtering
+    const allSections=document.querySelectorAll('.section[data-section]');
+    const allStageTitles=document.querySelectorAll('.stage-title');
+    function filterStage(stage){
+        document.querySelectorAll('.stage-btn').forEach(b=>{
+            b.classList.toggle('active',b.getAttribute('data-filter')===stage);
+        });
+        allStageTitles.forEach(t=>{t.classList.remove('active')});
+        if(stage!=='all'){
+            const st=document.getElementById('st-'+stage);
+            if(st)st.classList.add('active');
+        }
+        if(stage==='all'){
+            allSections.forEach(s=>{
+                s.classList.remove('filtering');
+                s.querySelectorAll('.flow-area').forEach(f=>f.classList.remove('stage-visible'));
+                s.querySelectorAll('.section-header').forEach(h=>h.classList.remove('stage-visible'));
+            });
+            return;
+        }
+        allSections.forEach(s=>{
+            s.classList.add('filtering');
+            let hasVisible=false;
+            s.querySelectorAll('.flow-area[data-stage]').forEach(f=>{
+                const match=f.getAttribute('data-stage')===stage;
+                f.classList.toggle('stage-visible',match);
+                if(match)hasVisible=true;
+            });
+            const hdr=s.querySelector('.section-header');
+            if(hdr)hdr.classList.toggle('stage-visible',hasVisible);
+        });
+        window.scrollTo({top:document.querySelector('.stage-bar').offsetTop-10,behavior:'smooth'});
+    }
+</script>
+</body>
+</html>
