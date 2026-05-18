@@ -12,12 +12,21 @@ A set of regulatory checks that screen payment instructions against risk rules a
 **Apigee X**
 Google Cloud's API gateway. Handles authentication, rate limiting, and load balancing for all inbound payment requests. The single entry point before any business logic runs. In SCT Inst, policies are kept minimal to avoid adding latency inside the 10-second window.
 
+**AISP (Account Information Service Provider)** 
+A PSD2-licensed third party that reads account data (balances, transactions) from a customer's bank via the bank's XS2A API. Read-only, consent-driven, requires token refresh cycles. Consent valid for 90 days under PSD2, proposed 180 days under PSD3.
+
+**ASPSP (Account Servicing Payment Service Provider)** 
+The customer's bank. Under PSD2, ASPSPs must expose dedicated APIs for licensed TPPs. The party that executes SCA and processes the actual payment or account data request.
+
 ---
 
 ## B
 
 **Bank Adapter Layer**
 A per-bank translation layer that converts internal payment objects into the ISO 20022 message format required by each specific bank or clearing network. Abstracts connectivity differences (SFTP, EBICS, REST, SWIFT FileAct) behind a uniform internal interface.
+
+**Berlin Group NextGenPSD2** 
+The dominant API specification for PSD2 access-to-account interfaces across continental Europe. Implemented by 75%+ of European banks. Defines endpoints for payment initiation, consent management, and account information. Not a single implementation — each bank interprets the spec differently.
 
 **BigQuery**
 Google Cloud's serverless data warehouse. Stores PII-stripped, enriched transaction events for analytics, SLA monitoring, and reconciliation reporting. Fed by Dataflow streaming pipelines.
@@ -31,6 +40,9 @@ An ISO 20022 Credit Notification message sent by the bank to confirm that funds 
 
 **camt.056**
 An ISO 20022 message used to request cancellation of a credit transfer that has already been submitted to clearing. Used in the SCT recall / compensation flow alongside pacs.007.
+
+**CANC (Cancelled)**
+ISO 20022 status indicating the payment was cancelled before execution, typically because the PSU cancelled during SCA. Terminal.
 
 **Circuit Breaker**
 A resilience pattern that stops retrying a failing downstream call after a threshold of consecutive failures, preventing cascade failures. Sits inside the Retry Mechanism alongside exponential backoff. When tripped, traffic is routed to the Manual Review Queue rather than continuing to hammer a degraded service.
@@ -78,6 +90,9 @@ An accounting principle where every transaction creates two ledger entries — a
 
 **EBA STEP2**
 The European Banking Authority's pan-European ACH (Automated Clearing House) system. Processes SCT instructions in up to 4 batch cycles per business day, with D+1 settlement via TARGET2. Also operates RT1, a separate real-time clearing service for SCT Inst.
+
+**eIDAS Certificate** 
+Electronic identification certificate issued by a QTSP, required for all TPP-to-bank communication. Two types: QWAC (for mTLS authentication) and QSealC (for request signing). The TPP's licence number is embedded in the certificate. Expiry without rotation causes total TPP outage.
 
 **EPC (European Payments Council)**
 The organisation that defines and maintains the SEPA payment scheme rulebooks — including SCT, SCT Inst, and SDD. Sets the 10-second settlement deadline for SCT Inst and mandates automatic rejection and full refund if the deadline is missed.
@@ -139,6 +154,27 @@ Data that can identify an individual — names, IBANs, account numbers. Stripped
 **PSP (Payment Service Provider)**
 A company that provides payment processing services to merchants. The architecture in this blog is described from the PSP perspective — sitting between the merchant app and the underlying banking infrastructure.
 
+**PISP (Payment Initiation Service Provider)** 
+A PSD2-licensed third party that initiates payments from a customer's bank account. Higher-risk than AISP — each payment triggers SCA. Uses `POST /v1/payments/sepa-credit-transfers` under NextGenPSD2.
+
+**PSD2 (Revised Payment Services Directive)** 
+EU directive (2015/2366) mandating that banks expose APIs for licensed third parties. Effective January 2018, with RTS on SCA following September 2019. Being replaced by PSD3 and PSR.
+
+**PSD3 / PSR (Payment Services Regulation)** 
+Successor to PSD2. Political agreement reached November 2025, application expected late 2027. Key changes: 180-day consent validity, mandatory Verification of Payee, APP fraud liability on PSPs, fallback interfaces eliminated, permission dashboards required.
+
+**PSU (Payment Service User)** 
+The end customer whose bank account is being accessed. Authenticates via SCA at the bank during the redirect flow. May abandon the SCA redirect chain at any point.
+
+---
+## Q
+
+**QTSP (Qualified Trust Service Provider)** The certificate authority that issues eIDAS certificates (e.g. D-Trust, Digicert, Entrust). Renewal can take days — emergency reissue is possible but not guaranteed within 24 hours.
+
+**QWAC (Qualified Website Authentication Certificate)** eIDAS certificate used for mTLS between the TPP and the bank API. Authenticates the TPP's server identity. The bank validates the certificate against the public TPP register.
+
+**QSealC (Qualified Certificate for Electronic Seals)** eIDAS certificate used to digitally sign API requests. Proves the request originated from the licensed TPP and was not tampered with in transit. Some banks require it on every request; others only on payment initiation.
+
 ---
 
 ## R
@@ -158,6 +194,9 @@ EBA's real-time gross settlement system for SCT Inst. Processes instant payment 
 
 **Sanctions Screening**
 A compliance check that validates payment parties (sender, beneficiary) against sanctioned entity lists (OFAC, EU, UN). Applied before any payment instruction reaches the bank adapter. In SCT Inst, results must be pre-cached — a live sanctions lookup cannot complete within the latency budget.
+
+**SCA (Strong Customer Authentication)** 
+PSD2 mandate requiring two of three factors (knowledge, possession, inherence) for payment authorisation. In the redirect approach, the customer leaves the TPP's app, authenticates at the bank, and is redirected back with an authorisation code. The redirect callback is the most fragile point in the entire flow.
 
 **SCT (SEPA Credit Transfer)**
 The standard SEPA payment scheme for euro credit transfers. Batch-based, D+1 settlement, asynchronous by design. Uses pain.001 / pain.002 message formats and clears via EBA STEP2. Suitable for payroll, supplier payments, and high-volume batch payouts.
@@ -187,6 +226,11 @@ In SCT Inst, the state reached when no pacs.002 response is received within the 
 **TIPS (TARGET Instant Payment Settlement)**
 The European Central Bank's infrastructure for SCT Inst settlement, operated by the Eurosystem. An alternative to RT1. Provides 24/7/365 real-time settlement in central bank money across SEPA-participating banks.
 
+**TPP (Third-Party Provider)** 
+Collective term for AISPs and PISPs — licensed non-bank entities that access customer bank accounts via PSD2 APIs. Must hold a licence from a national competent authority and possess valid eIDAS certificates.
+
+**TPP-Redirect-URI** 
+The callback URL registered with each bank where the customer is redirected after completing SCA. If this endpoint is unavailable during a redirect, the payment is lost. Must survive deployments with zero downtime.
 ---
 
 ## V–W
@@ -198,6 +242,10 @@ GCP's AI platform. Used in the reconciliation layer to classify ambiguous RJCT r
 An HTTP callback sent to a merchant or PSP's registered endpoint when a payment event occurs (completed, failed, reversed). In SCT Inst, webhooks fire asynchronously after the synchronous pacs.002 result has already been returned to the caller — serving disconnected or polling clients that cannot hold a synchronous connection open.
 
 ---
+## X
+
+**XS2A (Access to Account)** 
+The technical term for the PSD2-mandated interface that banks must expose to TPPs. The Berlin Group NextGenPSD2 framework is the most widely adopted XS2A specification.
 
 ## Quick reference — message formats
 
@@ -227,7 +275,3 @@ An HTTP callback sent to a merchant or PSP's registered endpoint when a payment 
 | RR01 | SCT | Missing account or identification details |
 
 ---
-
-*36 terms · 7 message formats · 8 error codes*
-*Fintech on Cloud · SEPA Series · Post #1 companion*
-*→ [Read the full blog post](https://fintechoncloud.substack.com)*
