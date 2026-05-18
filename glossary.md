@@ -231,6 +231,7 @@ Collective term for AISPs and PISPs — licensed non-bank entities that access c
 
 **TPP-Redirect-URI** 
 The callback URL registered with each bank where the customer is redirected after completing SCA. If this endpoint is unavailable during a redirect, the payment is lost. Must survive deployments with zero downtime.
+
 ---
 
 ## V–W
