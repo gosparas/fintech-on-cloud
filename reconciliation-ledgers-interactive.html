@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Reconciliation &amp; Ledgers &mdash; Production Architecture | Fintech on Cloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet"/>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#FFFFFF;font-family:'Outfit',sans-serif;color:#18181B;min-height:100vh;padding:0 0 60px;min-width:320px}
+        .header{background:#18181B;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+        .brand{font-family:'Fraunces',serif;font-size:16px;font-weight:700;color:#F8FAFC}
+        .brand span{color:#34D399}
+        .back{font-family:'JetBrains Mono',monospace;font-size:11px;color:#52525B;text-decoration:none;letter-spacing:0.1em}
+        .back:hover{color:#94A3B8}
+        .hero{text-align:center;padding:32px 24px 20px;max-width:900px;margin:0 auto}
+        .eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;color:#0891B2;text-transform:uppercase;margin-bottom:8px}
+        .hero h1{font-family:'Fraunces',serif;font-size:clamp(20px,3.5vw,32px);font-weight:700;color:#18181B;line-height:1.15;margin-bottom:8px}
+        .hero p{font-size:13px;color:#64748B;margin-bottom:16px}
+        .tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+        .tag{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:3px;letter-spacing:0.1em;text-transform:uppercase}
+        .tag-blue{background:#DBEAFE;color:#1D4ED8}
+        .tag-green{background:#D1FAE5;color:#065F46}
+        .tag-gray{background:#F1F5F9;color:#475569}
+        .tag-red{background:#FEE2E2;color:#B91C1C}
+        .tag-purple{background:#EDE9FE;color:#4C1D95}
+        .tag-cyan{background:#CFFAFE;color:#0E7490}
+        .tag-amber{background:#FEF3C7;color:#78350F}
+        .tag-orange{background:#FFEDD5;color:#C2410C}
+        .hint{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#94A3B8;padding:9px;background:#F8FAFC;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0;letter-spacing:0.05em}
+        .section{max-width:100%;margin:0 auto;padding:20px 12px 0}
+        .section-header{display:flex;align-items:flex-start;margin-bottom:12px;padding:12px 18px;border-radius:8px;border-left:4px solid}
+        .section-header h2{font-family:'Fraunces',serif;font-size:16px;font-weight:700;margin-bottom:3px}
+        .section-header p{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em}
+        .sh-initiate{background:#ECFEFF;border-color:#0891B2}.sh-initiate h2{color:#0E4F6B}.sh-initiate p{color:#0891B2}
+        .sh-ledger{background:#F0FDF4;border-color:#16A34A}.sh-ledger h2{color:#14532D}.sh-ledger p{color:#16A34A}
+        .sh-settle{background:#FFF7ED;border-color:#EA580C}.sh-settle h2{color:#7C2D12}.sh-settle p{color:#EA580C}
+        .sh-recon{background:#F5F3FF;border-color:#7C3AED}.sh-recon h2{color:#4C1D95}.sh-recon p{color:#7C3AED}
+        .sh-failure{background:#FFF1F2;border-color:#E11D48}.sh-failure h2{color:#881337}.sh-failure p{color:#E11D48}
+        .flow-area{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin-bottom:6px;border-left:4px solid #E2E8F0}
+        .flow-area.initiate-row{border-left-color:#22D3EE}
+        .flow-area.ledger-row{border-left-color:#4ADE80}
+        .flow-area.settle-row{border-left-color:#FB923C}
+        .flow-area.recon-row{border-left-color:#A78BFA}
+        .flow-area.failure-row{border-left-color:#FB7185}
+        .flow-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#94A3B8;margin-bottom:10px}
+        .flow-label.cyan{color:#0891B2}
+        .flow-label.green{color:#16A34A}
+        .flow-label.orange{color:#EA580C}
+        .flow-label.purple{color:#7C3AED}
+        .flow-label.danger{color:#DC2626}
+        .flow-label.warn{color:#D97706}
+        .flow-label.success{color:#059669}
+        .flow-row{display:flex;align-items:center;flex-wrap:wrap;row-gap:10px;column-gap:0px;padding-bottom:4px}
+        .box{flex-shrink:2;flex-grow:0;border-radius:7px;padding:8px 10px;cursor:pointer;border:2px solid;transition:transform 0.1s,box-shadow 0.1s;min-width:90px;max-width:152px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.10)}
+        .box:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,0.15)}
+        .bt{font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;margin-bottom:3px;line-height:1.25}
+        .bs{font-family:'JetBrains Mono',monospace;font-size:8px;line-height:1.4}
+        .box-blue{background:#1E40AF;border-color:#1D4ED8}.box-blue .bt{color:#FFFFFF}.box-blue .bs{color:#BFDBFE}
+        .box-teal{background:#065F46;border-color:#047857}.box-teal .bt{color:#FFFFFF}.box-teal .bs{color:#A7F3D0}
+        .box-purple{background:#4C1D95;border-color:#6D28D9}.box-purple .bt{color:#FFFFFF}.box-purple .bs{color:#DDD6FE}
+        .box-amber{background:#92400E;border-color:#B45309}.box-amber .bt{color:#FFFFFF}.box-amber .bs{color:#FDE68A}
+        .box-gray{background:#334155;border-color:#475569}.box-gray .bt{color:#FFFFFF}.box-gray .bs{color:#CBD5E1}
+        .box-green{background:#14532D;border-color:#16A34A}.box-green .bt{color:#FFFFFF}.box-green .bs{color:#BBF7D0}
+        .box-cyan{background:#0E4F6B;border-color:#0891B2}.box-cyan .bt{color:#FFFFFF}.box-cyan .bs{color:#A5F3FC}
+        .box-indigo{background:#312E81;border-color:#4F46E5}.box-indigo .bt{color:#FFFFFF}.box-indigo .bs{color:#C7D2FE}
+        .box-red{background:#991B1B;border-color:#DC2626}.box-red .bt{color:#FFFFFF}.box-red .bs{color:#FECACA}
+        .box-orange{background:#9A3412;border-color:#EA580C}.box-orange .bt{color:#FFFFFF}.box-orange .bs{color:#FED7AA}
+        .box-ext{background:#374151;border-color:#6B7280;border-style:dashed}.box-ext .bt{color:#F9FAFB}.box-ext .bs{color:#D1D5DB}
+        .box-ext-bank{background:#881337;border-color:#BE123C;border-style:dashed}.box-ext-bank .bt{color:#FFFFFF}.box-ext-bank .bs{color:#FECDD3}
+        .box-ext-user{background:#1E3A8A;border-color:#2563EB;border-style:dashed}.box-ext-user .bt{color:#FFFFFF}.box-ext-user .bs{color:#BFDBFE}
+        .arr{flex-shrink:1;flex-grow:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 6px;min-width:64px;max-width:96px;position:relative;overflow:visible}
+        .arr-line{height:2px;width:100%;position:relative;flex-shrink:0}
+        .arr-line::after{content:'▶';position:absolute;right:-7px;top:50%;transform:translateY(-50%);font-size:9px}
+        .arr-sync .arr-line{background:#0891B2}.arr-sync .arr-line::after{color:#0891B2}
+        .arr-ledger .arr-line{background:#16A34A}.arr-ledger .arr-line::after{color:#16A34A}
+        .arr-async .arr-line{background:transparent;border-top:2px dashed #0891B2}.arr-async .arr-line::after{color:#0891B2}
+        .arr-webhook .arr-line{background:transparent;border-top:2px dashed #EA580C}.arr-webhook .arr-line::after{color:#EA580C}
+        .arr-batch .arr-line{background:transparent;border-top:2px dashed #059669}.arr-batch .arr-line::after{color:#059669}
+        .arr-danger .arr-line{background:transparent;border-top:2px dashed #DC2626}.arr-danger .arr-line::after{color:#DC2626}
+        .arr-label{font-family:'JetBrains Mono',monospace;font-size:8px;margin-top:4px;white-space:normal;text-align:center;width:100%;line-height:1.3;word-break:break-word}
+        .arr-sync .arr-label{color:#0E7490}
+        .arr-ledger .arr-label{color:#047857}
+        .arr-async .arr-label{color:#0E7490}
+        .arr-webhook .arr-label{color:#C2410C}
+        .arr-batch .arr-label{color:#047857}
+        .arr-danger .arr-label{color:#B91C1C}
+        .banner{border-radius:5px;padding:7px 12px;margin-bottom:10px;font-family:'JetBrains Mono',monospace;font-size:10px;text-align:left;letter-spacing:0.04em}
+        .banner-amber{background:#FFFBEB;border:1px solid #FCD34D;color:#78350F}
+        .banner-red{background:#FFF1F2;border:1px solid #FDA4AF;color:#9F1239}
+        .banner-cyan{background:#ECFEFF;border:1px solid #A5F3FC;color:#0E4F6B}
+        .banner-green{background:#F0FDF4;border:1px solid #86EFAC;color:#14532D}
+        .legend{max-width:1300px;margin:16px auto 0;padding:0 14px}
+        .legend-inner{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center}
+        .li{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#64748B}
+        .ld{width:24px;height:2px}
+        .ld-s{background:#0891B2}
+        .ld-l{background:#16A34A}
+        .ld-a{background:transparent;border-top:2px dashed #0891B2}
+        .ld-w{background:transparent;border-top:2px dashed #EA580C}
+        .ld-b{background:transparent;border-top:2px dashed #059669}
+        .ld-d{background:transparent;border-top:2px dashed #DC2626}
+        .lb{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+        .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+        .modal-bg.open{display:flex}
+        .modal{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:14px;width:100%;max-width:540px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.12)}
+        .modal-head{padding:18px 22px 14px;border-bottom:1px solid #F1F5F9;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:#fff;z-index:1}
+        .modal-hl{flex:1}
+        .modal-tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:#0891B2;margin-bottom:4px}
+        .modal-title{font-family:'Fraunces',serif;font-size:19px;font-weight:700;color:#18181B;line-height:1.2}
+        .modal-x{background:none;border:none;font-size:18px;cursor:pointer;color:#94A3B8;flex-shrink:0;line-height:1}
+        .modal-x:hover{color:#18181B}
+        .modal-body{padding:18px 22px 22px}
+        .modal-body p{font-family:'Outfit',sans-serif;font-size:13px;color:#475569;line-height:1.75;margin-bottom:12px}
+        .modal-body p:last-child{margin-bottom:0}
+        .modal-body strong{color:#18181B;font-weight:600}
+        .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}
+        .chip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:4px}
+        .chip-blue{background:#DBEAFE;color:#1E3A8A}
+        .chip-teal{background:#D1FAE5;color:#064E3B}
+        .chip-amber{background:#FEF3C7;color:#78350F}
+        .chip-gray{background:#F1F5F9;color:#475569}
+        .chip-red{background:#FEE2E2;color:#B91C1C}
+        .chip-purple{background:#EDE9FE;color:#4C1D95}
+        .chip-orange{background:#FFEDD5;color:#C2410C}
+        .chip-cyan{background:#CFFAFE;color:#0E7490}
+        .chip-green{background:#D1FAE5;color:#065F46}
+        .chip-indigo{background:#E0E7FF;color:#3730A3}
+        .footer{text-align:center;margin-top:36px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#CBD5E1;padding:16px;background:#18181B}
+        .footer a{color:#34D399;text-decoration:none}
+        .stage-bar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:12px 14px 6px;max-width:1300px;margin:0 auto}
+        .stage-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:6px 14px;border-radius:6px;border:1.5px solid #E2E8F0;background:#FFFFFF;color:#64748B;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;text-transform:uppercase}
+        .stage-btn:hover{border-color:#94A3B8;color:#18181B}
+        .stage-btn.active{background:#18181B;color:#F8FAFC;border-color:#18181B}
+        .stage-btn.active:hover{background:#334155;border-color:#334155}
+        .stage-divider{width:1px;height:24px;background:#E2E8F0;align-self:center}
+        .section[data-section].filtering .flow-area[data-stage]{display:none}
+        .section[data-section].filtering .flow-area[data-stage].stage-visible{display:block}
+        .section.filtering .section-header,.section.filtering > .banner{display:none}
+        .section.filtering .section-header.stage-visible{display:flex}
+        .section-header.stage-header{display:none}
+        .section.filtering .section-header.default-header{display:none}
+        .stage-title{text-align:center;padding:8px 14px 0;max-width:1300px;margin:0 auto}
+        .stage-title h3{font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:#18181B;margin-bottom:2px}
+        .stage-title p{font-family:'JetBrains Mono',monospace;font-size:10px;color:#94A3B8;letter-spacing:0.08em}
+        .stage-title{display:none}
+        .stage-title.active{display:block}
+        @media print{.modal-bg,.stage-bar{display:none!important}body{padding:0!important}.section{padding:8px 6px 0!important}.flow-area{break-inside:avoid;margin-bottom:4px!important}.box{max-width:140px!important;min-width:80px!important}.arr{min-width:24px!important}}
+    </style>
+</head>
+<body>
+<div class="header">
+    <div class="brand">Fintech <span>on</span> Cloud</div>
+    <a class="back" href="https://fintechoncloud.substack.com">← Back to blog</a>
+</div>
+<div class="hero">
+    <div class="eyebrow">// Production Architecture · Post #8 · European Payment Series · Reconciliation &amp; Ledger Systems</div>
+    <h1>Reconciliation &amp; Ledgers &mdash; Production-Grade GCP Architecture<br/>Three Databases, One Immutable Ledger, End-to-End Consistency</h1>
+    <p>Architecture from the <strong>PSP / fintech</strong> viewpoint — what <em>you</em> build to prove money moved correctly. External parties (banks, clearing networks) shown as dashed-border components. Click any component for a full explanation.</p>
+    <div class="tags">
+        <span class="tag tag-green">Immutable Ledger</span>
+        <span class="tag tag-purple">State Machine</span>
+        <span class="tag tag-cyan">Reconciliation</span>
+        <span class="tag tag-amber">GCP</span>
+        <span class="tag tag-red">Failure Recovery</span>
+        <span class="tag tag-blue">Double-Entry</span>
+        <span class="tag tag-gray">ISO 20022 · camt.053</span>
+    </div>
+</div>
+
+<div style="max-width:1300px;margin:12px auto 0;padding:0 14px">
+    <div class="banner banner-cyan" style="display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:16px;line-height:1">🏗</span>
+        <div>
+            <strong style="color:#0E4F6B">Perspective: PSP / Fintech Building Payment Infrastructure</strong><br/>
+            This diagram shows what <em>you</em> build and operate as a fintech processing payments via SEPA, Instant Payments, or card networks. <strong style="color:#0E4F6B">Solid-border boxes</strong> = your systems (Pub/Sub, AlloyDB, Dataflow, etc.). <strong style="color:#0E4F6B">Dashed-border boxes</strong> = external parties (bank systems, clearing infrastructure, customers) — you do not control these.
+        </div>
+    </div>
+</div>
+
+<!-- STAGE FILTER BAR -->
+<div class="stage-bar" id="stageBar">
+    <button class="stage-btn active" data-filter="all" onclick="filterStage('all')">Show All</button>
+    <div class="stage-divider"></div>
+    <button class="stage-btn" data-filter="initiate" onclick="filterStage('initiate')">💳 Payment Initiation</button>
+    <button class="stage-btn" data-filter="ledger" onclick="filterStage('ledger')">📒 Ledger &amp; Event Processing</button>
+    <button class="stage-btn" data-filter="settle" onclick="filterStage('settle')">🏦 Settlement &amp; Bank</button>
+    <button class="stage-btn" data-filter="recon" onclick="filterStage('recon')">🔍 Reconciliation</button>
+    <button class="stage-btn" data-filter="failure" onclick="filterStage('failure')">✕ Failure Modes</button>
+</div>
+
+<!-- STAGE TITLES -->
+<div class="stage-title" id="st-initiate"><h3>💳 Payment Initiation</h3><p>USER REQUEST &rarr; VALIDATE &rarr; IDEMPOTENCY KEY &rarr; PUBLISH EVENT &rarr; RETURN 202 ACCEPTED</p></div>
+<div class="stage-title" id="st-ledger"><h3>📒 Ledger &amp; Event Processing</h3><p>PUB/SUB EVENT &rarr; IDEMPOTENCY CHECK &rarr; ATOMIC LEDGER WRITE &rarr; STATE UPDATE &rarr; BANK SUBMISSION</p></div>
+<div class="stage-title" id="st-settle"><h3>🏦 Settlement &amp; Bank Processing</h3><p>SEPA MESSAGE &rarr; BANK BATCH &rarr; PAIN.002 STATUS &rarr; WEBHOOK CALLBACK &rarr; STATE UPDATE (DO NOT REVERSE YET)</p></div>
+<div class="stage-title" id="st-recon"><h3>🔍 Reconciliation (Recon-Gated)</h3><p>CAMT.053 STATEMENT &rarr; PARSE &rarr; MATCH LEDGER &rarr; CONFIRM OR FLAG &rarr; RECON-GATED REVERSAL</p></div>
+<div class="stage-title" id="st-failure"><h3>✕ Failure Modes &amp; Recovery</h3><p>PHANTOM REVERSAL · DOUBLE-POST · SETTLEMENT WINDOW MISS · MISSING STATEMENT · CASCADING REVERSAL</p></div>
+
+<!-- ═══════════ MAIN SECTION ═══════════ -->
+<div class="section" data-section="main">
+
+    <!-- INITIATION HEADER -->
+    <div class="section-header sh-initiate default-header">
+        <div><h2>Phase 1 &mdash; Payment Initiation</h2><p>USER &rarr; API &rarr; IDEMPOTENCY KEY &rarr; PUB/SUB EVENT &rarr; 202 ACCEPTED</p></div>
+    </div>
+
+    <!-- Phase 1: API + Event Publish -->
+    <div class="flow-area initiate-row" data-stage="initiate">
+        <div class="flow-label cyan">// Phase 1 &mdash; Payment request: user triggers transfer &rarr; API validates &rarr; generates idempotency key &rarr; publishes event &rarr; returns 202 immediately</div>
+        <div class="flow-row">
+            <div class="box box-ext-user" onclick="om('user_api')"><div class="bt">User / Merchant</div><div class="bs">POST /transfers</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">validate request</div></div>
+            <div class="box box-blue" onclick="om('api_gateway')"><div class="bt">Payment API</div><div class="bs">Cloud Run · gateway</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">generate idem key</div></div>
+            <div class="box box-purple" onclick="om('idem_gen')"><div class="bt">Idempotency Gen</div><div class="bs">pay_abc123</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish event</div></div>
+            <div class="box box-amber" onclick="om('pubsub_payment')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.events</div></div>
+        </div>
+    </div>
+
+    <div class="banner banner-amber">⚠ Return 202 to user immediately. Never block on ledger write latency. Pub/Sub ordering key = user_id — all payments for this user process in sequence, never in parallel.</div>
+
+    <!-- LEDGER HEADER -->
+    <div class="section-header sh-ledger default-header" style="margin-top:16px">
+        <div><h2>Phase 2 &mdash; Ledger &amp; Event Processing (Dataflow)</h2><p>PUB/SUB EVENT &rarr; IDEMPOTENCY CHECK &rarr; ATOMIC LEDGER WRITE &rarr; STATE UPDATE &rarr; BANK SUBMISSION</p></div>
+    </div>
+
+    <!-- Phase 2a: Idempotency + Ledger Write -->
+    <div class="flow-area ledger-row" data-stage="ledger">
+        <div class="flow-label green">// Phase 2a &mdash; Idempotent ledger write: Dataflow consumes event &rarr; checks idempotency at DB level &rarr; atomic append-only INSERT &rarr; double-entry debit/credit</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('pubsub_payment')"><div class="bt">Cloud Pub/Sub</div><div class="bs">ordering key: user_id</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">consume event</div></div>
+            <div class="box box-cyan" onclick="om('dataflow')"><div class="bt">Dataflow</div><div class="bs">Apache Beam</div></div>
+            <div class="arr arr-ledger"><div class="arr-line"></div><div class="arr-label">check unique(key)</div></div>
+            <div class="box box-green" onclick="om('ledger_db')"><div class="bt">Immutable Ledger</div><div class="bs">AlloyDB · append-only</div></div>
+            <div class="arr arr-ledger"><div class="arr-line"></div><div class="arr-label">get sequence</div></div>
+            <div class="box box-green" onclick="om('ledger_entry')"><div class="bt">Ledger Entry</div><div class="bs">debit/credit · seq=1001</div></div>
+        </div>
+    </div>
+
+    <!-- Phase 2b: State Update + Bank Submission -->
+    <div class="flow-area ledger-row" data-stage="ledger">
+        <div class="flow-label green">// Phase 2b &mdash; State update + bank submission: mutable state DB updated atomically with ledger &rarr; SEPA message sent to bank with same idempotency key</div>
+        <div class="flow-row">
+            <div class="box box-cyan" onclick="om('dataflow')"><div class="bt">Dataflow</div><div class="bs">same worker</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">UPDATE status</div></div>
+            <div class="box box-purple" onclick="om('state_db')"><div class="bt">Payment State</div><div class="bs">AlloyDB · mutable</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">submit SEPA msg</div></div>
+            <div class="box box-ext-bank" onclick="om('bank_api')"><div class="bt">Bank API</div><div class="bs">SEPA submission</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('pubsub_status')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.submitted</div></div>
+        </div>
+    </div>
+
+    <div class="banner banner-green">✓ Both writes (ledger + state) must succeed atomically. If ledger posts but state fails, reconciliation breaks. Use SERIALIZABLE isolation in AlloyDB.</div>
+
+    <!-- SETTLEMENT HEADER -->
+    <div class="section-header sh-settle default-header" style="margin-top:16px">
+        <div><h2>Phase 3 &mdash; Settlement &amp; Bank Processing</h2><p>BANK QUEUES &rarr; PAIN.002 STATUS &rarr; WEBHOOK &rarr; STATE UPDATE (DO NOT REVERSE &mdash; WAIT FOR RECON)</p></div>
+    </div>
+
+    <!-- Phase 3: Bank Settlement -->
+    <div class="flow-area settle-row" data-stage="settle">
+        <div class="flow-label orange">// Phase 3 &mdash; Bank settlement: bank processes SEPA message &rarr; sends PAIN.002 status file &rarr; webhook callback &rarr; update state only (DO NOT touch ledger yet)</div>
+        <div class="flow-row">
+            <div class="box box-ext-bank" onclick="om('bank_settlement')"><div class="bt">Bank Settlement</div><div class="bs">batch · 17:00 CET cutoff</div></div>
+            <div class="arr arr-webhook"><div class="arr-line"></div><div class="arr-label">PAIN.002 status</div></div>
+            <div class="box box-ext-bank" onclick="om('bank_webhook')"><div class="bt">Bank Webhook</div><div class="bs">POSTED or R-code</div></div>
+            <div class="arr arr-webhook"><div class="arr-line"></div><div class="arr-label">callback</div></div>
+            <div class="box box-blue" onclick="om('webhook_handler')"><div class="bt">Webhook Handler</div><div class="bs">Cloud Run</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">update state only</div></div>
+            <div class="box box-purple" onclick="om('state_db')"><div class="bt">Payment State</div><div class="bs">status = BANK_ACK</div></div>
+        </div>
+    </div>
+
+    <div class="banner banner-red">⚠ CRITICAL: Do NOT reverse the ledger based on bank webhook. Webhooks can be replayed, reordered, or duplicated. Mark as FAILED_AT_BANK and wait for reconciliation to confirm.</div>
+
+    <!-- RECON HEADER -->
+    <div class="section-header sh-recon default-header" style="margin-top:16px">
+        <div><h2>Phase 4 &mdash; Reconciliation (Recon-Gated)</h2><p>CAMT.053 STATEMENT &rarr; PARSE &rarr; MATCH LEDGER &rarr; CONFIRM SETTLEMENT &rarr; RECON-GATED REVERSAL (IF FAILED)</p></div>
+    </div>
+
+    <!-- Phase 4a: Statement Download + Match -->
+    <div class="flow-area recon-row" data-stage="recon">
+        <div class="flow-label purple">// Phase 4a &mdash; Reconciliation matching: Cloud Tasks triggers nightly job &rarr; download camt.053 statement &rarr; parse &rarr; match against internal ledger &rarr; flag gaps</div>
+        <div class="flow-row">
+            <div class="box box-cyan" onclick="om('recon_scheduler')"><div class="bt">Cloud Tasks</div><div class="bs">nightly · exp backoff</div></div>
+            <div class="arr arr-batch"><div class="arr-line"></div><div class="arr-label">trigger job</div></div>
+            <div class="box box-teal" onclick="om('recon_engine')"><div class="bt">Recon Engine</div><div class="bs">Cloud Run · batch</div></div>
+            <div class="arr arr-batch"><div class="arr-line"></div><div class="arr-label">download camt.053</div></div>
+            <div class="box box-ext-bank" onclick="om('bank_sftp')"><div class="bt">Bank SFTP</div><div class="bs">ISO 20022 statement</div></div>
+            <div class="arr arr-batch"><div class="arr-line"></div><div class="arr-label">match ledger</div></div>
+            <div class="box box-indigo" onclick="om('recon_store')"><div class="bt">Recon Store</div><div class="bs">BigQuery · match log</div></div>
+        </div>
+    </div>
+
+    <!-- Phase 4b: Recon-Gated Reversal -->
+    <div class="flow-area recon-row" data-stage="recon">
+        <div class="flow-label purple">// Phase 4b &mdash; Recon-gated reversal: mismatch found &rarr; ledger says POSTED, statement says FAILED &rarr; only NOW post reversal entry &rarr; update state to REVERSED</div>
+        <div class="flow-row">
+            <div class="box box-red" onclick="om('recon_mismatch')"><div class="bt">Mismatch Found</div><div class="bs">ledger ≠ statement</div></div>
+            <div class="arr arr-ledger"><div class="arr-line"></div><div class="arr-label">post reversal entry</div></div>
+            <div class="box box-green" onclick="om('reversal_entry')"><div class="bt">INSERT Reversal</div><div class="bs">amount = -€50</div></div>
+            <div class="arr arr-ledger"><div class="arr-line"></div><div class="arr-label">idempotent key</div></div>
+            <div class="box box-purple" onclick="om('state_reversed')"><div class="bt">State = REVERSED</div><div class="bs">RECON_CONFIRMED</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">publish</div></div>
+            <div class="box box-amber" onclick="om('pubsub_recon')"><div class="bt">Cloud Pub/Sub</div><div class="bs">payment.reversed</div></div>
+        </div>
+    </div>
+
+    <div class="banner banner-green">✓ Reconciliation is the correctness layer. Only after recon confirms should customer-facing balances update. State machine: INITIATED → SUBMITTED → BANK_ACK → RECON_CONFIRMED → SETTLED.</div>
+
+    <!-- FAILURE HEADER -->
+    <div class="section-header sh-failure default-header" style="margin-top:16px">
+        <div><h2>Failure Modes, Recovery &amp; Operational Safety</h2><p>PHANTOM REVERSAL &middot; DOUBLE-POST &middot; SETTLEMENT WINDOW MISS &middot; MISSING STATEMENT &middot; DLQ &middot; STALE SCANNER</p></div>
+    </div>
+
+    <!-- Failure 1: Stale Payment Scanner -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label warn">// Stale payment scanner &mdash; catch payments stuck in PENDING &gt; 4 hours &mdash; safety net for lost bank callbacks and settlement batch failures</div>
+        <div class="flow-row">
+            <div class="box box-cyan" onclick="om('stale_scanner')"><div class="bt">Stale Scanner</div><div class="bs">Cloud Tasks · 15min</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">query PENDING > 4h</div></div>
+            <div class="box box-purple" onclick="om('state_db')"><div class="bt">Payment State</div><div class="bs">partial index scan</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">check bank status</div></div>
+            <div class="box box-ext-bank" onclick="om('bank_api')"><div class="bt">Bank API</div><div class="bs">live status query</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">escalate</div></div>
+            <div class="box box-red" onclick="om('manual_review')"><div class="bt">Manual Review</div><div class="bs">ops dashboard</div></div>
+        </div>
+    </div>
+
+    <!-- Failure 2: DLQ + Idempotency Failure Recovery -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// DLQ recovery: events that fail 5x → dead letter queue → ops review → manual replay with same idempotency key → prevents data loss</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('pubsub_payment')"><div class="bt">Cloud Pub/Sub</div><div class="bs">delivery fails 5x</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">move to DLQ</div></div>
+            <div class="box box-red" onclick="om('dlq')"><div class="bt">Dead Letter Queue</div><div class="bs">Pub/Sub DLQ topic</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">alert + review</div></div>
+            <div class="box box-red" onclick="om('pagerduty')"><div class="bt">PagerDuty</div><div class="bs">P1 alert</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">replay event</div></div>
+            <div class="box box-cyan" onclick="om('replay_handler')"><div class="bt">Replay Handler</div><div class="bs">same idem key</div></div>
+        </div>
+    </div>
+
+    <!-- Failure 3: Missing Statement Alert -->
+    <div class="flow-area failure-row" data-stage="failure">
+        <div class="flow-label danger">// Missing statement alert: recon job fails to download camt.053 after 5 retries → alert → manual upload fallback → recon must not go silent</div>
+        <div class="flow-row">
+            <div class="box box-teal" onclick="om('recon_engine')"><div class="bt">Recon Engine</div><div class="bs">SFTP download fails</div></div>
+            <div class="arr arr-danger"><div class="arr-line"></div><div class="arr-label">5x retry fails</div></div>
+            <div class="box box-red" onclick="om('pagerduty')"><div class="bt">PagerDuty</div><div class="bs">RECON_FAILED alert</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">manual upload</div></div>
+            <div class="box box-gray" onclick="om('ops_upload')"><div class="bt">Manual Upload API</div><div class="bs">fallback endpoint</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">trigger recon</div></div>
+            <div class="box box-teal" onclick="om('recon_engine')"><div class="bt">Recon Engine</div><div class="bs">process statement</div></div>
+        </div>
+    </div>
+
+    <!-- Failure 4: Audit Trail -->
+    <div class="flow-area" data-stage="failure">
+        <div class="flow-label success">// Audit trail: every ledger entry, state change, reversal, recon result &rarr; append-only &rarr; BigQuery &rarr; regulator export &rarr; 7yr archive</div>
+        <div class="flow-row">
+            <div class="box box-amber" onclick="om('pubsub_audit')"><div class="bt">Cloud Pub/Sub</div><div class="bs">all lifecycle events</div></div>
+            <div class="arr arr-async"><div class="arr-line"></div><div class="arr-label">stream</div></div>
+            <div class="box box-indigo" onclick="om('audit_service')"><div class="bt">Audit Service</div><div class="bs">append-only · immutable</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">persist</div></div>
+            <div class="box box-teal" onclick="om('audit_store')"><div class="bt">Audit Store</div><div class="bs">BigQuery · CMEK</div></div>
+            <div class="arr arr-sync"><div class="arr-line"></div><div class="arr-label">archive</div></div>
+            <div class="box box-green" onclick="om('archive')"><div class="bt">GCS Coldline</div><div class="bs">7yr · WORM lock</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+    <div class="legend-inner">
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:#0E4F6B;text-transform:uppercase;letter-spacing:0.08em">Connections</span>
+            <div class="li"><div class="ld ld-s"></div>Synchronous API call</div>
+            <div class="li"><div class="ld ld-l"></div>Ledger write (immutable)</div>
+            <div class="li"><div class="ld ld-a"></div>Async (Pub/Sub)</div>
+            <div class="li"><div class="ld ld-w"></div>Webhook / bank callback</div>
+            <div class="li"><div class="ld ld-b"></div>Batch (reconciliation)</div>
+            <div class="li"><div class="ld ld-d"></div>Failure path</div>
+        </div>
+        <div style="height:1px;width:100%;background:#E2E8F0"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:#065F46;text-transform:uppercase;letter-spacing:0.08em">Your Systems — solid border</span>
+            <div class="li"><div class="lb" style="background:#1E40AF;border:1.5px solid #2563EB"></div>API gateway / compute</div>
+            <div class="li"><div class="lb" style="background:#14532D;border:1.5px solid #16A34A"></div>Immutable ledger</div>
+            <div class="li"><div class="lb" style="background:#4C1D95;border:1.5px solid #6D28D9"></div>Payment state / state machine</div>
+            <div class="li"><div class="lb" style="background:#92400E;border:1.5px solid #B45309"></div>Messaging (Pub/Sub)</div>
+            <div class="li"><div class="lb" style="background:#0E4F6B;border:1.5px solid #0891B2"></div>Scheduled jobs / Dataflow</div>
+            <div class="li"><div class="lb" style="background:#312E81;border:1.5px solid #4F46E5"></div>Recon / audit stores</div>
+            <div class="li"><div class="lb" style="background:#991B1B;border:1.5px solid #DC2626"></div>Failure / alerts / DLQ</div>
+        </div>
+        <div style="height:1px;width:100%;background:#E2E8F0"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:#881337;text-transform:uppercase;letter-spacing:0.08em">External — dashed border</span>
+            <div class="li"><div class="lb" style="background:#881337;border:1.5px dashed #BE123C"></div>Bank / clearing infrastructure</div>
+            <div class="li"><div class="lb" style="background:#1E3A8A;border:1.5px dashed #2563EB"></div>User / merchant</div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="mbg" onclick="if(event.target===this)cm()">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-hl"><div class="modal-tag" id="mtag"></div><div class="modal-title" id="mtitle"></div></div>
+            <button class="modal-x" onclick="cm()">✕</button>
+        </div>
+        <div class="modal-body" id="mbody"></div>
+    </div>
+</div>
+
+<div class="footer">
+    Fintech <span style="color:#34D399">on</span> Cloud · <a href="https://fintechoncloud.substack.com">fintechoncloud.substack.com</a> · Reconciliation & Ledgers Architecture
+</div>
+
+<script>
+    const DATA={
+        'user_api':{tag:'External · User',title:'User / Merchant Application',body:'<p>The user or merchant that triggers a payment via your API. They call <code>POST /transfers</code> with: amount, currency, debtor IBAN, creditor IBAN, remittance info, and an idempotency key. Your API validates, generates an internal payment ID, and returns 202 Accepted immediately — the user never waits for the ledger write.</p>',chips:[{t:'Your API consumer',c:'chip-blue'},{t:'Idempotency key provided',c:'chip-red'},{t:'202 Accepted immediately',c:'chip-cyan'}]},
+        'api_gateway':{tag:'GCP · Cloud Run',title:'Payment API Gateway',body:'<p>Central API running on Cloud Run with <code>min-instances: 2</code> to eliminate cold starts. Validates requests, checks amount limits, deduplicates using the idempotency key, and publishes a <code>TRANSFER_INITIATED</code> event to Pub/Sub. Never blocks on the ledger write — the API handler\'s only job is to get the event into Pub/Sub safely and return 202.</p><p><strong>Key pattern:</strong> The API does NOT write to the ledger or state DB directly. It publishes an event and returns. Dataflow handles the rest asynchronously. This decouples API latency from ledger write latency.</p>',chips:[{t:'Cloud Run · min-instances: 2',c:'chip-blue'},{t:'202 Accepted (async)',c:'chip-cyan'},{t:'Idempotency check',c:'chip-red'},{t:'Pub/Sub publish',c:'chip-amber'}]},
+        'idem_gen':{tag:'Pattern · Critical',title:'Idempotency Key Generation',body:'<p>Every payment request must carry an idempotency key — a UUID generated by the client (merchant/user) that uniquely identifies this payment intent. If the same key arrives twice (network retry, user double-click), the second request returns the cached result without creating a duplicate payment.</p><p><strong>Database enforcement:</strong> <code>UNIQUE(idempotency_key)</code> constraint on the ledger table. If Dataflow tries to INSERT a duplicate, PostgreSQL rejects it atomically — no race condition possible.</p>',chips:[{t:'UUID from client',c:'chip-blue'},{t:'UNIQUE constraint at DB level',c:'chip-red'},{t:'Prevents double-posts',c:'chip-red'},{t:'Atomic check',c:'chip-teal'}]},
+        'pubsub_payment':{tag:'GCP · Messaging',title:'Cloud Pub/Sub — Payment Events',body:'<p>Central event backbone. Every payment lifecycle event (INITIATED, SUBMITTED, POSTED, FAILED, REVERSED) is published here. <strong>Ordering keys</strong> set to <code>user_id</code> guarantee that all events for a single user are processed in sequence — a user\'s refund cannot process before their original payment, even under retries.</p><p><strong>At-least-once delivery:</strong> Pub/Sub may deliver the same message more than once. This is why every downstream handler must be idempotent — the ledger\'s UNIQUE constraint is the safety net.</p>',chips:[{t:'Ordering key: user_id',c:'chip-amber'},{t:'At-least-once delivery',c:'chip-orange'},{t:'7-day retention',c:'chip-gray'},{t:'Fan-out to multiple subscribers',c:'chip-blue'}]},
+        'dataflow':{tag:'GCP · Processing',title:'Dataflow (Apache Beam) — Event Processor',body:'<p>Consumes Pub/Sub events and writes to both the immutable ledger and payment state DB atomically. Handles exactly-once semantics through Pub/Sub ordering keys and AlloyDB UNIQUE constraints. Can replay events from Pub/Sub if the ledger becomes inconsistent.</p><p><strong>Why Dataflow, not Lambda/Cloud Functions:</strong> Dataflow provides built-in exactly-once processing with deduplication. A simple Cloud Function would require custom deduplication logic and has no ordering guarantees. At scale (10K+ events/second), Dataflow auto-scales while maintaining order.</p>',chips:[{t:'Apache Beam',c:'chip-cyan'},{t:'Exactly-once semantics',c:'chip-red'},{t:'Auto-scaling',c:'chip-teal'},{t:'Event replay capability',c:'chip-amber'}]},
+        'ledger_db':{tag:'GCP · Storage · Critical',title:'Immutable Ledger — AlloyDB (Append-Only)',body:'<p><strong>This is the most important database in the system.</strong> Every financial event is a new row: debits, credits, fees, reversals, chargebacks. Never modified. Never deleted. Every row has: <code>idempotency_key</code> (UNIQUE), <code>debit_account</code>, <code>credit_account</code>, <code>amount</code>, <code>currency</code>, <code>created_at</code>, <code>effective_at</code>, <code>reference_id</code>.</p><p><strong>Double-entry enforced at DB level:</strong> Every debit has a matching credit. CHECK constraint ensures <code>debit_account != credit_account</code>. The ledger must always balance — if it doesn\'t, something is catastrophically wrong.</p><p><strong>Why AlloyDB:</strong> PostgreSQL compatibility gives you SERIALIZABLE isolation, UNIQUE constraints, and CHECK constraints. Append-only schema means no UPDATE or DELETE triggers exist. AlloyDB\'s columnar engine handles analytical queries (reconciliation) without impacting transactional writes.</p>',chips:[{t:'AlloyDB PostgreSQL',c:'chip-teal'},{t:'Append-only · no UPDATEs',c:'chip-red'},{t:'UNIQUE(idempotency_key)',c:'chip-red'},{t:'Double-entry enforced',c:'chip-blue'},{t:'SERIALIZABLE isolation',c:'chip-purple'},{t:'Legal document',c:'chip-amber'}]},
+        'ledger_entry':{tag:'Pattern · Accounting',title:'Ledger Entry — Double-Entry Record',body:'<p>Each ledger entry represents one side of a financial movement. For a €50 transfer from user_123 to merchant_456: one entry debits user_123\'s account (amount: 50.00), another credits bank_settlement account (amount: 50.00). The sum of all entries for any account gives the current balance.</p><p><strong>Reversal pattern:</strong> To reverse a payment, you INSERT a new entry with the opposite direction (debit becomes credit). The original entry stays. The net effect is zero, but the full history is preserved for audit.</p>',chips:[{t:'Debit/credit pair',c:'chip-green'},{t:'Append-only reversal',c:'chip-red'},{t:'Full history preserved',c:'chip-amber'},{t:'Sequence number',c:'chip-gray'}]},
+        'state_db':{tag:'GCP · Storage',title:'Payment State — AlloyDB (Mutable)',body:'<p>Stores the current status of each payment: INITIATED, SUBMITTED, BANK_ACK, RECON_CONFIRMED, SETTLED, FAILED, REVERSED. This is a <strong>mutable</strong> table — status changes via UPDATE. Used by the API for real-time status queries and by the webhook handler for bank callback processing.</p><p><strong>Why separate from ledger:</strong> The ledger is append-only and immutable. The state DB is mutable and transactional. Different access patterns, different consistency requirements. Your API needs low-latency reads (state DB). Your auditors need immutable history (ledger).</p>',chips:[{t:'AlloyDB PostgreSQL',c:'chip-teal'},{t:'Mutable state (UPDATE)',c:'chip-purple'},{t:'Real-time status queries',c:'chip-blue'},{t:'Linked to ledger via sequence',c:'chip-green'}]},
+        'bank_api':{tag:'External · Bank',title:'Bank API — SEPA Submission',body:'<p>The bank\'s API that accepts SEPA payment instructions. You submit a payment message, the bank queues it for the next settlement batch. Banks are eventually consistent — they process your message whenever their batch job runs (typically at 17:00 CET cutoff for SEPA Credit Transfer, or within ~10 seconds for SCT Inst).</p><p><strong>You do not control this system.</strong> Bank response times vary. Banks go down for maintenance. Banks have different error codes. Some banks acknowledge within seconds; others take hours.</p>',chips:[{t:'External · you don\'t control',c:'chip-red'},{t:'Eventually consistent',c:'chip-orange'},{t:'17:00 CET cutoff (SCT)',c:'chip-amber'},{t:'~10s for SCT Inst',c:'chip-cyan'}]},
+        'pubsub_status':{tag:'GCP · Messaging',title:'Cloud Pub/Sub — Status Events',body:'<p>Payment status change events published after Dataflow processes a state transition. Subscribers include: the merchant webhook handler (notify merchant of payment completion/failure), the audit service (compliance logging), and the monitoring system (operational alerts).</p>',chips:[{t:'Fan-out to webhook + audit',c:'chip-amber'},{t:'Ordering key: payment_id',c:'chip-blue'}]},
+        'bank_settlement':{tag:'External · Bank',title:'Bank Settlement Batch',body:'<p>Banks process SEPA messages in batches. Standard SEPA Credit Transfer: 1–3 business days. Instant Payments (SCT Inst): ~10 seconds. The 17:00 CET cutoff is hard — if your message arrives at 17:01, it settles tomorrow. After settlement, the bank generates a PAIN.002 status report and (eventually) a camt.053 statement file.</p>',chips:[{t:'Batch processing',c:'chip-amber'},{t:'17:00 CET cutoff',c:'chip-red'},{t:'1–3 days (SCT)',c:'chip-orange'},{t:'~10s (SCT Inst)',c:'chip-cyan'}]},
+        'bank_webhook':{tag:'External · Bank',title:'Bank Webhook — Status Callback',body:'<p>The bank sends a webhook callback when the payment status changes: POSTED (settled successfully) or an R-code (failed — R01 insufficient funds, R04 closed account, etc.). <strong>Webhooks are unreliable by nature:</strong> they can arrive late, arrive twice, arrive out of order, or never arrive at all.</p><p><strong>Critical rule:</strong> Never trust a webhook as the sole source of truth. Use it to update your mutable state DB, but do NOT reverse the ledger based on a webhook alone. Wait for the bank statement (reconciliation) to confirm.</p>',chips:[{t:'Unreliable by design',c:'chip-red'},{t:'Can be replayed',c:'chip-orange'},{t:'Can arrive out of order',c:'chip-orange'},{t:'Do NOT reverse ledger',c:'chip-red'}]},
+        'webhook_handler':{tag:'GCP · Cloud Run',title:'Webhook Handler',body:'<p>Receives bank webhook callbacks and updates the payment state DB. Validates webhook signature, checks idempotency (same webhook ID = skip), and updates <code>payment_state.status</code>. Does NOT touch the ledger — that\'s reconciliation\'s job.</p>',chips:[{t:'Cloud Run',c:'chip-blue'},{t:'Signature validation',c:'chip-teal'},{t:'Idempotent (webhook ID)',c:'chip-red'},{t:'State update only',c:'chip-purple'}]},
+        'recon_scheduler':{tag:'GCP · Scheduling',title:'Cloud Tasks — Reconciliation Scheduler',body:'<p>Triggers the reconciliation job nightly (2:00 AM CET). Uses exponential backoff — if the bank\'s SFTP server is down, retries up to 5 times before alerting. This ensures reconciliation runs reliably even when external systems are flaky.</p><p><strong>Why Cloud Tasks, not cron:</strong> A cron job that fails silently is catastrophic for reconciliation. Cloud Tasks provides built-in retry logic, dead-lettering, and monitoring. You know when reconciliation didn\'t run.</p>',chips:[{t:'Cloud Tasks + Cloud Scheduler',c:'chip-cyan'},{t:'Nightly 2:00 AM CET',c:'chip-amber'},{t:'Exponential backoff',c:'chip-teal'},{t:'5x retry before alert',c:'chip-red'}]},
+        'recon_engine':{tag:'GCP · Critical',title:'Reconciliation Engine',body:'<p>The core reconciliation job. Downloads the bank statement (camt.053 via SFTP), parses it, and matches each entry against the internal ledger. For each match: mark as <code>recon_confirmed = true</code>. For mismatches: log an exception and alert.</p><p><strong>Matching logic:</strong> Match by reference ID first (exact). If no match, try amount + timestamp window (±48 hours). If still no match, flag as an exception for manual review. Banks don\'t always follow the camt.053 spec consistently — your parser must handle edge cases.</p>',chips:[{t:'Cloud Run (batch mode)',c:'chip-blue'},{t:'camt.053 parsing',c:'chip-teal'},{t:'Reference ID matching',c:'chip-green'},{t:'Heuristic fallback',c:'chip-amber'},{t:'Exception logging',c:'chip-red'}]},
+        'bank_sftp':{tag:'External · Bank',title:'Bank SFTP — Statement Files',body:'<p>Banks deliver statement files via SFTP (typically). The camt.053 file (ISO 20022 format) contains every transaction that settled in the period: amounts, timestamps, fees, R-transactions. This is the <strong>source of truth for settlement</strong> — not webhooks, not API status responses.</p><p><strong>Arrival timing:</strong> 24–48 hours after settlement. Some banks deliver once daily; others deliver multiple times. File format varies despite the "standard" — your parser must handle bank-specific quirks.</p>',chips:[{t:'External · you don\'t control',c:'chip-red'},{t:'ISO 20022 camt.053',c:'chip-blue'},{t:'24–48h delay',c:'chip-orange'},{t:'Bank-specific quirks',c:'chip-amber'}]},
+        'recon_store':{tag:'GCP · Storage',title:'Reconciliation Store — BigQuery',body:'<p>Stores all reconciliation results: matched transactions, unmatched transactions, exceptions, and historical reconciliation reports. BigQuery is ideal: append-only, fast analytical queries, cheap storage, and SQL for regulator requests ("show me all unreconciled transactions from Q1 2025").</p>',chips:[{t:'BigQuery',c:'chip-teal'},{t:'Append-only',c:'chip-red'},{t:'Historical analysis',c:'chip-blue'},{t:'Regulator queries',c:'chip-amber'}]},
+        'recon_mismatch':{tag:'Pattern · Recovery',title:'Reconciliation Mismatch',body:'<p>When the reconciliation engine finds a mismatch: your ledger says POSTED (debit: €50), but the bank statement says the payment failed (R-transaction). This is the moment you reverse — not before. The reversal is a new append-only entry in the ledger (credit: €50), not a deletion or update of the original.</p>',chips:[{t:'Ledger ≠ statement',c:'chip-red'},{t:'Reversal entry (not deletion)',c:'chip-green'},{t:'Idempotent reversal key',c:'chip-red'}]},
+        'reversal_entry':{tag:'Pattern · Accounting',title:'Reversal Entry — Append-Only',body:'<p>A new ledger entry that reverses the original: if the original was debit user_123 / credit bank_settlement for €50, the reversal is debit bank_settlement / credit user_123 for €50. The original entry stays untouched. Net effect: zero. Full audit trail preserved.</p><p><strong>Idempotency:</strong> The reversal entry has its own idempotency key: <code>reverse_{original_ledger_sequence}</code>. If the reversal is triggered twice (duplicate event), the UNIQUE constraint prevents a double reversal.</p>',chips:[{t:'Append-only (no delete)',c:'chip-red'},{t:'Opposite direction',c:'chip-green'},{t:'Own idempotency key',c:'chip-red'},{t:'Net effect: zero',c:'chip-amber'}]},
+        'state_reversed':{tag:'Pattern · State Machine',title:'Payment State — REVERSED',body:'<p>The terminal state for a failed payment that has been reversed after reconciliation confirmation. State machine: <code>INITIATED → SUBMITTED → BANK_ACK → FAILED_AT_BANK → RECON_CONFIRMED_FAILED → REVERSED</code>. Customer-facing balance only updates after this final state.</p>',chips:[{t:'Terminal state',c:'chip-purple'},{t:'Recon-gated',c:'chip-red'},{t:'Customer balance updates now',c:'chip-green'}]},
+        'pubsub_recon':{tag:'GCP · Messaging',title:'Cloud Pub/Sub — Reconciliation Events',body:'<p>Published after reconciliation confirms a match or processes a reversal. Subscribers: customer notification service (inform customer of reversal), merchant webhook (update merchant\'s records), analytics pipeline (track reconciliation metrics).</p>',chips:[{t:'payment.reversed',c:'chip-red'},{t:'payment.recon_confirmed',c:'chip-green'},{t:'Fan-out to notifications',c:'chip-amber'}]},
+        'stale_scanner':{tag:'GCP · Recovery',title:'Stale Payment Scanner',body:'<p>Scheduled Cloud Tasks job (every 15 minutes) that queries payments stuck in non-terminal status (INITIATED, SUBMITTED, PENDING) for more than 4 hours. For each stale payment, fetches live status from the bank API. If the bank reports POSTED, trigger the normal downstream flow. If the bank has no record, escalate to manual review.</p><p><strong>Why 4 hours:</strong> Most SEPA settlement batches process within 2–3 hours. Adding a buffer to 4 hours avoids false positives. Instant payments use a separate 2-minute timeout.</p>',chips:[{t:'Every 15 minutes',c:'chip-cyan'},{t:'4-hour threshold',c:'chip-amber'},{t:'Safety net for lost callbacks',c:'chip-red'},{t:'Partial index scan',c:'chip-teal'}]},
+        'dlq':{tag:'GCP · Recovery',title:'Dead Letter Queue',body:'<p>Events that fail processing 5 times are moved to the DLQ topic. This prevents a single bad event from blocking the entire pipeline. The DLQ is monitored — any message appearing here triggers a P1 alert. Ops reviews the event, fixes the root cause, and replays with the same idempotency key.</p>',chips:[{t:'Pub/Sub DLQ topic',c:'chip-red'},{t:'5x retry threshold',c:'chip-amber'},{t:'P1 alert on arrival',c:'chip-red'},{t:'Manual replay',c:'chip-cyan'}]},
+        'pagerduty':{tag:'Ops · Incident',title:'PagerDuty — On-Call Alert',body:'<p>Critical alerts: reconciliation failure, DLQ messages, missing bank statements, stale payments exceeding threshold. P1 severity for anything that could lead to silent ledger corruption. On-call rotation ensures 24/7 coverage.</p>',chips:[{t:'P1 severity',c:'chip-red'},{t:'On-call rotation',c:'chip-amber'},{t:'24/7 coverage',c:'chip-gray'}]},
+        'replay_handler':{tag:'GCP · Recovery',title:'Event Replay Handler',body:'<p>Manual or automated replay of DLQ events. Uses the same idempotency key as the original event — the ledger\'s UNIQUE constraint ensures the replay is safe (if already processed, the INSERT fails and returns the cached result). This is why idempotency is non-negotiable.</p>',chips:[{t:'Same idempotency key',c:'chip-red'},{t:'UNIQUE constraint safety net',c:'chip-red'},{t:'Safe to replay N times',c:'chip-teal'}]},
+        'manual_review':{tag:'Ops · Dashboard',title:'Manual Review Queue',body:'<p>Payments that automated systems cannot resolve: bank returns unexpected status, stale scanner finds inconsistencies, reconciliation engine flags edge cases. Operators can: contact the bank, mark the payment as stuck, trigger a manual reversal, or notify the customer.</p>',chips:[{t:'Ops dashboard',c:'chip-gray'},{t:'Bank contact',c:'chip-amber'},{t:'Manual resolution',c:'chip-teal'}]},
+        'ops_upload':{tag:'Ops · Fallback',title:'Manual Statement Upload',body:'<p>Fallback API endpoint for when automated SFTP download fails. Ops can upload the camt.053 file manually, triggering the reconciliation engine. Not ideal, but better than reconciliation going silent for days.</p>',chips:[{t:'Fallback endpoint',c:'chip-gray'},{t:'Manual upload',c:'chip-amber'},{t:'Triggers recon engine',c:'chip-teal'}]},
+        'pubsub_audit':{tag:'GCP · Messaging',title:'Cloud Pub/Sub — Audit Events',body:'<p>Every ledger entry, state change, webhook received, reconciliation result, and reversal is published as an audit event. Multiple subscribers: audit service (compliance), analytics pipeline (operational metrics), monitoring (alerting).</p>',chips:[{t:'All lifecycle events',c:'chip-cyan'},{t:'Fan-out to audit + analytics',c:'chip-blue'}]},
+        'audit_service':{tag:'GCP · Compliance',title:'Audit Service — Append-Only Immutable',body:'<p>Central append-only audit trail. Every entry includes: timestamp, actor (service identity), action, payment ID, before/after state, and a hash chaining to the previous entry for tamper evidence. Strict write-only access — no service can update or delete entries.</p>',chips:[{t:'Append-only',c:'chip-red'},{t:'Hash-chained',c:'chip-purple'},{t:'Write-only access',c:'chip-red'},{t:'Tamper-evident',c:'chip-amber'}]},
+        'audit_store':{tag:'GCP · Storage',title:'Audit Store — BigQuery + CMEK',body:'<p>BigQuery as the primary audit store: streaming inserts from the Audit Service, column-level CMEK encryption, SQL queries for regulatory requests. Append-only table policy prevents deletion.</p>',chips:[{t:'BigQuery append-only',c:'chip-teal'},{t:'CMEK encryption',c:'chip-red'},{t:'Streaming inserts',c:'chip-blue'}]},
+        'archive':{tag:'GCP · Storage',title:'GCS Coldline — 7-Year Archive',body:'<p>Audit entries older than 2 years archived to GCS Coldline for cost-efficient long-term storage. <strong>7-year minimum retention</strong> per financial regulations. Object Lock (WORM) prevents deletion. Monthly integrity checks verify archive completeness.</p>',chips:[{t:'GCS Coldline',c:'chip-teal'},{t:'7yr retention',c:'chip-red'},{t:'WORM lock',c:'chip-red'},{t:'Monthly integrity check',c:'chip-amber'}]}
+    };
+
+    function om(k){
+        const d=DATA[k];
+        if(!d)return;
+        document.getElementById('mtag').textContent=d.tag;
+        document.getElementById('mtitle').textContent=d.title;
+        let html=d.body;
+        if(d.chips&&d.chips.length){
+            html+='<div class="chips">';
+            d.chips.forEach(c=>{html+='<span class="chip '+c.c+'">'+c.t+'</span>'});
+            html+='</div>';
+        }
+        document.getElementById('mbody').innerHTML=html;
+        document.getElementById('mbg').classList.add('open');
+    }
+    function cm(){document.getElementById('mbg').classList.remove('open')}
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')cm()});
+
+    const allSections=document.querySelectorAll('.section[data-section]');
+    const allStageTitles=document.querySelectorAll('.stage-title');
+    function filterStage(stage){
+        document.querySelectorAll('.stage-btn').forEach(b=>{
+            b.classList.toggle('active',b.getAttribute('data-filter')===stage);
+        });
+        allStageTitles.forEach(t=>{t.classList.remove('active')});
+        if(stage!=='all'){
+            const st=document.getElementById('st-'+stage);
+            if(st)st.classList.add('active');
+        }
+        if(stage==='all'){
+            allSections.forEach(s=>{
+                s.classList.remove('filtering');
+                s.querySelectorAll('.flow-area').forEach(f=>f.classList.remove('stage-visible'));
+                s.querySelectorAll('.section-header').forEach(h=>h.classList.remove('stage-visible'));
+            });
+            return;
+        }
+        allSections.forEach(s=>{
+            s.classList.add('filtering');
+            let hasVisible=false;
+            s.querySelectorAll('.flow-area[data-stage]').forEach(f=>{
+                const match=f.getAttribute('data-stage')===stage;
+                f.classList.toggle('stage-visible',match);
+                if(match)hasVisible=true;
+            });
+            const hdr=s.querySelector('.section-header');
+            if(hdr)hdr.classList.toggle('stage-visible',hasVisible);
+        });
+        window.scrollTo({top:document.querySelector('.stage-bar').offsetTop-10,behavior:'smooth'});
+    }
+</script>
+</body>
+</html>
